@@ -3,23 +3,22 @@
 > yctimlin `mcp_excalidraw`(MIT) 포크. 서버 코드(그리는 손)는 업스트림 것, 내장 스킬을 **백엔드 실무 다이어그램 판단 스킬 `archdraw`**로 교체한 Claude Code / Codex 플러그인.
 > 업스트림: `https://github.com/yctimlin/mcp_excalidraw` — `git remote upstream`.
 >
-> **현 단계: PRD 단계.** 판단 스킬 코드 0줄. 산출물은 `docs/` 문서.
+> **현 단계: PRD 단계.** 판단 스킬 코드 0줄. 산출물은 `.scratch/archdraw-skill/spec.md`.
 
 ## SSOT 규약
 
 - **이 파일이 맵이다. 백과사전이 아니다.** 규약·구조·gotcha 포인터만 둔다. 상세는 `docs/`로 분리하고 여기서 가리킨다.
 - `CLAUDE.md`는 `@AGENTS.md` 한 줄 — import 전용. 내용 쓰지 말 것.
 - 레포 보면 아는 것(디렉터리 목록, 빌드 명령)은 적지 않는다. 토큰은 gotcha에 쓴다.
-- 빈 비계 금지 — `CONTEXT.md`·`docs/adr/`·`docs/issues/`는 첫 내용이 생길 때 만든다.
+- 빈 비계 금지 — `CONTEXT.md`·`docs/adr/`는 첫 내용이 생길 때 만든다.
 
 ## 문서 위치
 
 | 무엇 | 어디 |
 |---|---|
-| PRD | `docs/prd/` (번호 순, 현재 `001-excalidraw-architect.md`) |
+| 스펙(PRD)·구현 슬라이스 | `.scratch/<feature-slug>/` — slug는 기능명(프로젝트명 X). 현재 `archdraw-skill/spec.md` |
 | 용어 사전 | `CONTEXT.md` (미생성) |
 | 결정 기록 | `docs/adr/` (미생성) |
-| 구현 슬라이스 | `docs/issues/` (미생성) |
 
 ## 지식 소스 — 심링크 3종 (읽기 전용)
 
@@ -42,3 +41,17 @@ sibling 레포 소유. **생성·수정·삭제 금지.** git에는 심링크째
 ## 커밋
 
 영어 1~2문장. `Co-Authored-By` 없음. push는 지시 있을 때만.
+
+## Agent skills
+
+### Issue tracker
+
+로컬 markdown, `.scratch/<feature-slug>/` (원본 스킬 구조 그대로). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+기본 5종 (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`), 이슈 파일의 `Status:` 줄에 기록. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+single-context — 루트 `CONTEXT.md` + `docs/adr/`. See `docs/agents/domain.md`.
