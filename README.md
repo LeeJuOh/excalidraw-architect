@@ -13,10 +13,6 @@ The canvas comes from [yctimlin/mcp_excalidraw](https://github.com/yctimlin/mcp_
 - **Five zoom levels, stack-agnostic.** System context → deployment unit → module boundary → layer → boundary type. Each diagram is one box of the level above, zoomed in. Gradle multi-module and NestJS modules get their own level, which C4 does not give them.
 - **Throwaway by default.** Diagrams are explanation until you say "keep it"; then they are promoted to a proper drawing and exported into your repo.
 
-## Status
-
-PRD stage. The judgement skill has zero lines of code yet. Server code is upstream's as-is. There is nothing to install.
-
 ## Upstream
 
 This is a fork of [yctimlin/mcp_excalidraw](https://github.com/yctimlin/mcp_excalidraw) (MIT). For the canvas server, CLI, and MCP tools, see the upstream README. The original copyright notice is kept in [LICENSE](LICENSE).
