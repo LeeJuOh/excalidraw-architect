@@ -12,6 +12,8 @@ public/dist/
 *.log
 
 # Editor artifacts
+.idea/
+*.iml
 .cursor/
 .claude/
 .agent/
