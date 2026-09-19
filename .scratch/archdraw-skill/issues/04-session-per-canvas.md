@@ -7,8 +7,8 @@
 - 키는 서버가 발급한다. 호스트 세션 ID·PPID에 의존하지 않아 Claude·Codex 동일.
 - 업스트림의 "머신당 서버 하나, 포트 3000, pid 파일" 전제를 세션 단위로 바꾼다. 빈 포트 탐색.
 - 브라우저 탭 제목에 세션 키가 보인다.
-- **프로젝트 루트 고정 (검수 R03, 2026-09-14 그릴 확정):** `session start`는 cwd에서 위로 올라가 git 루트를 찾아 세션의 프로젝트 루트로 저장한다. 없으면 cwd. `--project <경로>`로 덮어쓸 수 있다. 출력과 `session list`에 프로젝트 루트가 나온다. 이후 모든 호출은 세션 키만으로 그 루트를 쓴다 — 근거 검사(07)·export 허용 폴더·스냅샷 폴더(06)의 기준이 `process.cwd()`에서 세션의 프로젝트 루트로 바뀐다. ([ADR-0003](../../../docs/adr/0003-one-canvas-server-per-session.md)·[ADR-0005](../../../docs/adr/0005-server-checks-evidence-and-demotes.md))
-- 기존 커맨드는 `--session` 없이 부르면 세션이 하나일 때 그 세션으로, 여럿이면 에러. (스펙에 없는 티켓 작성 시 제안 — 착수 전 확인)
+- **프로젝트 루트 고정 (검수 R03, 2026-09-14 그릴 확정):** `session start`는 cwd에서 위로 올라가 git 루트를 찾아 세션의 프로젝트 루트로 저장한다. 없으면 cwd. `--project <경로>`로 덮어쓸 수 있다. 출력과 `session list`에 프로젝트 루트가 나온다. 이후 모든 호출은 세션 키만으로 그 루트를 쓴다 — 근거 검사(07)·스냅샷 폴더(06)의 기준이 `process.cwd()`에서 세션의 프로젝트 루트로 바뀐다. ([ADR-0003](../../../docs/adr/0003-one-canvas-server-per-session.md)·[ADR-0005](../../../docs/adr/0005-server-checks-evidence-and-demotes.md))
+- 기존 커맨드는 `--session` 없이 부르면 세션이 하나일 때 그 세션으로, 여럿이면 에러. (2026-09-19 2차 검수 A6에서 확정 — 컴팩션 복귀의 하나면 자동·여럿이면 묻기와 같은 규칙)
 
 **Blocked by:** 01 (플러그인 골격)
 
