@@ -3,7 +3,7 @@
 > **설계 수정·구현 착수 전:** [1차 검수](review.md)·[2차 검수](review-02-handoff.md)의 대상 이슈별 지적과 완료 조건을 확인한다. 두 검수 모두 처리 완료(2026-09-19), 미해결 지적 없음. 다음 작업은 이슈 01 착수.
 
 > 생성: 2026-09-05 · 출처: excalidraw 레포 3종 비교 + 방법론 서치 세션
-> 구현 이슈: [01~07](issues/) 작성됨. 순서 = 01 → 03 → 04~07 → 02 도그푸딩. 세부 의존성과 검증 시점은 각 이슈를 따른다.
+> 구현 이슈: [01~09](issues/) 작성됨. 순서 = 01 → 09 → 03 → 04~08 → 02 도그푸딩. 세부 의존성과 검증 시점은 각 이슈를 따른다.
 > 대상: 신규 플러그인. **이름 확정(2026-09-11 3차): 레포 = 플러그인 = npm = `excalidraw-architect`** (npm 비어있음 확인). yctimlin `mcp-excalidraw-server`(그리는 손)와 나란히 놓았을 때 "판단(아키텍트)"이 차별점으로 읽히게. **스킬 = `archdraw`** (`skills/archdraw/SKILL.md`, 호스트별 호출은 아래 "수동 스킬" 참조; 본문의 `/archdraw` 예시는 Claude의 짧은 표기). 구 작업명 `backend-diagram`은 본문에서 `archdraw`로 읽는다(경로 표기 `skills/backend-diagram/` → `skills/archdraw/`). **별도 레포 확정** — 포크 레포 생성 완료(2026-09-11), 이 문서는 `claude-code-zero/docs/specs/015`에서 이동됨.
 > 의존: `mcp-excalidraw-yctimlin` (MCP 26툴, 라이브 캔버스). **2026-09-11 그릴 확정: 별도 레포 = yctimlin 포크(MIT).** 서버 코드는 우리 것, 내장 스킬(`skills/excalidraw-skill/`)은 판단 스킬로 교체, 플러그인 `.mcp.json`으로 서버 내장. 사용자는 우리 플러그인 하나만 설치. (구 전제 "캔버스 조작 코드 없음" 폐기)
 > 근거 원문: `references/mcp-excalidraw-yctimlin/` (README, `src/core/design-guide.ts`), `references/excalidraw-diagram-skill/SKILL.md` (LICENSE 없음 → 복사 금지, 원칙만 재작성), c4model.com, arc42.org, CodeScene change-coupling.
@@ -22,7 +22,7 @@
 
 기존 자산 두 개가 이 판단을 주지 않는다:
 
-- **yctimlin MCP** — 손. 캔버스 조작 전부 + 치수·색 규격(`read_diagram_guide`). "무엇을 그릴지"는 없다.
+- **yctimlin MCP** — 손. 캔버스 조작 전부 + 치수·색 규격(업스트림은 `read_diagram_guide` 툴, 우리는 서버 md 원본을 `instructions`·`resources`로 전달 — ADR-0006). "무엇을 그릴지"는 없다.
 - **excalidraw-diagram-skill** — 눈썰미. "잘 그리는 법" 방법론 552줄. 설명·교육용 그림에 최적화돼 있어 일부 원칙은 아키텍처 도면과 정면 충돌한다(균일 금지, 박스 최소화). 렌더러는 yctimlin이 대체한다.
 
 ## Solution
@@ -78,7 +78,7 @@ yctimlin 캔버스 위에서 동작하는 **판단 전용 스킬.** 다섯 가�
 ## Implementation Decisions
 
 **플러그인 형태** (2026-09-11 그릴 확정)
-- yctimlin 포크(MIT) 레포 = 캔버스 서버(우리 코드) + 스킬 1개 + 플러그인 패키징. 내장 `excalidraw-skill`은 판단 스킬로 교체, 조작법은 `references/canvas-ops.md`로 이동.
+- yctimlin 포크(MIT) 레포 = 캔버스 서버(우리 코드) + 스킬 1개 + 플러그인 패키징. 내장 `excalidraw-skill`은 판단 스킬로 교체, 조작법은 `references/canvas-ops.md`로 이동, 치수·색·바인딩 규격은 서버 `docs/canvas-guide.md` 한 벌([ADR-0006](../../docs/adr/0006-canvas-guide-single-source-via-mcp.md)).
 - 인터페이스: **CLI 기본**(yctimlin CLI 그대로; JSON stdout, 스크린샷은 파일→Read). MCP는 옵션. **호출 줄 (2026-09-11 3차 확정, 검수 R01로 수정)**: `skills/archdraw/scripts/archdraw` shim을 두고 SKILL.md는 `scripts/archdraw <cmd>`로 부른다(스킬 루트 기준 상대경로 — Agent Skills 스펙 관례). shim은 셸 몇 줄: `ARCHDRAW_BIN`이 있으면 `exec node "$ARCHDRAW_BIN" "$@"`(개발자 로컬 빌드), 없으면 `exec npx -y excalidraw-architect@<버전> "$@"`(npm 게시본, 버전은 7-5b가 생성). 이유: Codex는 SKILL.md 안 `${CLAUDE_PLUGIN_ROOT}`·`${PLUGIN_ROOT}`를 치환 안 함(Agent Plugins §9.2, 치환은 mcp.json args/env/cwd만), 반면 스킬 폴더 경로는 Claude("Base directory")·Codex(스킬 목록에 파일 경로) 둘 다 모델에 알려줌. 구 `node ${CLAUDE_PLUGIN_ROOT}/dist/bin.js`와 구 shim의 `dist/bin.js` 직접 실행은 폐기 — `dist/`는 gitignore이고 플러그인 설치는 복사(+Claude는 `npm ci --ignore-scripts`)만 해서 새 PC엔 실행 파일이 없다. `allowed-tools`는 Claude용 `Bash(${CLAUDE_SKILL_DIR}/scripts/archdraw *)`(Codex는 무시, 무해). 대안 기각: 빌드 결과 커밋(Codex는 의존성 설치 보장이 없어 서버 번들 작업이 추가됨) / 첫 호출 때 shim이 빌드(실패 지점이 사용자 PC의 네트워크·node·빌드 시간으로 이동) / SessionStart 훅이 루트 경로 파일에 기록(Codex 훅은 v1 스펙 밖 + 두 벌).
 - **첫 실행 안내** (검수 R01): 스킬은 첫 턴 서버 명령 전에 "캔버스 서버 준비 중, 처음이면 다운로드로 오래 걸림" 한 줄을 알린다. 실패하면 에러를 원인(인터넷 없음·Codex 권한)으로 옮겨 알린다. shim이 캐시 여부를 판단하지 않는다(로직 불필요). README에 "첫 실행에 인터넷 필요" 한 줄.
 - **수동 스킬** (2026-09-14 그릴 확정, 검수 R11): 공통 `skills/archdraw/SKILL.md`에 Claude용 frontmatter `disable-model-invocation: true`를 두고, 같은 폴더의 `agents/openai.yaml`에 Codex용 `policy.allow_implicit_invocation: false`를 둔다. 두 호스트 모두 사용자가 명시적으로 부를 때 시작한다. 호출 안내는 호스트별로 구분한다: Claude 플러그인은 `/excalidraw-architect:archdraw <발화>`(이름 충돌 없으면 `/archdraw`), Codex는 `/skills`에서 선택하거나 `$`로 표시된 스킬을 선택한다(일반 스킬 예시 `$archdraw`; 플러그인의 정확한 식별자는 설치 시 확인). README와 스킬 사용 안내도 이 구분을 따른다. 공통 파일의 실제 로딩 호환성은 01의 기존 설치→호출 확인에 포함하며, 자동 호출 차단을 별도 실행 시험으로 추가하지 않는다. 한 번 호출한 뒤 같은 대화에서 그림으로 이어 답하는 것은 제품 요구이며 호스트의 무기한 유지 보장이 아니다. 후속 턴 적용과 압축 후 재호출·재개는 02 도그푸딩에서 확인한다. 공식 설정·보장 범위는 [R11 조사](research-r11-host-invocation.md) 참조.
@@ -185,7 +185,7 @@ yctimlin 캔버스 위에서 동작하는 **판단 전용 스킬.** 다섯 가�
 - **7-2 스냅샷 영속화 [수정]**: `snapshot`/`restore` 저장소를 메모리 Map → `$CLAUDE_PLUGIN_DATA/snapshots/<name>.excalidraw`. 스토리 17 before/after가 세션을 넘겨야 해서.
   - **그림 단위 저장·복사 (2026-09-14 그릴 확정, 검수 R02):** 캔버스에 그림이 여러 개이므로 저장·복사·복원 단위를 나눈다. `export`는 기본 전체, `--frame <이름>`이면 그 그림만. `import`는 지우지 않고 얹으며 요소·frame·바인딩 ID를 한 세트로 항상 새로 발급해 독립 복사본을 만든다(`--replace` 삭제). 캔버스를 지우는 명령은 `snapshot restore` 하나. 복사본은 현재 내용 오른쪽에 `"<원본> (복사)"` 이름으로 놓는다. 이유: 업스트림은 캔버스 하나 = 그림 하나라 전체 단위로 충분했지만, §3.5(캔버스 안 지움) + 스토리 17(before/after 나란히)에서는 전체 복원이 다른 그림을 지우고 ID 보존 merge가 원본을 덮어썼다. 기각: 요소 ID 목록 지정(그림 경계 표현이 frame과 이중), 사용자 수동 복붙(에이전트가 스토리 17을 못 함), `--mode replace|merge` 통합(지우는지가 옵션 값에 숨음). 담당 06.
 - **7-3 근거 검사 [추가]**: 요소에 `evidence: {tag: code|design|log, path, line}` 칸. 생성 경로(`mcp-dispatch` create/batch, CLI `add`) 공통 함수에 검사 삽입 — `code`면 파일·줄 존재 확인, 없으면 점선 강등 + "근거 없음: A→B" 텍스트 자동 생성. 모양은 archify `repository-evidence.mjs`, 거부 대신 강등·태그 3종은 우리 판단. 레포 위치 = 세션의 프로젝트 루트(§3.5, 검수 R03). **생성 후 수명주기 (2026-09-14 그릴 확정, 검수 R04):** 근거 칸이 바뀌면 생성·수정·import·restore 어디서든 같은 검사(검사 통과 = 현재 프로젝트의 파일·줄 존재 확인. 의존성의 의미는 보장하지 않는다). 서버가 내린 선은 근거가 맞아지면 서버가 올린다("서버 강등" 표시로 추론 점선과 구분 — ADR-0005 "내리기만"을 좁힘). "근거 없음" 텍스트는 선 ID를 기억하는 부속물로 이동·삭제·복구를 따라간다. 기각: 생성 때만 검사(수정으로 뚫림) / 복구 없음(고쳤는데 점선인 채) / 경고 텍스트 독립 요소(유령 경고). 강등·복구 시 화살촉과 통신 방식·응답 라벨은 보존한다(위 "선 표기"). 담당 07.
-- **7-4 내장 스킬 교체 [교체]**: `skills/excalidraw-skill/`(조작법 276줄+치트시트 192줄) → `skills/archdraw/SKILL.md`(공통 판단 본문, 500줄 이하) + `agents/openai.yaml`(Codex 호출 정책, 01 담당) + `references/canvas-ops.md`(yctimlin 조작법 이동, 선 표기는 위 "선 표기"로 교체) + `references/routing-table.md` + `references/zoom-levels.md`. 출처 4종: yctimlin(MIT, 조작법 이동·선 표기 교체) / excalidraw-diagram-skill(라이선스 없음, 원칙만 재작성) / archify(MIT, 규칙 재작성) / 이 스펙. `install-skill` 커맨드 삭제(플러그인 `skills/` 자동 로드).
+- **7-4 내장 스킬 교체 [교체]**: `skills/excalidraw-skill/`(조작법 276줄+치트시트 192줄) → `skills/archdraw/SKILL.md`(공통 판단 본문, 500줄 이하) + `agents/openai.yaml`(Codex 호출 정책, 01 담당) + `references/canvas-ops.md`(yctimlin 조작법 이동 — 커맨드 호출 순서만. 치수·색·바인딩 규격은 담지 않고 서버 리소스 `guide://canvas`를 가리킴, ADR-0006) + `references/routing-table.md` + `references/zoom-levels.md`. 출처 4종: yctimlin(MIT, 조작법 이동·선 표기 교체) / excalidraw-diagram-skill(라이선스 없음, 원칙만 재작성) / archify(MIT, 규칙 재작성) / 이 스펙. `install-skill` 커맨드 삭제(플러그인 `skills/` 자동 로드).
 - **7-5 플러그인 포장 [추가]**: (a) 매니페스트 — 두 채널, 7-5a·7-5b / (b) 산출물 export 경로를 특정 폴더로 제한하지 않고 CLI·MCP 모두 지정 경로를 받는다. 실행 환경의 파일 쓰기 권한은 따른다 / (c) CLI `screenshot` 임시 png 위치를 `$CLAUDE_PLUGIN_DATA/tmp/`로 고정(레포 오염 방지).
 - **7-5a 채널 확정** (2026-09-11 3차 그릴 확정, 검수 R01로 수정): **서버는 npm, 스킬은 레포.** 서버는 npm 패키지 `excalidraw-architect`로 게시한다 — `prepublishOnly`가 빌드하고 `files`의 `dist/**`에 서버와 프론트(`dist/frontend`)가 함께 들어간다(yctimlin과 같은 방식). 스킬 폴더를 받는 채널은 셋: Claude Code 플러그인(`.claude-plugin/plugin.json` + `.mcp.json`) / Codex·Agent Plugins 1.0(루트 `plugin.json` + `mcp.json`) / `npx skills add <레포>`(스킬 폴더를 하위 폴더·실행 권한째 복사). 셋 다 shim이 npx로 서버를 받으므로 채널별 동작 차이 없음. 구 결정 "설치 = 레포 클론이라 npm 배포 불필요"는 폐기 — 클론에 빌드 산출물이 없었다. `install-skill` 커맨드 삭제(7-4)는 유지(`npx skills`가 대체). Codex 기본 권한(인터넷 차단·작업 폴더 밖 쓰기 차단)에서 첫 `npx`가 막히는지는 02에서 확인 — yctimlin도 Codex에 같은 npx 경로를 권장하므로 새 위험은 아니다.
 - **7-5b 매니페스트 생성** (2026-09-11 3차 그릴 확정): `package.json`이 단일 소스(name/version/description). `npm run manifests` 스크립트(~40줄)가 `.claude-plugin/plugin.json` · `.claude-plugin/marketplace.json`(`source: "./"`, GitHub 직접 설치용) · `.mcp.json` · 루트 `plugin.json` · `mcp.json`(둘 다 `npx -y excalidraw-architect@<버전> mcp`) 5개와 shim의 고정 버전을 생성, 생성물은 커밋. 버전 올릴 때 `package.json` 한 곳 + 스크립트. CI(또는 pre-commit)에서 "생성물 최신인가" diff 검사. 대안 기각: 손으로 6개(버전 4곳 불일치 반복된 실수), MCP 매니페스트 제거(옵션 사용자 위해 유지).
@@ -205,7 +205,7 @@ yctimlin 캔버스 위에서 동작하는 **판단 전용 스킬.** 다섯 가�
 - 안 가져옴: 균일 금지 / 박스 최소화·컨테이너 30% / cloud·spiral·tree 패턴 / 미학 규칙 / 렌더러·JSON 스키마·팔레트 파일(yctimlin 대체).
 
 **yctimlin과의 경계**
-- 치수·색·화살표 바인딩 규격은 yctimlin 디자인 가이드를 따른다. CLI엔 가이드 커맨드가 없으므로(MCP `read_diagram_guide`만 존재) 가이드 내용은 `references/canvas-ops.md`에 옮겨 담는다(7-4). 스킬 본문이 중복 정의하지 않는다.
+- 치수·색·화살표 바인딩 규격은 yctimlin 디자인 가이드를 따르되 원본은 **서버 패키지 `docs/canvas-guide.md` 한 벌**이다(2026-09-19, [ADR-0006](../../docs/adr/0006-canvas-guide-single-source-via-mcp.md)). 서버가 시작 시 읽어 MCP `instructions`(앞 512자 핵심, 2KB 이내 요약)와 `resources`(`guide://canvas`, 전문)로 전달하고, `read_diagram_guide` 툴과 `src/core/design-guide.ts` 문자열은 삭제한다(이슈 09). 스킬 본문·`canvas-ops.md`는 규격을 복사하지 않고 리소스를 가리킨다. 선 표기는 위 "선 표기"대로 그 md에서 교체한다. 근거: `docs/research/2026-09-19-mcp-guidance-delivery.md`.
 - 스킬은 어떤 커맨드를 언제 부르는지만 지시(CLI 기본, 괄호는 MCP 대응): 첫 턴 `session start`, 턴 시작 `screenshot`(`get_canvas_screenshot`), 저장 시 `export`(`export_scene`), 승격 시 `arrange align`(`align_elements`), before/after 시 `snapshot save`(`snapshot_scene`). 그림으로 답한 턴 끝에 `screenshot` 결과의 저장 상태를 한 줄로 옮겨 적고, 사용자가 세션을 끝내자고 하면 미저장 그림이 있을 때 1회 묻고 `session end`.
 
 ## Testing Decisions
@@ -241,6 +241,7 @@ yctimlin 캔버스 위에서 동작하는 **판단 전용 스킬.** 다섯 가�
 | 순서 | 이슈 | 역할 |
 |---|---|---|
 | 1 | [01 설치 골격](issues/01-plugin-skeleton.md) | 플러그인 설치와 실행 준비 |
+| 2 | [09 규격 단일 원본](issues/09-canvas-guide-single-source.md) | 서버 md 한 벌을 `instructions`·`resources`로. 03 앞 |
 | 2 | [03 판단 스킬 본문](issues/03-archdraw-skill-body.md) | 라우팅·줌 레벨·캔버스 우선 규칙 |
 | 3 | [04 캔버스 세션](issues/04-session-per-canvas.md) | 캔버스 세션 분리와 재개 |
 | 3 | [05 frame](issues/05-frame-element.md) | 그림 구분과 글꼴 기본값 |
