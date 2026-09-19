@@ -28,7 +28,7 @@ AI 에이전트와 개발할 때, 텍스트만으로는 서로 같은 도메인�
 | 용어 사전 | `CONTEXT.md` |
 | 결정 기록 | `docs/adr/` |
 
-**archdraw 설계 수정·구현 착수 전** [검수 인계](.scratch/archdraw-skill/review.md)를 읽고 대상 이슈의 미해결 지적과 완료 조건을 확인한다.
+**archdraw 설계 수정·구현 착수 전** [1차 검수](.scratch/archdraw-skill/review.md)·[2차 검수](.scratch/archdraw-skill/review-02-handoff.md)를 읽고 대상 이슈의 지적과 완료 조건을 확인한다. 두 검수 모두 처리 완료(2026-09-19)이며 미해결 지적은 없다. 구현 순서는 PRD 구현 순서 표를 따른다.
 
 ## 지식 소스 — 심링크 3종 (읽기 전용)
 
