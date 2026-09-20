@@ -28,6 +28,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check generated manifests are current
+        run: npm run test:manifests
+
       - name: Run TypeScript type check
         run: npm run type-check
 
@@ -53,6 +56,9 @@ jobs:
           test -f dist/server.js || (echo "dist/server.js not found" && exit 1)
           test -d dist/frontend || (echo "dist/frontend not found" && exit 1)
           echo "All build artifacts present!"
+
+      - name: Check npm tarball contents
+        run: node scripts/check-pack-contents.mjs
 
       - name: Upload build artifacts
         if: matrix.node-version == '20.x'

@@ -15,6 +15,7 @@ jobs:
     name: Publish to NPM Registry
     runs-on: ubuntu-latest
     outputs:
+      package_name: ${{ steps.package-version.outputs.name }}
       package_version: ${{ steps.package-version.outputs.version }}
       version_exists: ${{ steps.check-version.outputs.exists }}
     permissions:
@@ -49,9 +50,11 @@ jobs:
           test -d dist/frontend || (echo "ERROR: dist/frontend not found" && exit 1)
           echo "All required artifacts present!"
 
-      - name: Get package version
+      - name: Get package name and version
         id: package-version
-        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+        run: |
+          echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+          echo "name=$(node -p "require('./package.json').name")" >> $GITHUB_OUTPUT
 
       - name: Verify release tag
         if: github.event_name == 'release'
@@ -68,10 +71,11 @@ jobs:
       - name: Check if version exists on NPM
         id: check-version
         env:
+          PACKAGE_NAME: ${{ steps.package-version.outputs.name }}
           PACKAGE_VERSION: ${{ steps.package-version.outputs.version }}
         run: |
           set +e
-          npm_output=$(npm view "mcp-excalidraw-server@${PACKAGE_VERSION}" version 2>&1)
+          npm_output=$(npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version 2>&1)
           npm_status=$?
           set -e
 
@@ -117,14 +121,14 @@ jobs:
       - name: Create GitHub Release Assets
         if: github.event_name == 'release'
         run: |
-          tar -czf mcp-excalidraw-server-${{ steps.package-version.outputs.version }}.tar.gz dist/
+          tar -czf ${{ steps.package-version.outputs.name }}-${{ steps.package-version.outputs.version }}.tar.gz dist/
 
       - name: Upload Release Assets
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            mcp-excalidraw-server-${{ steps.package-version.outputs.version }}.tar.gz
+            ${{ steps.package-version.outputs.name }}-${{ steps.package-version.outputs.version }}.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -137,12 +141,13 @@ jobs:
     steps:
       - name: Success notification
         env:
+          PACKAGE_NAME: ${{ needs.publish.outputs.package_name }}
           PACKAGE_VERSION: ${{ needs.publish.outputs.package_version }}
           VERSION_EXISTS: ${{ needs.publish.outputs.version_exists }}
         run: |
           if [ "$VERSION_EXISTS" = "true" ]; then
-            echo "mcp-excalidraw-server@$PACKAGE_VERSION already exists on NPM; publish was skipped"
+            echo "$PACKAGE_NAME@$PACKAGE_VERSION already exists on NPM; publish was skipped"
           else
-            echo "mcp-excalidraw-server@$PACKAGE_VERSION was successfully published to NPM"
+            echo "$PACKAGE_NAME@$PACKAGE_VERSION was successfully published to NPM"
           fi
-          echo "View at: https://www.npmjs.com/package/mcp-excalidraw-server/v/$PACKAGE_VERSION"
+          echo "View at: https://www.npmjs.com/package/$PACKAGE_NAME/v/$PACKAGE_VERSION"

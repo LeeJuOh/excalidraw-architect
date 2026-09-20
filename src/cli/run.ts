@@ -1,5 +1,5 @@
 import { CliUsageError } from './args.js';
-import { packageVersion } from '../core/version.js';
+import { packageName, packageVersion } from '../core/version.js';
 import * as server from './commands/server.js';
 import * as elements from './commands/elements.js';
 import * as scene from './commands/scene.js';
@@ -36,13 +36,20 @@ const COMMANDS: Record<string, Command> = {
 };
 
 function printHelp(): void {
+  const cli = packageName();
+  // The bin name comes from package.json, so the usage column is measured, not
+  // counted by hand.
+  const usage: [form: string, summary: string][] = [
+    [cli, 'Run the MCP stdio server (for MCP clients)'],
+    [`${cli} <command> [...]`, 'Drive the canvas from the command line'],
+    ['excalidraw-canvas <command> [...]', 'Same CLI under its short alias']
+  ];
+  const column = Math.max(...usage.map(([form]) => form.length)) + 2;
   const lines = [
-    `mcp-excalidraw-server ${packageVersion()} — Excalidraw toolkit for AI coding agents`,
+    `${cli} ${packageVersion()} — Excalidraw toolkit for AI coding agents`,
     '',
     'Usage:',
-    '  mcp-excalidraw-server                  Run the MCP stdio server (for MCP clients)',
-    '  mcp-excalidraw-server <command> [...]  Drive the canvas from the command line',
-    '  excalidraw-canvas <command> [...]      Same CLI under its short alias',
+    ...usage.map(([form, summary]) => `  ${form.padEnd(column)}${summary}`),
     '',
     'Commands:',
     ...Object.entries(COMMANDS).map(([name, cmd]) => `  ${name.padEnd(14)} ${cmd.summary}`),
@@ -55,7 +62,7 @@ function printHelp(): void {
     '  Canvas-driving commands auto-start the server (disable with EXCALIDRAW_NO_AUTOSTART=1).',
     '  Canvas URL comes from EXPRESS_SERVER_URL (default http://127.0.0.1:3000) or --url.',
     '',
-    'Run `mcp-excalidraw-server help <command>` for per-command usage.'
+    `Run \`${cli} help <command>\` for per-command usage.`
   ];
   process.stdout.write(lines.join('\n') + '\n');
 }
@@ -74,7 +81,7 @@ export async function runCli(argv: string[]): Promise<void> {
   if (!name || name === 'help' || name === '--help' || name === '-h') {
     const topic = name === 'help' ? rest[0] : undefined;
     if (topic && COMMANDS[topic]) {
-      process.stdout.write(`Usage: mcp-excalidraw-server ${COMMANDS[topic].usage}\n  ${COMMANDS[topic].summary}\n`);
+      process.stdout.write(`Usage: ${packageName()} ${COMMANDS[topic].usage}\n  ${COMMANDS[topic].summary}\n`);
     } else {
       printHelp();
     }
@@ -88,7 +95,7 @@ export async function runCli(argv: string[]): Promise<void> {
 
   const command = COMMANDS[name];
   if (!command) {
-    process.stderr.write(`Unknown command "${name}". Run \`mcp-excalidraw-server help\` for the list.\n`);
+    process.stderr.write(`Unknown command "${name}". Run \`${packageName()} help\` for the list.\n`);
     process.exitCode = 2;
     return;
   }
@@ -100,7 +107,7 @@ export async function runCli(argv: string[]): Promise<void> {
       process.stderr.write(`Error: ${(error as Error).message}\n`);
     }
     if (error instanceof CliUsageError) {
-      process.stderr.write(`Usage: mcp-excalidraw-server ${command.usage}\n`);
+      process.stderr.write(`Usage: ${packageName()} ${command.usage}\n`);
     }
     process.exitCode = exitCodeFor(error);
   }

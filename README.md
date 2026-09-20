@@ -13,6 +13,22 @@ The canvas comes from [yctimlin/mcp_excalidraw](https://github.com/yctimlin/mcp_
 - **Five zoom levels, stack-agnostic.** System context → deployment unit → module boundary → layer → boundary type. Each diagram is one box of the level above, zoomed in. Gradle multi-module and NestJS modules get their own level, which C4 does not give them.
 - **Throwaway by default.** Diagrams are explanation until you say "keep it"; then they are promoted to a proper drawing and exported into your repo.
 
+## Install
+
+Three channels, one skill folder. The two plugin channels register the MCP server, so the agent drives the canvas through MCP tools; `npx skills add` copies the skill only, and it falls back to the bundled CLI shim.
+
+| Channel | Install | Call it |
+|---|---|---|
+| Claude Code plugin | `/plugin marketplace add LeeJuOh/excalidraw-architect`, then `/plugin install excalidraw-architect@excalidraw-architect` | `/excalidraw-architect:archdraw <what you want drawn>` — plain `/archdraw` when nothing else claims the name |
+| Codex plugin | Put the repo at `~/.codex/plugins/excalidraw-architect` (the repo root is the plugin root: `plugin.json`, `mcp.json`, `skills/`) | `$archdraw`, or pick it in `/skills`; in ChatGPT desktop pick the `@excalidraw-architect` plugin |
+| Any Agent Skills host | `npx skills add LeeJuOh/excalidraw-architect` | however that host invokes a skill by name |
+
+The skill is manual only. It never starts itself — you call it, and then it keeps drawing for that conversation.
+
+**The first run needs internet.** The canvas server is not in this repo; the skill fetches it from npm (`npx -y excalidraw-architect@<version>`) the first time you draw. So the first command is slow, and it fails without network — including under Codex's default sandbox, which blocks it.
+
+Hacking on the server itself? `npm run build`, then start `claude`/`codex` from a shell with `ARCHDRAW_BIN=<repo>/dist/bin.js`: both the MCP path and the CLI fallback then run your build instead of the published package.
+
 ## Upstream
 
 This is a fork of [yctimlin/mcp_excalidraw](https://github.com/yctimlin/mcp_excalidraw) (MIT). For the canvas server, CLI, and MCP tools, see the upstream README. The original copyright notice is kept in [LICENSE](LICENSE).

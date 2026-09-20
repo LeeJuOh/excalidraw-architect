@@ -1,0 +1,33 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "excalidraw-architect",
+  "version": "2.0.0",
+  "description": "Excalidraw toolkit for AI coding agents — agent skill, CLI, and MCP server with a live canvas",
+  "author": {
+    "name": "LeeJuOh",
+    "email": "xop4p@naver.com",
+    "url": "https://github.com/LeeJuOh"
+  },
+  "homepage": "https://github.com/LeeJuOh/excalidraw-architect#readme",
+  "repository": "https://github.com/LeeJuOh/excalidraw-architect",
+  "license": "MIT",
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "excalidraw",
+    "model-context-protocol",
+    "ai",
+    "drawing",
+    "diagrams",
+    "canvas",
+    "real-time",
+    "websocket",
+    "visualization",
+    "claude",
+    "ai-tools",
+    "claude-skill",
+    "agent-skills",
+    "cli",
+    "ai-agents"
+  ]
+}

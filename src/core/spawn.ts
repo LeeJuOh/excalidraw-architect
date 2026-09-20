@@ -6,6 +6,7 @@ import { getHealth, CANVAS_SERVICE_NAME, foreignServiceError, markCanvasIdentity
 
 export { foreignServiceError };
 import { readPidFile, removePidFile } from './pidfile.js';
+import { packageName } from './version.js';
 
 const LOOPBACK_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
 
@@ -41,7 +42,7 @@ function isLoopbackUrl(): boolean {
 function unreachableError(reason: string): Error {
   const error = new Error(
     `Canvas server is not reachable at ${EXPRESS_SERVER_URL} (${reason}). ` +
-    `Start it with \`mcp-excalidraw-server start\` or \`node dist/server.js\`.`
+    `Start it with \`${packageName()} start\` or \`node dist/server.js\`.`
   );
   (error as any).code = 'CANVAS_UNREACHABLE';
   return error;

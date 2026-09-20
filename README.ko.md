@@ -13,6 +13,22 @@
 - **줌 레벨 5개, 스택 무관.** 시스템 컨텍스트 → 배포 단위 → 모듈 경계 → 레이어 → 경계 타입 순서입니다. 각 그림은 윗 레벨 박스 하나를 확대한 것입니다. C4에는 없는 Gradle 멀티모듈·NestJS 모듈 칸이 따로 있습니다.
 - **기본은 남기지 않습니다.** 그림은 설명용이고, "저장해"라고 말하면 도면으로 승격되어 레포에 export됩니다.
 
+## 설치
+
+채널은 셋, 스킬 폴더는 하나입니다. 플러그인 두 채널은 MCP 서버를 등록해 에이전트가 MCP 툴로 캔버스를 다루고, `npx skills add`는 스킬만 복사하므로 내장 CLI shim으로 폴백합니다.
+
+| 채널 | 설치 | 부르는 법 |
+|---|---|---|
+| Claude Code 플러그인 | `/plugin marketplace add LeeJuOh/excalidraw-architect` 후 `/plugin install excalidraw-architect@excalidraw-architect` | `/excalidraw-architect:archdraw <그려줬으면 하는 것>` — 이름이 겹치지 않으면 `/archdraw` |
+| Codex 플러그인 | 레포를 `~/.codex/plugins/excalidraw-architect`에 둡니다 (레포 루트가 플러그인 루트: `plugin.json`, `mcp.json`, `skills/`) | `$archdraw` 또는 `/skills`에서 선택. ChatGPT 데스크톱 Codex에서는 `@excalidraw-architect` 플러그인 선택 |
+| 그 외 Agent Skills 호스트 | `npx skills add LeeJuOh/excalidraw-architect` | 해당 호스트의 스킬 호출 방식 |
+
+이 스킬은 수동 전용입니다. 알아서 시작하지 않고, 사용자가 부른 뒤부터 그 대화에서 그림으로 답합니다.
+
+**첫 실행에는 인터넷이 필요합니다.** 캔버스 서버는 이 레포에 들어 있지 않고 처음 그릴 때 npm에서 받아옵니다(`npx -y excalidraw-architect@<버전>`). 그래서 첫 명령은 느리고, 네트워크가 없으면 실패합니다 — 인터넷을 막는 Codex 기본 샌드박스도 여기에 해당합니다.
+
+서버 코드를 직접 고치는 중이라면 `npm run build` 후 `ARCHDRAW_BIN=<레포>/dist/bin.js`가 있는 셸에서 `claude`/`codex`를 시작하세요. MCP 경로와 CLI 폴백 모두 게시본 대신 그 빌드를 씁니다.
+
 ## 업스트림
 
 [yctimlin/mcp_excalidraw](https://github.com/yctimlin/mcp_excalidraw) (MIT)의 포크입니다. 캔버스 서버·CLI·MCP 툴 사용법은 업스트림 README를 참고해 주세요. 원저작권 표기는 [LICENSE](LICENSE)에 그대로 유지합니다.

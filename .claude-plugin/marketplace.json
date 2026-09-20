@@ -1,0 +1,23 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "excalidraw-architect",
+  "description": "Excalidraw toolkit for AI coding agents — agent skill, CLI, and MCP server with a live canvas",
+  "owner": {
+    "name": "LeeJuOh",
+    "email": "xop4p@naver.com",
+    "url": "https://github.com/LeeJuOh"
+  },
+  "plugins": [
+    {
+      "name": "excalidraw-architect",
+      "source": "./",
+      "description": "Excalidraw toolkit for AI coding agents — agent skill, CLI, and MCP server with a live canvas",
+      "author": {
+        "name": "LeeJuOh",
+        "email": "xop4p@naver.com",
+        "url": "https://github.com/LeeJuOh"
+      },
+      "homepage": "https://github.com/LeeJuOh/excalidraw-architect#readme"
+    }
+  ]
+}

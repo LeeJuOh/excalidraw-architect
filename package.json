@@ -1,11 +1,11 @@
 {
-  "name": "mcp-excalidraw-server",
+  "name": "excalidraw-architect",
   "version": "2.0.0",
   "description": "Excalidraw toolkit for AI coding agents — agent skill, CLI, and MCP server with a live canvas",
   "main": "dist/index.js",
   "type": "module",
   "bin": {
-    "mcp-excalidraw-server": "dist/bin.js",
+    "excalidraw-architect": "dist/bin.js",
     "excalidraw-canvas": "dist/bin.js"
   },
   "scripts": {
@@ -21,12 +21,15 @@
     "production": "npm run build && npm run canvas",
     "prepublishOnly": "npm run build",
     "sync:skills": "node scripts/sync-skills.mjs",
-    "test": "npm run test:mcp && npm run test:bind",
+    "test": "npm run test:manifests && npm run test:mcp && npm run test:bind && npm run test:data-dir",
     "test:bind": "npm run build:server && node scripts/check-local-bind.mjs",
+    "test:data-dir": "npm run build:server && node scripts/check-data-dir.mjs",
     "test:mcp": "npm run build:server && node scripts/check-mcp-stdio.mjs",
     "test:canvas": "npm run build && playwright test",
     "type-check:frontend": "tsc --noEmit -p frontend/tsconfig.json",
-    "type-check": "npx tsc --noEmit"
+    "type-check": "npx tsc --noEmit",
+    "manifests": "node scripts/generate-manifests.mjs",
+    "test:manifests": "node scripts/generate-manifests.mjs --check"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.1",
@@ -77,17 +80,18 @@
     "ai-agents"
   ],
   "author": {
-    "name": "yctimlin",
-    "email": "c22647809@gmail.com"
+    "name": "LeeJuOh",
+    "email": "xop4p@naver.com",
+    "url": "https://github.com/LeeJuOh"
   },
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yctimlin/mcp_excalidraw.git"
+    "url": "https://github.com/LeeJuOh/excalidraw-architect.git"
   },
-  "homepage": "https://github.com/yctimlin/mcp_excalidraw#readme",
+  "homepage": "https://github.com/LeeJuOh/excalidraw-architect#readme",
   "bugs": {
-    "url": "https://github.com/yctimlin/mcp_excalidraw/issues"
+    "url": "https://github.com/LeeJuOh/excalidraw-architect/issues"
   },
   "engines": {
     "node": ">=20.0.0"

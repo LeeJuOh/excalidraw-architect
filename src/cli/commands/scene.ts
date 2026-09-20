@@ -1,6 +1,5 @@
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
 import { parseArgs, CliUsageError, readStdin } from '../args.js';
 import { printJson, note, requireBrowserClient } from '../util.js';
 import { ensureCanvasRunning } from '../../core/spawn.js';
@@ -15,6 +14,7 @@ import { wrapSceneAsObsidianMd } from '../../core/obsidian-md.js';
 import { describeScene } from '../../core/describe.js';
 import { exportToExcalidrawUrl } from '../../core/share-url.js';
 import { EXPRESS_SERVER_URL } from '../../core/config.js';
+import { pluginTmpDir } from '../../core/data-dir.js';
 
 async function readTextFileOrStdin(inputPath: string | undefined): Promise<string> {
   if (!inputPath || inputPath === '-') return await readStdin();
@@ -52,7 +52,9 @@ export async function screenshot(argv: string[]): Promise<void> {
     return;
   }
   if (!outPath) {
-    outPath = path.join(os.tmpdir(), `excalidraw-screenshot-${Date.now()}.png`);
+    // Plugin data folder, not the working directory: a screenshot is our file,
+    // not the user's (spec 7-5c).
+    outPath = path.join(pluginTmpDir(), `excalidraw-screenshot-${Date.now()}.png`);
   }
 
   const resolved = path.resolve(outPath);

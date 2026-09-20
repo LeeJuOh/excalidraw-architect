@@ -1,0 +1,8 @@
+interface:
+  display_name: "archdraw"
+  short_description: "Draw and refine backend architecture diagrams on a live Excalidraw canvas."
+
+policy:
+  # Manual only, same as `disable-model-invocation: true` in SKILL.md for Claude.
+  # Explicit `$archdraw` (or picking it from /skills) still works.
+  allow_implicit_invocation: false
