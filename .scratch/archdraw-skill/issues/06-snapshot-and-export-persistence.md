@@ -1,6 +1,6 @@
 # 06: 스냅샷·export 영속화 — 데이터 폴더와 지정 경로
 
-> 02 도그푸딩(구현 뒤)의 판정이 수정 사항으로 돌아온다.
+> 02 도그푸딩(구현 뒤)의 판정이 수정 사항으로 돌아온다. 결정: [ADR-0007](../../../docs/adr/0007-canvas-never-cleared-import-copies.md)(얹기·새 ID·restore만 지움) · [ADR-0009](../../../docs/adr/0009-snapshots-per-project-canvas-per-session.md)(프로젝트별 스냅샷·동명 거부) · [ADR-0010](../../../docs/adr/0010-server-reports-save-state-skill-never-asks.md)(저장 상태 동봉).
 
 **What to build:** 사용자가 "지금 상태 찍어둬"라고 하면 스냅샷이 디스크에 남아 서버를 재시작하거나 다음 날 다시 열어도 `restore`된다. 도면으로 승격한 그림을 "저장해"라고 하면 지정 경로에 `.excalidraw`로 export된다. 산출물 저장 경로는 고정하지 않는다. 스토리 17(저장된 도면 복사 → 그 위에 변경 색칠 → before/after 비교)이 세션을 넘겨 동작한다.
 
