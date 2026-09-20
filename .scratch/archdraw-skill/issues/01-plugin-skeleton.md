@@ -51,3 +51,38 @@
 2. MCP `serverInfo.name`은 아직 `mcp-excalidraw-server`(업스트림 값). 패키지만 개명했다. 바꾸면 `scripts/check-mcp-stdio.mjs`의 단언 2줄도 같이 바꾼다 — 티켓에 없어 건드리지 않았다.
 3. Codex `codex plugin marketplace add`용 카탈로그(`.agents/plugins/marketplace.json`)는 티켓의 매니페스트 5개에 없어 만들지 않았다. 공식 문서상 카탈로그 없이도 플러그인 폴더 설치는 가능하다.
 4. 업스트림 `skills/excalidraw-skill/`은 티켓 지시대로 그대로 뒀다. 그 스킬은 수동 전용 설정이 없어 자동 호출 대상이고 구 npm 패키지를 안내한다 — 03에서 삭제된다.
+
+**2026-09-21 — 핸드오프: 사람이 정할 것 3개 (그릴 대상)**
+
+**첫 행동:** 아래 Q1부터 한 번에 하나씩 사용자에게 묻는다(이 레포의 그릴 방식은 [검수](../review.md) "그릴 방식" 참조 — 질문 하나, 맥락 한 줄, 선택지와 추천 한 줄, 답 받은 뒤에 문서 수정). 구현 코드는 이미 커밋됐다(`d8c538c`, 작업 트리 깨끗) — 세 질문은 코드가 아니라 **게시·정체성 결정**이며, 답이 나오면 수정 범위는 `package.json` 한 곳 + 생성기 재실행이거나 서버 상수 한 곳이다.
+
+---
+
+**Q1 — npm 게시와 버전.** 게시 전까지는 아무 채널도 동작하지 않는다.
+
+- 확인된 사실: `npm view excalidraw-architect` → 404(이름 비어 있음). `package.json` version `2.0.0`, shim은 `npx -y excalidraw-architect@2.0.0`으로 고정(`skills/archdraw/scripts/archdraw`). 티켓은 첫 `npm publish`를 사람이 하라고 적었다.
+- 문제: 새 npm 이름의 첫 릴리스인데 버전이 업스트림 계보를 이어받은 `2.0.0`이다. 사용자가 `npm view`로 보면 1.x가 없는 2.0.0이 보인다.
+- 선택지: (A) `2.0.0` 그대로 — 포크 계보가 버전에 남고 업스트림 대조가 쉽다 / (B) `0.1.0`으로 내려 시작 — 판단 스킬이 아직 없으니 정직하고, 03~07 동안 breaking을 자유롭게 낸다 / (C) `1.0.0` — 01만으로도 설치는 완성됐다는 표시.
+- 추천: B. 01은 관통선이고 라우팅 규칙이 0줄이라 지금 2.0.0은 "완성된 제품"으로 읽힌다. 02 도그푸딩 뒤에 1.0.0.
+- 고르면 바뀌는 것: `package.json`의 `version` 한 줄 → `npm run manifests` → 매니페스트 3개와 shim 고정 버전이 따라온다. 그 뒤 사람이 `npm publish`.
+
+**Q2 — MCP 서버가 자기 이름을 뭐라고 말할까.**
+
+- 확인된 사실: `src/core/mcp-server.ts`의 `SERVER_NAME = 'mcp-excalidraw-server'`(업스트림 값, 미변경). `scripts/check-mcp-stdio.mjs` 131·240행이 그 값을 단언한다. `src/core/scene-io.ts`의 `source: 'mcp-excalidraw-server'`(export한 `.excalidraw` 파일에 박히는 값)도 같다. 매니페스트의 서버 키는 `archdraw`이므로 **툴 이름은 이미 archdraw 네임스페이스**로 나온다 — 이 질문은 툴 이름이 아니라 `initialize` 응답의 정체성 문자열 얘기다.
+- 문제: 패키지·플러그인은 `excalidraw-architect`인데 서버는 자기를 업스트림 이름으로 소개한다. 호스트 로그·에러 메시지에서 두 이름이 섞인다.
+- 선택지: (A) 그대로 둔다 — 티켓 밖이고 업스트림 머지가 쉬워진다 / (B) `excalidraw-architect`로 바꾼다 — 단언 2줄 같이 수정 / (C) `archdraw`로 바꾼다 — 매니페스트 서버 키와 일치.
+- 추천: B. 패키지 정체성과 맞추는 게 최소 혼란이고, `archdraw`는 스킬 이름이라 서버 이름으로 쓰면 둘이 겹친다.
+- 미결: `scene-io.ts`의 `source`는 **이미 내보낸 파일과의 호환** 문제다. 바꾸면 기존 export를 다시 읽을 때 달라지는지 06에서 확인할 일 — Q2를 B로 정해도 `source`는 따로 판단한다.
+
+**Q3 — 게시 문구(description).**
+
+- 확인된 사실: `package.json`의 `description` = "Excalidraw toolkit for AI coding agents — agent skill, CLI, and MCP server with a live canvas"(업스트림 문구 그대로). 이 한 줄이 단일 소스라 npm과 매니페스트 5개 중 4개(`.claude-plugin/plugin.json`·`marketplace.json` 2곳·루트 `plugin.json`)에 그대로 나간다.
+- 문제: 이 문구는 "그리는 손"만 설명한다. 포크의 차별점인 **판단**(무엇을 어떤 줌 레벨로 그릴지)이 안 보여서, yctimlin 패키지 옆에 놓였을 때 구분이 안 된다. README 첫 문단은 이미 판단을 앞세우고 있어 문구끼리도 어긋난다.
+- 선택지: (A) 그대로 / (B) 판단을 앞세운 새 한 줄로 교체(예: 백엔드 아키텍처를 그림으로 논의하는 Claude Code/Codex 플러그인 — 질문에 맞는 그림 종류와 줌 레벨을 고른다) / (C) 03에서 스킬 본문을 쓴 뒤에 함께 정한다.
+- 추천: B를 지금. 게시 전이라 무료로 바꿀 수 있고, 게시 후에 바꾸면 npm 페이지·마켓플레이스 캐시가 엇갈린다.
+- 고르면 바뀌는 것: `package.json`의 `description` → `npm run manifests`.
+
+---
+
+이 셋과 별개로, **미완 인수 항목 6개는 전부 사람이 실제 설치해야 확인 가능**하다(위 체크박스). Q1이 정해져 게시가 끝나야 그중 5개를 시작할 수 있다.
+
