@@ -106,7 +106,7 @@
 
 ---
 
-**2026-09-21 — 핸드오프 2: Codex 재시험 + 플러그인 루트 분리 결정**
+**2026-09-21 — 핸드오프 2(처리 완료, 핸드오프 3으로 대체): Codex 재시험 + 플러그인 루트 분리 결정**
 
 **Goal.** 01 인수 마무리. 남은 건 (a) Codex 플러그인 채널이 shim 수정 후 **MCP 툴 경로**로 그리는지, (b) `npx skills add` 채널의 CLI 폴백, (c) 인수 중 드러난 구조 문제 "플러그인 루트 = 레포 루트"를 어디서 고칠지 결정.
 
@@ -157,3 +157,44 @@ sqlite3 ~/.codex/logs_2.sqlite "select datetime(ts,'unixepoch','localtime'), sub
 **2026-09-21 — 인수 2/3: Codex 플러그인 채널 통과.** SKILL.md 재구성 후 Codex 재시작, `$excalidraw-architect:archdraw 박스 하나 그려줘`. rollout: `mcp__archdraw__batch_create_elements` → `mcp__archdraw__get_canvas_screenshot`(이미지 반환). shim 실행 0회. 남은 채널: `npx skills add`(CLI 폴백, push 필요).
 
 **2026-09-21 — 플러그인 루트 분리(대안 B) 반영.** 사용자 결정: 우회(`cd /`) 대신 정석. 플러그인 파일을 `plugin/`로 옮기고 루트 카탈로그 2개의 `source`를 `./plugin`으로. 생성기·`check-pack-contents`·`package.json` `files`(`plugin/**/*` 추가) 갱신, shim의 `cd /` 제거. [ADR-0011](../../../docs/adr/0011-plugin-lives-under-plugin-dir.md). 공식 문서 확인: Claude(`./plugins/my-plugin` 예시)·Codex(`{"source":"local","path":"./plugins/my-plugin"}` 예시) 둘 다 하위 폴더 지원. `npx skills add`는 skills CLI가 루트 Claude 카탈로그 `source` 아래 `skills/`를 탐색하므로 영향 없음(소스 확인). 로컬 검증: Codex 캐시에 `plugin/` 내용만 복사됨(`package.json` 없음), 그 루트를 cwd로 shim 무인자 실행 → `initialize` 응답. `npm test` 통과. 두 호스트 실세션 재시험은 사용자 몫 — Claude 채널은 push 후 `/plugin update`가 필요.
+
+---
+
+**2026-09-21 — 핸드오프 3: 구현 완료, 인수 시험만 남음(전부 사용자 실행)**
+
+**Goal.** 01 인수 마무리. 코드·문서는 끝났고(`e9dab40`, push됨, 작업 트리 깨끗), 남은 체크박스 5개는 사용자가 호스트를 실제로 돌려야 확인된다. 에이전트 몫은 시험 결과를 로그로 판정하고 체크박스·README를 갱신하는 것.
+
+**First Action.** 사용자에게 아래 시험 1을 시키고, 끝났다고 하면 최신 Codex rollout을 읽어 판정한다:
+```
+f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "$f" | sort | uniq -c
+```
+`mcp__archdraw__batch_create_elements` 호출이 있고 `exec`로 `scripts/archdraw`를 부른 흔적이 없으면 통과. 통과하면 시험 2로.
+
+**남은 인수 시험(순서대로, 사용자 실행 — 에이전트는 설치·제거 명령을 대신 치지 않는다. 사용자가 "명령어로 넣는 건 괜찮다"고 했으니 확인 명령은 돼도, 설치는 사용자가 결과를 봐야 하므로 사용자가 한다):**
+1. **Codex 재시험(새 `plugin/` 레이아웃).** 이 머신에는 에이전트가 `codex plugin add`로 로컬 경로 설치해 둔 상태(`codex plugin list` → `installed, enabled 0.1.0`, SOURCE `<레포>/plugin`). Codex를 완전히 종료 → 레포 밖 폴더에서 새로 켜기 → `$excalidraw-architect:archdraw 박스 하나 그려줘`. 판정은 First Action.
+2. **Claude 재시험(새 레이아웃).** `/plugin update excalidraw-architect` → `/excalidraw-architect:archdraw 박스 하나 그려줘`. 판정: `~/.claude/projects/<cwd>/*.jsonl` 최신 파일에 `mcp__plugin_excalidraw-architect_archdraw__batch_create_elements` 호출, Bash shim 호출 없음.
+3. **`npx skills add` 채널(CLI 폴백).** Claude 플러그인이 있으면 MCP가 잡히므로 먼저 `/plugin uninstall excalidraw-architect`. 레포 밖 폴더에서 `npx skills add LeeJuOh/excalidraw-architect --skill archdraw -y` → 같은 폴더에서 `claude` → `/archdraw 박스 하나 그려줘`. 판정: transcript에 Bash로 `scripts/archdraw add`(또는 `.claude/skills/archdraw/scripts/archdraw add`) 실행, MCP 툴 호출 없음, 박스 확인. 통과하면 체크박스 20·21·22번 줄(세 채널 / MCP 있음·없음 경로 / Codex 호출 줄) 체크.
+4. **오프라인 첫 호출 안내(선택).** `rm -rf ~/.npm/_npx`, 인터넷 끊고 시험 3 반복 → 에이전트가 "인터넷 없음"을 원인으로 말하면 체크박스 23번 줄 체크. Codex 샌드박스 변형은 01:08 세션에서 이미 확인됨.
+5. **`ARCHDRAW_BIN` 호스트 상속(선택, 개발용).** `npm run build` → `export ARCHDRAW_BIN=<레포>/dist/bin.js` → 같은 셸에서 `codex`(또는 `claude`) → 박스 하나 → 다른 터미널에서 `ps aux | grep 'dist/bin.js'`에 node 프로세스가 보이면 체크박스 24번 줄 체크.
+
+**Context.** 이 세션은 핸드오프 2의 셋을 처리했다. (a) Codex 재시험: 첫 시도(01:37)는 `/mcp`에 `archdraw: connected (26 tools)`인데도 모델이 SKILL.md의 shim 예시를 따라 CLI로 그렸다 → SKILL.md를 구조로 고쳐(본문은 MCP 절만, CLI는 `references/canvas-ops.md`로 격리) 재시험(01:48)에서 MCP 툴 경로 통과. (b) "플러그인 루트 = 레포 루트" 문제는 사용자가 정석(B)을 택해 `plugin/` 하위로 분리, shim `cd /` 제거, ADR-0011. 두 호스트 공식 문서에서 하위 폴더 `source` 지원을 확인했고, skills CLI 소스에서 루트 Claude 카탈로그의 `source` 아래 `skills/`를 탐색함을 확인했다. (c) 그러나 **새 레이아웃으로는 두 호스트 실세션 재시험을 아직 안 했다** — 로컬 검증(Codex 캐시에 `plugin/` 내용만 복사, 그 루트 cwd에서 shim 무인자 → `initialize` 응답)까지만.
+
+**Current Progress** (git 기준, `main` = `origin/main` = `e9dab40`, 작업 트리 깨끗):
+- ✅ SKILL.md MCP-first 재구성 + `references/canvas-ops.md` 신설, `check-pack-contents.mjs`에 참조 파일 추가 — `aa6d35b`
+- ✅ Codex 채널 인수 통과(구 레이아웃, MCP 경로) — `ddde7a3`
+- ✅ 플러그인 `plugin/` 분리: 생성기 `PLUGIN_DIR`, 루트 카탈로그 2개 `./plugin`, `package.json` `files`에 `plugin/**/*`, shim `cd /` 제거, AGENTS.md gotcha, ADR-0011 — `e9dab40`
+- ✅ 체크박스: 17·18·19·25·26번 줄 체크됨
+- ⏳ 체크박스 20~24번 줄: 위 시험 1~5
+- ⏳ Claude 채널·Codex 채널 모두 **새 레이아웃으로 재확인 필요**(구 레이아웃 통과 기록은 유효하지만 경로가 바뀌었다)
+
+**Decisions Made.**
+- SKILL.md는 예시로 유도: "MCP 있으면 shim 금지" 문장은 안 먹혔고, 본문에서 shim 명령을 치우자 먹혔다(사용자 A 선택).
+- 시작 안내 문구("서버 준비 중, 첫 실행은 다운로드")는 MCP 경로에서 뺐다. 서버는 호스트가 이미 띄웠으므로 문구가 틀리다. CLI 절에만 남김.
+- 플러그인 루트 분리는 정석(B). 우회 `cd /`는 폐기. 근거·대안은 ADR-0011.
+- 세모 요청은 Excalidraw에 `triangle` 타입이 없어 선으로 그려짐 — 도형 어휘는 03 몫.
+
+**What Worked.** 호스트 세션 기록 직접 읽기: Codex `~/.codex/sessions/<y>/<m>/<d>/rollout-*.jsonl`(payload.type이 `custom_tool_call`/`message`), `~/.codex/logs_2.sqlite`(`MCP server stderr` 줄), Codex TUI `/mcp`로 서버 연결·툴 수 확인. Codex 조건 재현은 캐시 플러그인 루트를 cwd로 shim에 `initialize` 파이프. 사용자 요청 형식: 한 번에 하나, 결과부터, 장황 금지.
+
+**What Didn't Work.** ⚠️ Codex 재시작 없이 새 스레드만 열면 MCP 서버는 옛 상태 그대로 — 재시험은 반드시 프로세스 재시작. ⚠️ rollout의 마지막 assistant 줄만 보고 "실패"로 오판했다 — 전체 순서를 출력해 판정할 것. ⚠️ 에이전트가 사용자 몫 시험(플러그인 재설치)을 대신 실행하자 사용자가 불편해했다 — 설치·시험은 사용자, 에이전트는 판정. ⚠️ macOS에 `timeout` 없음. ⚠️ 레포 루트(또는 그 사본)에서 `npx excalidraw-architect`는 `command not found` — 이제 플러그인 복사본에는 해당 없고 레포 안 개발자만 해당.
+
+**Next Steps.** 시험 1~5 판정 → 체크박스·README 갱신 → 01 Status를 닫고 02 도그푸딩으로. 시험 중 README 표기(호출 식별자·설치 명령)가 다르면 두 언어 모두 고친다.
