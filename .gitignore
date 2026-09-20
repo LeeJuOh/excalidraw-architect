@@ -17,9 +17,12 @@ public/dist/
 .cursor/
 .claude/
 .agent/
-.agents/
-# Codex marketplace catalog is a generated manifest (npm run manifests)
+# .agents/ is ignored except the Codex marketplace catalog, a generated
+# manifest (npm run manifests). git cannot re-include a file inside an
+# excluded directory, so exclude contents (`/*`) rather than the directory.
+.agents/*
 !.agents/plugins/
+.agents/plugins/*
 !.agents/plugins/marketplace.json
 
 # Development artifacts

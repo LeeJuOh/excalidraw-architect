@@ -118,11 +118,11 @@ sqlite3 ~/.codex/logs_2.sqlite "select datetime(ts,'unixepoch','localtime'), sub
 
 **Context.** 이 세션은 01 핸드오프 1의 Q1~Q3(버전 0.1.0·서버 이름·description)를 결정하고 npm `0.1.0`을 게시한 뒤 세 채널 인수를 시작했다. Claude 채널은 통과. Codex 채널은 두 번 걸렸다: (1) 폴더 드롭 설치가 안 돼 카탈로그를 생성기에 추가했고, (2) MCP 서버가 `sh: excalidraw-architect: command not found`로 죽어 CLI 폴백으로 그려졌다. 원인은 Codex가 MCP 서버를 cwd=플러그인 루트(레포 사본, `package.json` name이 npm 패키지와 동일)로 띄우고 npx가 그걸 로컬 프로젝트로 잡는 것. shim에 MCP 모드 `cd /`를 넣어 고쳤고 같은 조건에서 `initialize` 응답을 확인했지만, **실제 Codex 세션으로는 아직 재시험 안 했다.** 사용자는 이 수정이 "치팅 아니냐"고 물었고, 정석 대안 B(플러그인 루트를 `plugin/` 하위 폴더로 분리해 복사본에 `package.json`이 안 들어가게)를 설명했다. **B를 할지·언제 할지는 다음 세션에서 사용자와 결정** — 그릴 대상.
 
-**Current Progress** (git 기준, 작업 트리 깨끗, `origin/main`보다 3커밋 앞섬 — `53a8e8e`·`3078ff0` 포함, push는 지시 있을 때만):
+**Current Progress** (git 기준, 작업 트리 깨끗, `origin/main`보다 앞선 커밋 있음 — `git log origin/main..HEAD`로 확인, push는 지시 있을 때만):
 - ✅ 핸드오프 1의 Q1~Q3 결정·반영 — `ee05201`, `3e016d1`
 - ✅ npm `excalidraw-architect@0.1.0` 게시(사람, 계정 `leejuo`) — `6e7ad85`에 기록
 - ✅ Claude 플러그인 채널 인수 통과(MCP 툴 경로, 스크린샷 확인) — `992e6b6`
-- ✅ Codex 카탈로그 `.agents/plugins/marketplace.json`을 생성기 6번째 매니페스트로 추가, `.gitignore` 예외, README 설치 명령 교체 — `53a8e8e`
+- ✅ Codex 카탈로그 `.agents/plugins/marketplace.json`을 생성기 6번째 매니페스트로 추가, README 설치 명령 교체 — `53a8e8e`. 그 커밋의 `.gitignore` 예외는 무효였고(디렉터리째 제외 안의 `!`는 안 먹음) 파일이 untracked였다 — 검증 에이전트가 잡아냄. `.agents/*` 패턴으로 고쳐 추적 — 이 핸드오프 다음 커밋
 - ✅ shim MCP 모드 `cd /` 수정, README의 Codex 식별자를 `$excalidraw-architect:archdraw`로 교정 — `3078ff0`
 - ✅ 이 머신의 Codex에 플러그인 설치됨: 마켓플레이스는 **로컬 경로**(`codex plugin marketplace add /Users/ljo/Desktop/project/zero-code/excalidraw-architect`), 캐시 `~/.codex/plugins/cache/excalidraw-architect/excalidraw-architect/0.1.0`에 수정된 shim 반영 확인. GitHub 경로 설치는 push 뒤에나 가능
 - ⏳ Codex 채널 MCP 경로 재시험 — 미실행
