@@ -155,3 +155,5 @@ sqlite3 ~/.codex/logs_2.sqlite "select datetime(ts,'unixepoch','localtime'), sub
 다음: Codex **재시작** 후 `$excalidraw-architect:archdraw 박스 하나 그려줘` → rollout에 exec 없이 MCP 툴 호출이 있으면 Codex 채널 통과.
 
 **2026-09-21 — 인수 2/3: Codex 플러그인 채널 통과.** SKILL.md 재구성 후 Codex 재시작, `$excalidraw-architect:archdraw 박스 하나 그려줘`. rollout: `mcp__archdraw__batch_create_elements` → `mcp__archdraw__get_canvas_screenshot`(이미지 반환). shim 실행 0회. 남은 채널: `npx skills add`(CLI 폴백, push 필요).
+
+**2026-09-21 — 플러그인 루트 분리(대안 B) 반영.** 사용자 결정: 우회(`cd /`) 대신 정석. 플러그인 파일을 `plugin/`로 옮기고 루트 카탈로그 2개의 `source`를 `./plugin`으로. 생성기·`check-pack-contents`·`package.json` `files`(`plugin/**/*` 추가) 갱신, shim의 `cd /` 제거. [ADR-0011](../../../docs/adr/0011-plugin-lives-under-plugin-dir.md). 공식 문서 확인: Claude(`./plugins/my-plugin` 예시)·Codex(`{"source":"local","path":"./plugins/my-plugin"}` 예시) 둘 다 하위 폴더 지원. `npx skills add`는 skills CLI가 루트 Claude 카탈로그 `source` 아래 `skills/`를 탐색하므로 영향 없음(소스 확인). 로컬 검증: Codex 캐시에 `plugin/` 내용만 복사됨(`package.json` 없음), 그 루트를 cwd로 shim 무인자 실행 → `initialize` 응답. `npm test` 통과. 두 호스트 실세션 재시험은 사용자 몫 — Claude 채널은 push 후 `/plugin update`가 필요.

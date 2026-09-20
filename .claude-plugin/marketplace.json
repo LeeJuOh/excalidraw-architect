@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "excalidraw-architect",
-      "source": "./",
+      "source": "./plugin",
       "description": "Discuss backend architecture in pictures with your coding agent — picks the diagram type and zoom level for the question, then draws it on a live Excalidraw canvas. Agent skill, MCP server, and CLI.",
       "author": {
         "name": "LeeJuOh",

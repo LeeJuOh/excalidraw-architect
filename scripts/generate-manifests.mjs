@@ -5,13 +5,19 @@
 //   npm run manifests        rewrite the generated files
 //   npm run test:manifests   fail if a generated file drifted (CI + npm test)
 //
-// Six manifests, three install channels:
-//   .claude-plugin/plugin.json + .claude-plugin/marketplace.json + .mcp.json
-//       Claude Code plugin (marketplace source "./" = install straight from the repo)
-//   plugin.json + mcp.json + .agents/plugins/marketplace.json
-//       Codex / Agent Plugins 1.0 (Codex only installs through a marketplace
-//       catalog; a bare folder under ~/.codex/plugins is not discovered)
-//   (npx skills add copies skills/ only — no MCP registration, CLI fallback)
+// Six manifests, three install channels. The plugin itself lives under
+// plugin/ and both catalogs at the repo root point there ("./plugin"), so a
+// host copies only that folder: no package.json travels with the plugin, and
+// npx run from the plugin root cannot mistake it for a local project (ADR-0011).
+//   .claude-plugin/marketplace.json (root catalog)
+//   plugin/.claude-plugin/plugin.json + plugin/.mcp.json
+//       Claude Code plugin
+//   .agents/plugins/marketplace.json (root catalog; Codex only installs
+//       through a catalog, a bare folder under ~/.codex/plugins is not discovered)
+//   plugin/plugin.json + plugin/mcp.json
+//       Codex / Agent Plugins 1.0
+//   (npx skills add reads the Claude catalog and copies plugin/skills/ only —
+//   no MCP registration, CLI fallback)
 //
 // Both MCP manifests run the same shim with no arguments instead of calling npx
 // directly: bin.js with no arguments is the MCP stdio server, so ARCHDRAW_BIN
@@ -29,6 +35,9 @@ const SKILL_NAME = 'archdraw';
 // Server key in both MCP manifests: hosts expose the tools under this name, and
 // SKILL.md tells the agent to look for archdraw tools before falling back.
 const MCP_SERVER_NAME = 'archdraw';
+// Where the plugin lives in the repo; both catalogs point here.
+const PLUGIN_DIR = 'plugin';
+// Shim path relative to the plugin root — what the MCP manifests reference.
 const SHIM_REL = `skills/${SKILL_NAME}/scripts/${SKILL_NAME}`;
 
 const AGENT_PLUGINS_SCHEMA = 'https://agent-plugins.org/schemas/1.0.0';
@@ -86,7 +95,7 @@ const claudeMarketplace = json({
   plugins: [
     {
       name: pkg.name,
-      source: './',
+      source: `./${PLUGIN_DIR}`,
       description: pkg.description,
       author,
       homepage: pkg.homepage
@@ -105,14 +114,14 @@ const codexMcp = mcpManifest({
 
 // Codex catalog: `codex plugin marketplace add LeeJuOh/excalidraw-architect`
 // reads this file from the repo, then `codex plugin add <name>@<name>` installs
-// the plugin whose root is the repo root ("./").
+// the plugin whose root is plugin/.
 const codexMarketplace = json({
   name: pkg.name,
   interface: { displayName: pkg.name },
   plugins: [
     {
       name: pkg.name,
-      source: { source: 'local', path: './' },
+      source: { source: 'local', path: `./${PLUGIN_DIR}` },
       policy: { installation: 'AVAILABLE' }
     }
   ]
@@ -131,14 +140,6 @@ const shim = `#!/bin/sh
 # start claude/codex from a shell that has it.
 set -e
 
-# MCP mode: Codex launches the server with cwd = plugin root, which is this repo
-# and carries a package.json named ${pkg.name}. npx then resolves that
-# local project (no bin linked) and dies with "command not found". The server
-# never reads cwd, so leave. CLI mode keeps cwd for relative file arguments.
-if [ $# -eq 0 ]; then
-  cd /
-fi
-
 if [ -n "\${ARCHDRAW_BIN:-}" ]; then
   exec node "$ARCHDRAW_BIN" "$@"
 fi
@@ -148,13 +149,13 @@ exec npx -y ${pkg.name}@${pkg.version} "$@"
 
 /** @type {{ path: string, content: string, mode?: number }[]} */
 const artifacts = [
-  { path: '.claude-plugin/plugin.json', content: claudePlugin },
+  { path: `${PLUGIN_DIR}/.claude-plugin/plugin.json`, content: claudePlugin },
   { path: '.claude-plugin/marketplace.json', content: claudeMarketplace },
-  { path: '.mcp.json', content: claudeMcp },
-  { path: 'plugin.json', content: codexPlugin },
-  { path: 'mcp.json', content: codexMcp },
+  { path: `${PLUGIN_DIR}/.mcp.json`, content: claudeMcp },
+  { path: `${PLUGIN_DIR}/plugin.json`, content: codexPlugin },
+  { path: `${PLUGIN_DIR}/mcp.json`, content: codexMcp },
   { path: '.agents/plugins/marketplace.json', content: codexMarketplace },
-  { path: SHIM_REL, content: shim, mode: 0o755 }
+  { path: `${PLUGIN_DIR}/${SHIM_REL}`, content: shim, mode: 0o755 }
 ];
 
 const checkOnly = process.argv.includes('--check');

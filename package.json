@@ -104,6 +104,7 @@
     "src/**/*",
     "dist/**/*",
     "skills/**/*",
+    "plugin/**/*",
     "*.d.ts",
     "README.md",
     "LICENSE"

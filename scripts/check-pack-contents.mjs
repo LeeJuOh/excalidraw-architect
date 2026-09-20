@@ -14,10 +14,10 @@ const REQUIRED = [
   'dist/index.js',
   'dist/server.js',
   'dist/frontend/index.html',
-  'skills/archdraw/SKILL.md',
-  'skills/archdraw/scripts/archdraw',
-  'skills/archdraw/agents/openai.yaml',
-  'skills/archdraw/references/canvas-ops.md'
+  'plugin/skills/archdraw/SKILL.md',
+  'plugin/skills/archdraw/scripts/archdraw',
+  'plugin/skills/archdraw/agents/openai.yaml',
+  'plugin/skills/archdraw/references/canvas-ops.md'
 ];
 
 const raw = execFileSync('npm', ['pack', '--dry-run', '--json'], {
