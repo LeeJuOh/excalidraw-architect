@@ -15,7 +15,7 @@
 **Status:** ready-for-human
 
 - [x] `npm pack` 결과물에 `dist/bin.js`와 `dist/frontend/index.html`이 들어 있다
-- [x] `npm run manifests` 한 번으로 매니페스트 5개와 shim 버전이 생성되고, 버전은 `package.json` 한 곳만 바꾸면 전부 따라온다
+- [x] `npm run manifests` 한 번으로 매니페스트 6개(2026-09-21 Codex 카탈로그 추가)와 shim 버전이 생성되고, 버전은 `package.json` 한 곳만 바꾸면 전부 따라온다
 - [x] CI에서 생성물이 스크립트 출력과 다르면 실패한다
 - [ ] `dist/`가 없고 `ARCHDRAW_BIN`이 비어 있는 환경에서, 세 채널(Claude 플러그인 / Codex 플러그인 / `npx skills add`) 각각 공통 SKILL.md와 Codex 설정 파일을 함께 설치 → 호스트별 표기로 `archdraw`에 "박스 하나 그려줘" 요청 → 브라우저 캔버스에 박스가 보인다. 플러그인 두 채널은 MCP 툴 호출로, `npx skills add`는 CLI 폴백으로 그려졌음을 호스트 로그로 확인한다. 이 과정에서 공통 파일의 로딩 호환성과 Codex에 표시된 호출 식별자를 확인하고 사용 안내에 반영한다
 - [ ] MCP 툴이 있는 세션에서 스킬이 Bash로 shim을 부르지 않고, MCP 툴이 없는 세션에서는 shim으로 넘어간다
@@ -52,7 +52,7 @@
 3. ~~Codex 카탈로그(`.agents/plugins/marketplace.json`)는 만들지 않았다. 공식 문서상 카탈로그 없이도 플러그인 폴더 설치는 가능하다.~~ **2026-09-21 정정:** 틀렸다. Codex 0.155.1에서 `~/.codex/plugins/<이름>`에 레포를 두면 `/skills`·`$archdraw` 모두 `no matches`. 카탈로그가 필수라 생성기에 6번째 매니페스트로 추가(`codexMarketplace`, source local `./`). `.gitignore`의 `.agents/` 무시에 예외 추가. 설치: `codex plugin marketplace add <레포 또는 로컬 경로>` → `codex plugin add excalidraw-architect@excalidraw-architect`. 로컬 경로로 등록·설치 확인(`installed, enabled 0.1.0`). README 표기도 이 명령으로 교체.
 4. 업스트림 `skills/excalidraw-skill/`은 티켓 지시대로 그대로 뒀다. 그 스킬은 수동 전용 설정이 없어 자동 호출 대상이고 구 npm 패키지를 안내한다 — 03에서 삭제된다.
 
-**2026-09-21 — 핸드오프: 사람이 정할 것 3개 (그릴 대상)**
+**2026-09-21 — 핸드오프(처리 완료): 사람이 정할 것 3개.** 세 질문 모두 아래에 ✅로 결정 기록됨. 최신 핸드오프는 이 파일 맨 아래.
 
 **첫 행동:** 아래 Q1부터 한 번에 하나씩 사용자에게 묻는다(이 레포의 그릴 방식은 [검수](../review.md) "그릴 방식" 참조 — 질문 하나, 맥락 한 줄, 선택지와 추천 한 줄, 답 받은 뒤에 문서 수정). 구현 코드는 이미 커밋됐다(`d8c538c`, 작업 트리 깨끗) — 세 질문은 코드가 아니라 **게시·정체성 결정**이며, 답이 나오면 수정 범위는 `package.json` 한 곳 + 생성기 재실행이거나 서버 상수 한 곳이다.
 
@@ -103,4 +103,45 @@
 - 그래서 스킬은 설계대로 CLI 폴백으로 갔고(exec로 shim `add`), 그건 Codex 기본 샌드박스의 네트워크 차단에 걸려 출력 없음. 에이전트는 "샌드박스에서 npx를 못 받았다, 네트워크 접근 필요"라고 원인을 말했다 — 오프라인 안내 항목의 Codex 변형은 이걸로 확인.
 - 수정: shim이 **인자 없음(MCP 모드)일 때 `cd /`** 후 npx 실행. 서버는 cwd를 안 읽는다. CLI 모드는 상대경로 인자 때문에 cwd 유지(레포 안에서 CLI 폴백을 돌리는 경우만 여전히 함정 — 개발자만 해당). 레포 루트 cwd에서 `initialize` 응답 확인.
 - Codex 재설치(`codex plugin remove` → `add`) 후 사람이 재시험. 네트워크 차단은 Codex 승인 프롬프트나 `--sandbox danger-full-access`로.
+
+---
+
+**2026-09-21 — 핸드오프 2: Codex 재시험 + 플러그인 루트 분리 결정**
+
+**Goal.** 01 인수 마무리. 남은 건 (a) Codex 플러그인 채널이 shim 수정 후 **MCP 툴 경로**로 그리는지, (b) `npx skills add` 채널의 CLI 폴백, (c) 인수 중 드러난 구조 문제 "플러그인 루트 = 레포 루트"를 어디서 고칠지 결정.
+
+**First Action.** 사용자에게 레포 밖 폴더에서 Codex를 새로 켜고 `$excalidraw-architect:archdraw 박스 하나 더 그려줘`를 치게 한 뒤, 아래로 경로를 판정한다:
+```
+sqlite3 ~/.codex/logs_2.sqlite "select datetime(ts,'unixepoch','localtime'), substr(feedback_log_body,1,200) from logs where feedback_log_body like '%archdraw%' and ts > strftime('%s','now')-1800 order by id desc limit 10"
+```
+`command not found`가 없고 세션 rollout(`ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1`)에 `exec`로 shim을 부른 흔적 없이 MCP 툴 호출이 있으면 Codex 채널 통과 → 인수 체크박스 갱신. 네트워크 승인 프롬프트가 뜨면 승인(첫 npx 다운로드).
+
+**Context.** 이 세션은 01 핸드오프 1의 Q1~Q3(버전 0.1.0·서버 이름·description)를 결정하고 npm `0.1.0`을 게시한 뒤 세 채널 인수를 시작했다. Claude 채널은 통과. Codex 채널은 두 번 걸렸다: (1) 폴더 드롭 설치가 안 돼 카탈로그를 생성기에 추가했고, (2) MCP 서버가 `sh: excalidraw-architect: command not found`로 죽어 CLI 폴백으로 그려졌다. 원인은 Codex가 MCP 서버를 cwd=플러그인 루트(레포 사본, `package.json` name이 npm 패키지와 동일)로 띄우고 npx가 그걸 로컬 프로젝트로 잡는 것. shim에 MCP 모드 `cd /`를 넣어 고쳤고 같은 조건에서 `initialize` 응답을 확인했지만, **실제 Codex 세션으로는 아직 재시험 안 했다.** 사용자는 이 수정이 "치팅 아니냐"고 물었고, 정석 대안 B(플러그인 루트를 `plugin/` 하위 폴더로 분리해 복사본에 `package.json`이 안 들어가게)를 설명했다. **B를 할지·언제 할지는 다음 세션에서 사용자와 결정** — 그릴 대상.
+
+**Current Progress** (git 기준, 작업 트리 깨끗, `origin/main`보다 3커밋 앞섬 — `53a8e8e`·`3078ff0` 포함, push는 지시 있을 때만):
+- ✅ 핸드오프 1의 Q1~Q3 결정·반영 — `ee05201`, `3e016d1`
+- ✅ npm `excalidraw-architect@0.1.0` 게시(사람, 계정 `leejuo`) — `6e7ad85`에 기록
+- ✅ Claude 플러그인 채널 인수 통과(MCP 툴 경로, 스크린샷 확인) — `992e6b6`
+- ✅ Codex 카탈로그 `.agents/plugins/marketplace.json`을 생성기 6번째 매니페스트로 추가, `.gitignore` 예외, README 설치 명령 교체 — `53a8e8e`
+- ✅ shim MCP 모드 `cd /` 수정, README의 Codex 식별자를 `$excalidraw-architect:archdraw`로 교정 — `3078ff0`
+- ✅ 이 머신의 Codex에 플러그인 설치됨: 마켓플레이스는 **로컬 경로**(`codex plugin marketplace add /Users/ljo/Desktop/project/zero-code/excalidraw-architect`), 캐시 `~/.codex/plugins/cache/excalidraw-architect/excalidraw-architect/0.1.0`에 수정된 shim 반영 확인. GitHub 경로 설치는 push 뒤에나 가능
+- ⏳ Codex 채널 MCP 경로 재시험 — 미실행
+- ⏳ `npx skills add` 채널 — 미시작
+- ⏳ 인수 체크박스 중 채널 항목은 세 채널이 다 끝나야 체크. 로컬 빌드(`ARCHDRAW_BIN`) 항목·`screenshot` png 위치 항목도 미확인
+
+**Decisions Made.**
+- Q1~Q3: 위 ✅ 표시 참조.
+- 폴더 드롭 대신 카탈로그: Codex 0.155.1이 `~/.codex/plugins/<이름>`을 인식하지 않음(실측). 핸드오프 1의 "미결 3번" 판단은 틀렸었다.
+- Codex MCP 기동 실패는 shim `cd /`(A)로 우선 해결. 대안 B는 미결.
+
+**What Worked.** 다른 세션의 transcript를 직접 읽어 인수 판정(`~/.claude/projects/<cwd>/*.jsonl`, `~/.codex/sessions/…/*.jsonl`, `~/.codex/logs_2.sqlite`). SendMessage로 Claude 세션에 재시도를 시켜 스크린샷 확인. Codex 조건 재현은 플러그인 캐시 루트를 cwd로 shim에 `initialize`를 파이프.
+
+**What Didn't Work.** ⚠️ 레포 루트(또는 그 사본)에서 `npx excalidraw-architect`는 항상 `command not found` — npx의 로컬 프로젝트 우선 규칙. `npx -p pkg cmd` 형태도 같다. ⚠️ `!`로 세션 안에서 `npm publish`하면 2FA 브라우저 창을 못 띄워 `EOTP`; 별도 터미널에서. ⚠️ macOS엔 `timeout`이 없다. 이 세션은 사용자가 npm·2FA·플러그인 설치 개념을 처음 접해 설명 왕복이 길었다 — 다음엔 한 번에 하나, 결과부터.
+
+**Next Steps.**
+1. First Action(Codex 재시험). 실패하면 `logs_2.sqlite`의 stderr 줄부터.
+2. `npx skills add LeeJuOh/excalidraw-architect`(레포 밖, push 필요) → MCP 없는 Claude 세션에서 `/archdraw` → CLI 폴백으로 그리는지 transcript 확인. Claude 플러그인이 설치돼 있으면 MCP가 잡히므로 먼저 `/plugin uninstall excalidraw-architect`.
+3. 그릴: 대안 B(플러그인 루트 분리)를 03에 넣을지, 별도 이슈로 뺄지, 안 할지. 비용은 매니페스트 6개 경로·생성기·카탈로그 `source` 변경·두 호스트 재설치 시험.
+4. 남은 체크박스: `ARCHDRAW_BIN` 호스트 상속, `screenshot` png 위치.
+5. README 두 언어의 Codex 행이 GitHub 경로 명령을 적고 있으니 push 후 그 명령으로 한 번 더 설치 확인.
 
