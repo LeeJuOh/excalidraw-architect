@@ -22,7 +22,7 @@
 - [ ] Codex에서 SKILL.md의 호출 줄이 치환 없이 그대로 동작한다
 - [ ] npx 캐시가 비고 인터넷이 끊긴 상태에서 첫 호출 시, 에이전트가 서버를 받지 못한 원인을 사용자에게 알린다
 - [ ] `ARCHDRAW_BIN=<레포>/dist/bin.js`를 둔 셸에서 호스트를 시작하면 MCP 경로와 CLI 폴백 모두 npm 게시본 대신 로컬 빌드가 뜬다
-- [ ] `screenshot` 결과 png가 레포 안이 아니라 데이터 폴더 `tmp/`에 생긴다
+- [x] `screenshot` 결과 png가 레포 안이 아니라 데이터 폴더 `tmp/`에 생긴다 (2026-09-21 Codex CLI 폴백 세션에서 `~/.excalidraw-architect/tmp/` 확인)
 - [x] 기존 `npm test`가 그대로 통과한다
 
 ## Comments
@@ -145,3 +145,11 @@ sqlite3 ~/.codex/logs_2.sqlite "select datetime(ts,'unixepoch','localtime'), sub
 4. 남은 체크박스: `ARCHDRAW_BIN` 호스트 상속, `screenshot` png 위치.
 5. README 두 언어의 Codex 행이 GitHub 경로 명령을 적고 있으니 push 후 그 명령으로 한 번 더 설치 확인.
 
+
+**2026-09-21 — 인수 2/3 재시험(Codex 재시작 후): 서버는 붙었는데 스킬이 shim으로 감.** `/mcp`에 `archdraw: connected (26 tools)`. 그런데 세션 rollout은 SKILL.md를 읽고 곧바로 exec로 shim CLI를 실행했고 MCP 툴 호출은 0회. 그림은 나왔지만 인수 조건(플러그인 채널 = MCP 툴)은 미통과. 원인 판단: SKILL.md 본문에 shim 명령 예시가 있어 모델이 눈앞 예시를 따랐다 — "MCP 있으면 shim 금지" 문장으로는 못 막았다.
+
+결정(사용자, A): SKILL.md를 구조로 강제. 본문은 MCP 툴 절만 두고 shim 명령 예시 전부 제거. CLI 사용법·툴↔커맨드 대응표·"서버 준비 중" 안내는 `references/canvas-ops.md`로 격리하고 "MCP 툴이 없을 때만 읽어라". 시작 안내 문구는 MCP 경로에서 아예 뺐다(서버는 호스트가 이미 띄웠으므로 문구 자체가 틀림). `check-pack-contents.mjs`에 참조 파일 추가. Codex 플러그인 재설치로 캐시 갱신. 03이 `canvas-ops.md`를 이 파일 위에 확장한다.
+
+부수 확인: 01:14 세션에서 `screenshot` png가 `~/.excalidraw-architect/tmp/`에 생김 → 데이터 폴더 항목 체크. 세모 요청은 Excalidraw에 `triangle` 타입이 없어 스킬이 선으로 그렸다 — 도형 어휘는 03 몫.
+
+다음: Codex **재시작** 후 `$excalidraw-architect:archdraw 박스 하나 그려줘` → rollout에 exec 없이 MCP 툴 호출이 있으면 Codex 채널 통과.
