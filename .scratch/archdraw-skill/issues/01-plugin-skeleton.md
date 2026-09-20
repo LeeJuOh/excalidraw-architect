@@ -49,7 +49,7 @@
 결정이 필요한 남은 사항:
 1. `npm publish`는 사람이 해야 한다(티켓 명시). 게시 전까지 shim의 `excalidraw-architect@2.0.0`은 npm에 없으므로 `ARCHDRAW_BIN` 없이는 어떤 채널도 서버를 못 받는다.
 2. MCP `serverInfo.name`은 아직 `mcp-excalidraw-server`(업스트림 값). 패키지만 개명했다. 바꾸면 `scripts/check-mcp-stdio.mjs`의 단언 2줄도 같이 바꾼다 — 티켓에 없어 건드리지 않았다.
-3. Codex `codex plugin marketplace add`용 카탈로그(`.agents/plugins/marketplace.json`)는 티켓의 매니페스트 5개에 없어 만들지 않았다. 공식 문서상 카탈로그 없이도 플러그인 폴더 설치는 가능하다.
+3. ~~Codex 카탈로그(`.agents/plugins/marketplace.json`)는 만들지 않았다. 공식 문서상 카탈로그 없이도 플러그인 폴더 설치는 가능하다.~~ **2026-09-21 정정:** 틀렸다. Codex 0.155.1에서 `~/.codex/plugins/<이름>`에 레포를 두면 `/skills`·`$archdraw` 모두 `no matches`. 카탈로그가 필수라 생성기에 6번째 매니페스트로 추가(`codexMarketplace`, source local `./`). `.gitignore`의 `.agents/` 무시에 예외 추가. 설치: `codex plugin marketplace add <레포 또는 로컬 경로>` → `codex plugin add excalidraw-architect@excalidraw-architect`. 로컬 경로로 등록·설치 확인(`installed, enabled 0.1.0`). README 표기도 이 명령으로 교체.
 4. 업스트림 `skills/excalidraw-skill/`은 티켓 지시대로 그대로 뒀다. 그 스킬은 수동 전용 설정이 없어 자동 호출 대상이고 구 npm 패키지를 안내한다 — 03에서 삭제된다.
 
 **2026-09-21 — 핸드오프: 사람이 정할 것 3개 (그릴 대상)**

@@ -20,7 +20,7 @@
 | 채널 | 설치 | 부르는 법 |
 |---|---|---|
 | Claude Code 플러그인 | `/plugin marketplace add LeeJuOh/excalidraw-architect` 후 `/plugin install excalidraw-architect@excalidraw-architect` | `/excalidraw-architect:archdraw <그려줬으면 하는 것>` — 이름이 겹치지 않으면 `/archdraw` |
-| Codex 플러그인 | 레포를 `~/.codex/plugins/excalidraw-architect`에 둡니다 (레포 루트가 플러그인 루트: `plugin.json`, `mcp.json`, `skills/`) | `$archdraw` 또는 `/skills`에서 선택. ChatGPT 데스크톱 Codex에서는 `@excalidraw-architect` 플러그인 선택 |
+| Codex 플러그인 | `codex plugin marketplace add LeeJuOh/excalidraw-architect` 후 `codex plugin add excalidraw-architect@excalidraw-architect` (`~/.codex/plugins`에 폴더만 두는 방식은 인식되지 않음) | `$archdraw` 또는 `/skills`에서 선택. ChatGPT 데스크톱 Codex에서는 `@excalidraw-architect` 플러그인 선택 |
 | 그 외 Agent Skills 호스트 | `npx skills add LeeJuOh/excalidraw-architect` | 해당 호스트의 스킬 호출 방식 |
 
 이 스킬은 수동 전용입니다. 알아서 시작하지 않고, 사용자가 부른 뒤부터 그 대화에서 그림으로 답합니다.

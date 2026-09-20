@@ -18,6 +18,9 @@ public/dist/
 .claude/
 .agent/
 .agents/
+# Codex marketplace catalog is a generated manifest (npm run manifests)
+!.agents/plugins/
+!.agents/plugins/marketplace.json
 
 # Development artifacts
 *.excalidraw
