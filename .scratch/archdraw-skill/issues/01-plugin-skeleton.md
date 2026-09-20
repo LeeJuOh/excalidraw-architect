@@ -153,3 +153,5 @@ sqlite3 ~/.codex/logs_2.sqlite "select datetime(ts,'unixepoch','localtime'), sub
 부수 확인: 01:14 세션에서 `screenshot` png가 `~/.excalidraw-architect/tmp/`에 생김 → 데이터 폴더 항목 체크. 세모 요청은 Excalidraw에 `triangle` 타입이 없어 스킬이 선으로 그렸다 — 도형 어휘는 03 몫.
 
 다음: Codex **재시작** 후 `$excalidraw-architect:archdraw 박스 하나 그려줘` → rollout에 exec 없이 MCP 툴 호출이 있으면 Codex 채널 통과.
+
+**2026-09-21 — 인수 2/3: Codex 플러그인 채널 통과.** SKILL.md 재구성 후 Codex 재시작, `$excalidraw-architect:archdraw 박스 하나 그려줘`. rollout: `mcp__archdraw__batch_create_elements` → `mcp__archdraw__get_canvas_screenshot`(이미지 반환). shim 실행 0회. 남은 채널: `npx skills add`(CLI 폴백, push 필요).
