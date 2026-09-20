@@ -131,6 +131,14 @@ const shim = `#!/bin/sh
 # start claude/codex from a shell that has it.
 set -e
 
+# MCP mode: Codex launches the server with cwd = plugin root, which is this repo
+# and carries a package.json named ${pkg.name}. npx then resolves that
+# local project (no bin linked) and dies with "command not found". The server
+# never reads cwd, so leave. CLI mode keeps cwd for relative file arguments.
+if [ $# -eq 0 ]; then
+  cd /
+fi
+
 if [ -n "\${ARCHDRAW_BIN:-}" ]; then
   exec node "$ARCHDRAW_BIN" "$@"
 fi

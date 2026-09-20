@@ -20,7 +20,7 @@ Three channels, one skill folder. The two plugin channels register the MCP serve
 | Channel | Install | Call it |
 |---|---|---|
 | Claude Code plugin | `/plugin marketplace add LeeJuOh/excalidraw-architect`, then `/plugin install excalidraw-architect@excalidraw-architect` | `/excalidraw-architect:archdraw <what you want drawn>` — plain `/archdraw` when nothing else claims the name |
-| Codex plugin | `codex plugin marketplace add LeeJuOh/excalidraw-architect`, then `codex plugin add excalidraw-architect@excalidraw-architect` (a bare folder under `~/.codex/plugins` is not discovered) | `$archdraw`, or pick it in `/skills`; in ChatGPT desktop pick the `@excalidraw-architect` plugin |
+| Codex plugin | `codex plugin marketplace add LeeJuOh/excalidraw-architect`, then `codex plugin add excalidraw-architect@excalidraw-architect` (a bare folder under `~/.codex/plugins` is not discovered) | `$excalidraw-architect:archdraw`, or pick it in `/skills`; in ChatGPT desktop pick the `@excalidraw-architect` plugin |
 | Any Agent Skills host | `npx skills add LeeJuOh/excalidraw-architect` | however that host invokes a skill by name |
 
 The skill is manual only. It never starts itself — you call it, and then it keeps drawing for that conversation.

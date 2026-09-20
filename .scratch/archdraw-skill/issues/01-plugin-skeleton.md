@@ -98,3 +98,9 @@
 - 발견: `/health`의 `service: "mcp-excalidraw-canvas"`도 업스트림 정체성 문자열. Q2 범위 밖이라 그대로 둠.
 - 남은 채널: Codex 플러그인, `npx skills add`(CLI 폴백 경로).
 
+**2026-09-21 — 인수 2/3: Codex 플러그인 채널, 1차 실패 → shim 수정.** 카탈로그로 설치 후 Codex에서 `$excalidraw-architect:archdraw 박스 하나 그려줘`(자동완성이 준 식별자. **`$archdraw`가 아니라 플러그인 접두 형식** — README 두 언어 수정). 세션 rollout·`logs_2.sqlite` 확인:
+- MCP 서버 기동 실패: `MCP server stderr (sh): sh: excalidraw-architect: command not found`. Codex는 `mcp.json`의 서버를 **cwd = 플러그인 루트**(`~/.codex/plugins/cache/.../0.1.0`, 즉 레포 사본)로 띄운다. 거기 `package.json` 이름이 게시 패키지와 같아 npx가 로컬 프로젝트로 잡고 bin이 없어 죽는다. 위 "레포 밖에서 검증" 메모가 사실은 운영 버그였다. `npx -p pkg cmd` 형태도 같은 결함.
+- 그래서 스킬은 설계대로 CLI 폴백으로 갔고(exec로 shim `add`), 그건 Codex 기본 샌드박스의 네트워크 차단에 걸려 출력 없음. 에이전트는 "샌드박스에서 npx를 못 받았다, 네트워크 접근 필요"라고 원인을 말했다 — 오프라인 안내 항목의 Codex 변형은 이걸로 확인.
+- 수정: shim이 **인자 없음(MCP 모드)일 때 `cd /`** 후 npx 실행. 서버는 cwd를 안 읽는다. CLI 모드는 상대경로 인자 때문에 cwd 유지(레포 안에서 CLI 폴백을 돌리는 경우만 여전히 함정 — 개발자만 해당). 레포 루트 cwd에서 `initialize` 응답 확인.
+- Codex 재설치(`codex plugin remove` → `add`) 후 사람이 재시험. 네트워크 차단은 Codex 승인 프롬프트나 `--sandbox danger-full-access`로.
+
