@@ -58,7 +58,9 @@
 
 ---
 
-**Q1 — npm 게시와 버전.** 게시 전까지는 아무 채널도 동작하지 않는다.
+**Q1 — npm 게시와 버전.** ✅ 결정 2026-09-21: **B `0.1.0`**. `package.json` version 변경 → `npm run manifests` 재실행(매니페스트 2개·shim 고정 버전 `excalidraw-architect@0.1.0` 추종). 1.0.0은 02 도그푸딩 뒤. 게시는 사람이 `npm login` → `npm run build` → `npm publish --access public`.
+
+원문: 게시 전까지는 아무 채널도 동작하지 않는다.
 
 - 확인된 사실: `npm view excalidraw-architect` → 404(이름 비어 있음). `package.json` version `2.0.0`, shim은 `npx -y excalidraw-architect@2.0.0`으로 고정(`skills/archdraw/scripts/archdraw`). 티켓은 첫 `npm publish`를 사람이 하라고 적었다.
 - 문제: 새 npm 이름의 첫 릴리스인데 버전이 업스트림 계보를 이어받은 `2.0.0`이다. 사용자가 `npm view`로 보면 1.x가 없는 2.0.0이 보인다.
@@ -66,7 +68,7 @@
 - 추천: B. 01은 관통선이고 라우팅 규칙이 0줄이라 지금 2.0.0은 "완성된 제품"으로 읽힌다. 02 도그푸딩 뒤에 1.0.0.
 - 고르면 바뀌는 것: `package.json`의 `version` 한 줄 → `npm run manifests` → 매니페스트 3개와 shim 고정 버전이 따라온다. 그 뒤 사람이 `npm publish`.
 
-**Q2 — MCP 서버가 자기 이름을 뭐라고 말할까.**
+**Q2 — MCP 서버가 자기 이름을 뭐라고 말할까.** ✅ 결정 2026-09-21: **B**. `SERVER_NAME`을 리터럴 대신 `packageName()`(package.json 단일 소스)으로, `check-mcp-stdio.mjs` 단언도 package.json에서 읽음. `scene-io.ts`의 `source`는 그대로(06 판단).
 
 - 확인된 사실: `src/core/mcp-server.ts`의 `SERVER_NAME = 'mcp-excalidraw-server'`(업스트림 값, 미변경). `scripts/check-mcp-stdio.mjs` 131·240행이 그 값을 단언한다. `src/core/scene-io.ts`의 `source: 'mcp-excalidraw-server'`(export한 `.excalidraw` 파일에 박히는 값)도 같다. 매니페스트의 서버 키는 `archdraw`이므로 **툴 이름은 이미 archdraw 네임스페이스**로 나온다 — 이 질문은 툴 이름이 아니라 `initialize` 응답의 정체성 문자열 얘기다.
 - 문제: 패키지·플러그인은 `excalidraw-architect`인데 서버는 자기를 업스트림 이름으로 소개한다. 호스트 로그·에러 메시지에서 두 이름이 섞인다.
@@ -74,7 +76,7 @@
 - 추천: B. 패키지 정체성과 맞추는 게 최소 혼란이고, `archdraw`는 스킬 이름이라 서버 이름으로 쓰면 둘이 겹친다.
 - 미결: `scene-io.ts`의 `source`는 **이미 내보낸 파일과의 호환** 문제다. 바꾸면 기존 export를 다시 읽을 때 달라지는지 06에서 확인할 일 — Q2를 B로 정해도 `source`는 따로 판단한다.
 
-**Q3 — 게시 문구(description).**
+**Q3 — 게시 문구(description).** ✅ 결정 2026-09-21: **B**. 호스트 이름(Claude Code/Codex)은 빼고 형태(skill·MCP·CLI)는 꼬리로, 범위는 백엔드로 한정(03 규칙이 백엔드 기준). 확정 문구: "Discuss backend architecture in pictures with your coding agent — picks the diagram type and zoom level for the question, then draws it on a live Excalidraw canvas. Agent skill, MCP server, and CLI."
 
 - 확인된 사실: `package.json`의 `description` = "Excalidraw toolkit for AI coding agents — agent skill, CLI, and MCP server with a live canvas"(업스트림 문구 그대로). 이 한 줄이 단일 소스라 npm과 매니페스트 5개 중 4개(`.claude-plugin/plugin.json`·`marketplace.json` 2곳·루트 `plugin.json`)에 그대로 나간다.
 - 문제: 이 문구는 "그리는 손"만 설명한다. 포크의 차별점인 **판단**(무엇을 어떤 줌 레벨로 그릴지)이 안 보여서, yctimlin 패키지 옆에 놓였을 때 구분이 안 된다. README 첫 문단은 이미 판단을 앞세우고 있어 문구끼리도 어긋난다.

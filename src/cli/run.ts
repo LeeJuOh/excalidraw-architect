@@ -46,7 +46,7 @@ function printHelp(): void {
   ];
   const column = Math.max(...usage.map(([form]) => form.length)) + 2;
   const lines = [
-    `${cli} ${packageVersion()} — Excalidraw toolkit for AI coding agents`,
+    `${cli} ${packageVersion()} — live Excalidraw canvas for coding agents (CLI of excalidraw-architect)`,
     '',
     'Usage:',
     ...usage.map(([form, summary]) => `  ${form.padEnd(column)}${summary}`),

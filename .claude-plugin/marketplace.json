@@ -1,7 +1,7 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "excalidraw-architect",
-  "description": "Excalidraw toolkit for AI coding agents — agent skill, CLI, and MCP server with a live canvas",
+  "description": "Discuss backend architecture in pictures with your coding agent — picks the diagram type and zoom level for the question, then draws it on a live Excalidraw canvas. Agent skill, MCP server, and CLI.",
   "owner": {
     "name": "LeeJuOh",
     "email": "xop4p@naver.com",
@@ -11,7 +11,7 @@
     {
       "name": "excalidraw-architect",
       "source": "./",
-      "description": "Excalidraw toolkit for AI coding agents — agent skill, CLI, and MCP server with a live canvas",
+      "description": "Discuss backend architecture in pictures with your coding agent — picks the diagram type and zoom level for the question, then draws it on a live Excalidraw canvas. Agent skill, MCP server, and CLI.",
       "author": {
         "name": "LeeJuOh",
         "email": "xop4p@naver.com",

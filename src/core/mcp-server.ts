@@ -1,11 +1,11 @@
 import { McpServer, fromJsonSchema } from '@modelcontextprotocol/server';
 import type { JsonSchemaType, McpRequestContext, McpServerFactory } from '@modelcontextprotocol/server';
 import logger from '../utils/logger.js';
-import { packageVersion } from './version.js';
+import { packageName, packageVersion } from './version.js';
 import { tools } from './mcp-tools.js';
 import { callExcalidrawTool } from './mcp-dispatch.js';
 
-const SERVER_NAME = 'mcp-excalidraw-server';
+const SERVER_NAME = packageName();
 const SERVER_DESCRIPTION =
   'Programmatic canvas toolkit for Excalidraw with file I/O, image export, and real-time sync';
 const SERVER_VERSION = packageVersion();

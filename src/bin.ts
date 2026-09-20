@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// Single bin entry for both package bins (mcp-excalidraw-server and
+// Single bin entry for both package bins (excalidraw-architect and
 // excalidraw-canvas):
 //
 //   no arguments  -> MCP stdio server (backward compatible with MCP clients)

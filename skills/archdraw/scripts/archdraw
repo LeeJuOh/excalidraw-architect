@@ -15,4 +15,4 @@ if [ -n "${ARCHDRAW_BIN:-}" ]; then
   exec node "$ARCHDRAW_BIN" "$@"
 fi
 
-exec npx -y excalidraw-architect@2.0.0 "$@"
+exec npx -y excalidraw-architect@0.1.0 "$@"
