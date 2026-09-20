@@ -11,7 +11,7 @@ AI 에이전트와 개발할 때 개발자는 코드를 직접 보지 않고 에
 > yctimlin `mcp_excalidraw`(MIT) 포크. 서버 코드(그리는 손)는 업스트림 것, 내장 스킬을 **백엔드 실무 다이어그램 판단 스킬 `archdraw`**로 교체한 Claude Code / Codex 플러그인.
 > 업스트림: `https://github.com/yctimlin/mcp_excalidraw` — `git remote upstream`.
 >
-> **현 단계: 01 설치 골격 구현됨, 판단 규칙은 아직 0줄.** `skills/archdraw/`에 최소 SKILL.md·shim·Codex 정책 파일이 있고 매니페스트 5개가 생성된다. 라우팅·줌 레벨은 03에서 들어온다. 스펙은 `.scratch/archdraw-skill/spec.md`.
+> **현 단계: 01 설치 골격 구현·npm `0.1.0` 게시됨, 판단 규칙은 아직 0줄.** `skills/archdraw/`에 최소 SKILL.md·shim·Codex 정책 파일이 있고 매니페스트 5개가 생성된다. 라우팅·줌 레벨은 03에서 들어온다. 스펙은 `.scratch/archdraw-skill/spec.md`.
 
 ## SSOT 규약
 
@@ -49,7 +49,7 @@ sibling 레포 소유. **생성·수정·삭제 금지.** git에는 심링크째
 - 매니페스트 5개(`.claude-plugin/plugin.json`·`marketplace.json`·`.mcp.json`, 루트 `plugin.json`·`mcp.json`)와 스킬 shim(`skills/archdraw/scripts/archdraw`)은 **생성물이다.** 손으로 고치지 말고 `package.json`을 고친 뒤 `npm run manifests`. `npm test`·CI가 `--check`로 드리프트와 shim 실행 권한을 검사한다.
 - `gh`는 기본 레포를 `upstream`(yctimlin)으로 잡는다. 이 클론은 `gh repo set-default LeeJuOh/excalidraw-architect`로 고정했지만 새 클론은 다시 해야 한다. 이슈·라벨 작업 전 `gh repo view`로 확인.
 - `.gitignore`가 `.claude/`도 무시한다. 프로젝트 설정을 커밋할 일이 생기면 그때 결정.
-- 서버 코드 변경을 확인할 때는 `npm run build` 후 셸에 `ARCHDRAW_BIN=<레포>/dist/bin.js`를 둔다. 비어 있으면 스킬 shim이 npm에 게시된 고정 버전을 `npx`로 띄워 방금 고친 코드가 돌지 않는다. MCP 매니페스트도 shim을 거치므로 같은 변수로 바뀌지만, MCP 프로세스는 호스트가 띄우므로 호스트(claude/codex)를 그 변수가 있는 셸에서 시작해야 한다. 스킬 텍스트만 고칠 땐 불필요, npm 게시본이 나오기 전까지는 항상 필요.
+- 서버 코드 변경을 확인할 때는 `npm run build` 후 셸에 `ARCHDRAW_BIN=<레포>/dist/bin.js`를 둔다. 비어 있으면 스킬 shim이 npm에 게시된 고정 버전을 `npx`로 띄워 방금 고친 코드가 돌지 않는다. MCP 매니페스트도 shim을 거치므로 같은 변수로 바뀌지만, MCP 프로세스는 호스트가 띄우므로 호스트(claude/codex)를 그 변수가 있는 셸에서 시작해야 한다. 스킬 텍스트만 고칠 땐 불필요. 반대로 게시본을 검증할 땐 **레포 밖 디렉터리**에서 — 레포 안에서는 npx가 같은 이름의 로컬 패키지를 잡아 `command not found`가 난다.
 
 ## 커밋
 

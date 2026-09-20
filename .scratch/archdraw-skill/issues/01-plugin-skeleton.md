@@ -88,3 +88,7 @@
 
 이 셋과 별개로, **미완 인수 항목 6개는 전부 사람이 실제 설치해야 확인 가능**하다(위 체크박스). Q1이 정해져 게시가 끝나야 그중 5개를 시작할 수 있다.
 
+**2026-09-21 — npm 게시 완료(사람, 계정 `leejuo`).** `excalidraw-architect@0.1.0` 게시됨. 확인(에이전트): 레포 밖 디렉터리에서 `ARCHDRAW_BIN` 없이 shim 실행 → `--version` 0.1.0, 무인자 `initialize` 응답 `serverInfo.name: excalidraw-architect`. 두 경로 모두 npm 게시본으로 뜬다. 남은 인수 항목(세 채널 설치 → 박스 하나)은 이제 시작 가능.
+
+주의: **레포 루트 안에서** `ARCHDRAW_BIN` 없이 shim/npx를 돌리면 `sh: excalidraw-architect: command not found`. npx가 현재 디렉터리의 `package.json` 이름이 같아 로컬 패키지로 잡는데 bin이 링크돼 있지 않아서다. 게시본 검증은 레포 밖에서.
+
