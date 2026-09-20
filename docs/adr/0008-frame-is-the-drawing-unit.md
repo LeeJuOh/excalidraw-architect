@@ -1,11 +1,12 @@
 # 그림 하나 = frame 하나
 
-캔버스에 그림 여러 개가 놓이므로([ADR-0007](0007-canvas-never-cleared-import-copies.md)) 저장·복사·탐색·과밀 세기의 단위가 필요하다. Excalidraw의 `frame` 요소를 그림 단위로 쓴다. frame 이름이 그림 제목(답하는 질문)이고, `export --frame`, `describe`의 그림별 묶음, "한 그림에 한 종류" 판정, "안 그림" 줄 위치, 사용자가 액자를 끌면 그림 통째 이동이 전부 frame에 의존한다. 그림 참조는 frame 이름이 아니라 ID 기반이다 — 이름 변경·복사에 견뎌야 하고, 일부만 export한 파일의 미포함 참조가 이름이 같은 다른 그림에 붙으면 안 되기 때문이다. 업스트림에는 `frameId` 칸만 있고 frame 타입이 없어 서버에 추가한다(Excalidraw 0.18이 원래 그리므로 프론트 수정은 없을 것으로 본다).
+캔버스에 그림 여러 개가 놓이므로([ADR-0007](0007-canvas-never-cleared-import-copies.md)) 저장·복사·탐색·과밀 세기의 단위가 필요하다. Excalidraw의 `frame` 요소를 그림 단위로 쓴다. frame 이름이 그림 제목(답하는 질문)이고, `export --frame`, `describe`의 그림별 묶음, "한 그림에 한 종류" 판정, "안 그림" 줄 위치, 사용자가 액자를 끌면 그림 통째 이동이 전부 frame에 의존한다. 그림 참조는 frame 이름이 아니라 ID 기반이다 — 이름 변경·복사에 견뎌야 하고, 일부만 export한 파일의 미포함 참조가 이름이 같은 다른 그림에 붙으면 안 되기 때문이다. ID는 박스 요소의 `link` 칸에 Excalidraw 요소 링크 `?element=<frame id>`로 적는다(2026-09-20). 에이전트가 읽는 데이터이면서 브라우저에서 박스의 링크 아이콘을 누르면 Excalidraw가 그 frame으로 이동해 사용자 클릭 탐색이 따로 구현 없이 생긴다. 업스트림에는 `frameId` 칸만 있고 frame 타입이 없어 서버에 추가한다(Excalidraw 0.18이 원래 그리므로 프론트 수정은 없을 것으로 본다).
 
 ## Considered Options
 
 - group + 제목 텍스트: 경계 상자가 없어 과밀 세기·액자 끌기·`export --frame`을 따로 구현해야 해 기각했다.
 - 그림 참조를 frame 이름으로: 복사본 `"(복사)"`와 동명 그림에서 대상이 갈려 기각했다.
+- 그림 참조를 `customData`에: 화면에 안 보이고 다른 칸과 겹치지 않지만 클릭 탐색이 생기지 않는다. 코드 위치는 근거 태그가 이미 가져 `link` 칸이 비어 있으므로 기각했다.
 
 ## Consequences
 

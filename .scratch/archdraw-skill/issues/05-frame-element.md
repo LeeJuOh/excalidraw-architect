@@ -9,7 +9,8 @@
 - `describe`가 frame과 그 자식을 그림 단위로 묶어 보여준다.
 - group + 제목 텍스트 대안은 기각됐다(스펙 §7-6, [ADR-0008](../../../docs/adr/0008-frame-is-the-drawing-unit.md)).
 - frame 자동 확장(2026-09-20 그릴 Q4 (a), drawio-mcp `shared/normalize-model.js` 관행): 서버가 frame을 만들거나 frame에 자식을 넣을 때 자식이 frame 경계 밖으로 나가면 frame을 자식이 들어오도록 키운다. 줄이지 않고 자식은 옮기지 않는다(사용자가 옮긴 배치 유지, 일부러 둔 여백 유지). 멱등 — 이미 들어 있으면 아무것도 안 바뀐다. 이유: Excalidraw frame은 밖으로 나간 자식을 잘라 그리므로 스크린샷에서 안 보여 에이전트가 못 잡는다. 서버 생성·수정 경로에만 적용하고 브라우저에서 사용자가 자식을 밖으로 끄는 것은 건드리지 않는다.
-- 글꼴 기본값(스펙 §7-9, 2026-09-14 배정): 서버가 만드는 텍스트·라벨의 기본 `fontFamily`를 1(Virgil)에서 2(Helvetica)로 바꾼다 — `src/core/expand-elements.ts`의 텍스트·라벨 생성부 두 곳. 코드 이름도 2, 고정폭 안 씀. 브라우저에서 사용자가 새로 쓰는 글씨 기본값도 2로 맞춘다 — 프론트는 초기 appState를 넘기지 않아 Excalidraw 0.18 `DEFAULT_FONT_FAMILY` = Excalifont(5, 손글씨)가 기본이다(2026-09-20 코드 확인). 프론트가 초기 appState `currentItemFontFamily: 2`를 넘긴다. 이 이슈에 둔 이유: frame과 같은 요소 기본값 층이고 프론트를 같이 보는 이슈라서.
+- `link` 칸 개방(2026-09-20 그릴 Q1 (a), [ADR-0008](../../../docs/adr/0008-frame-is-the-drawing-unit.md)): 그림 참조는 박스 요소의 `link`에 `?element=<대상 frame id>`로 적는다. 업스트림은 타입에 `link`가 있고 `expand-elements.ts`가 통과시키지만, MCP 툴 JSON 스키마와 `mcp-dispatch.ts`의 zod `ElementSchema`가 `link`를 받지 않아 버린다. `create_element`·`batch_create_elements`·`update_element` 입력에 `link`(string|null)를 연다. 참조를 쓰는 쪽은 03, 저장·재로드 보존은 06.
+- 글꼴 기본값(스펙 §7-9, 2026-09-14 배정): 서버가 만드는 텍스트·라벨의 기본 `fontFamily`를 1(Virgil)에서 2(Helvetica)로 바꾼다 — `src/core/expand-elements.ts`의 텍스트·라벨 생성부 두 곳. 코드 이름도 2, 고정폭 안 씀. 브라우저에서 사용자가 새로 쓰는 글씨 기본값도 2로 맞춘다 — 프론트는 초기 appState에 `theme`만 넘겨(`frontend/src/App.tsx`) 글꼴은 Excalidraw 0.18 `DEFAULT_FONT_FAMILY` = Excalifont(5, 손글씨)가 기본이다(2026-09-20 코드 확인). 프론트가 초기 appState `currentItemFontFamily: 2`를 넘긴다. 이 이슈에 둔 이유: frame과 같은 요소 기본값 층이고 프론트를 같이 보는 이슈라서.
 
 **Blocked by:** 01 (플러그인 골격)
 
@@ -21,6 +22,7 @@
 - [ ] export한 `.excalidraw`를 excalidraw.com에서 열면 frame이 유지된다
 - [ ] frame 경계 밖 좌표로 자식을 넣으면 frame이 자식을 포함하도록 커지고, 자식 좌표는 그대로다. 이미 안에 있는 자식을 다시 넣으면 frame 크기가 안 바뀐다
 - [ ] `fontFamily` 없이 만든 텍스트·라벨의 실제 요소 데이터가 Helvetica(2)이고, 브라우저에서 새로 친 글씨도 2다
+- [ ] frame B 안에 박스가 있을 때 `create_element`로 `link: "?element=<B의 id>"`를 준 박스를 만들면 요소 데이터에 그 `link`가 남고, 브라우저에서 박스의 링크 아이콘을 누르면 화면이 B로 이동한다. `update_element`로 `link`를 바꾸거나 `null`로 지울 수 있다
 - [ ] 기존 `npm test` 통과
 
 

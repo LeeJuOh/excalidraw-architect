@@ -43,7 +43,7 @@ policy:
 ## 미확인 사항과 검증 제안
 
 1. **공통 파일 호환성:** 위 두 메타를 한 폴더에 동시 배포하는 설계는 문서 구조에 부합하는 후보지만, Codex가 Claude 확장 frontmatter를 수용한다는 명시적 보장은 확인하지 못했다. Claude 문서는 일부 다른 배포 경로(claude.ai 업로드 등)가 확장 frontmatter를 거부한다고 설명한다. 이 경고를 Codex의 거부로 일반화할 수 없다. 실제 대상 호스트에서 로딩 확인이 필요하다. [Claude frontmatter portability](https://code.claude.com/docs/en/skills#using-skill-frontmatter-outside-claude-code)
-2. **Codex 플러그인 호출의 정확한 namespace 문자열:** 공식 문서는 namespace 사용과 `$skill`을 각각 설명하지만, 확인한 페이지에서 `$plugin:skill`의 정확한 호출 예시는 찾지 못했다. 설치 후 `/skills`에 노출되는 식별자를 선택해 확인하고 사용 예시에 기록할 것. `$archdraw`를 모든 설치 채널의 보장된 문자열로 단정하지 않는다. [OpenAI packaging](https://developers.openai.com/plugins/build/plugins), [OpenAI skills](https://learn.chatgpt.com/docs/build-skills)
+2. **Codex 플러그인 호출의 정확한 namespace 문자열:** _(2026-09-20 해소: 문서는 `$<skill-name>`만 제공하고 플러그인 접두 형식은 없음. openai/codex#39166에서 플러그인 스킬을 `$<skill-name>`으로 CLI 호출 확인, ChatGPT 데스크톱은 `@플러그인명` 선택. 이슈 01·스펙 반영.)_ 공식 문서는 namespace 사용과 `$skill`을 각각 설명하지만, 확인한 페이지에서 `$plugin:skill`의 정확한 호출 예시는 찾지 못했다. 설치 후 `/skills`에 노출되는 식별자를 선택해 확인하고 사용 예시에 기록할 것. `$archdraw`를 모든 설치 채널의 보장된 문자열로 단정하지 않는다. [OpenAI packaging](https://developers.openai.com/plugins/build/plugins), [OpenAI skills](https://learn.chatgpt.com/docs/build-skills)
 3. **검증 제안(설계 미확정):** 설치 채널×호스트마다 새 대화의 일반 설명 요청에서 미실행 → 표시된 명시 호출로 실행 → 같은 그림 수정 후속 턴 → 관련 없는 새 요청에서 새 다이어그램 작업 미시작을 확인한다. 압축 후 재개는 별도 관찰로 기록한다. 실제 설치/실행은 이 조사에서 하지 않았다.
 
 ## 로컬 확인 범위
