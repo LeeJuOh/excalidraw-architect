@@ -92,3 +92,9 @@
 
 주의: **레포 루트 안에서** `ARCHDRAW_BIN` 없이 shim/npx를 돌리면 `sh: excalidraw-architect: command not found`. npx가 현재 디렉터리의 `package.json` 이름이 같아 로컬 패키지로 잡는데 bin이 링크돼 있지 않아서다. 게시본 검증은 레포 밖에서.
 
+**2026-09-21 — 인수 1/3: Claude 플러그인 채널 통과.** 레포 밖 폴더에서 `/plugin marketplace add LeeJuOh/excalidraw-architect` → `/plugin install excalidraw-architect` → `/excalidraw-architect:archdraw 박스하나그려줘`. 세션 transcript로 확인: 스킬이 Bash shim 없이 **MCP 툴**(`mcp__plugin_excalidraw-architect_archdraw__batch_create_elements`)로 박스를 만들었고, 사용자가 `http://127.0.0.1:3000`을 연 뒤 `get_canvas_screenshot`이 이미지를 돌려줬다(파란 사각형 확인). 호출 표기 `/excalidraw-architect:archdraw`는 README 그대로.
+
+- 티켓 문구 정정: "브라우저에 캔버스가 열리고"는 자동이 아니다. 업스트림도 우리 SKILL.md도 사용자에게 URL을 열어달라고 한다. 첫 스크린샷은 브라우저 열기 전이라 `No frontend client connected`로 실패했고, 연 뒤 재시도로 성공 — 설계대로. 자동 열기는 별도 결정거리(원하면 새 이슈).
+- 발견: `/health`의 `service: "mcp-excalidraw-canvas"`도 업스트림 정체성 문자열. Q2 범위 밖이라 그대로 둠.
+- 남은 채널: Codex 플러그인, `npx skills add`(CLI 폴백 경로).
+
