@@ -48,7 +48,7 @@ sibling 레포 소유. **생성·수정·삭제 금지.** git에는 심링크째
 - 업스트림 `.gitignore`는 `docs/`를 무시했다. 포크에서 그 줄을 뺐다 — 업스트림 머지 시 되살아나면 다시 뺄 것. 같은 이유로 업스트림 `read_diagram_guide` 툴·`design-guide.ts`도 머지 때 되살아나면 지운다(ADR-0006, 이슈 09).
 - `gh`는 기본 레포를 `upstream`(yctimlin)으로 잡는다. 이 클론은 `gh repo set-default LeeJuOh/excalidraw-architect`로 고정했지만 새 클론은 다시 해야 한다. 이슈·라벨 작업 전 `gh repo view`로 확인.
 - `.gitignore`가 `.claude/`도 무시한다. 프로젝트 설정을 커밋할 일이 생기면 그때 결정.
-- 서버 코드 변경을 확인할 때는 `npm run build` 후 셸에 `ARCHDRAW_BIN=<레포>/dist/bin.js`를 둔다. 비어 있으면 스킬 shim이 npm에 게시된 고정 버전을 `npx`로 띄워 방금 고친 코드가 돌지 않는다. 스킬 텍스트만 고칠 땐 불필요, npm 게시본이 없는 01 동안은 항상 필요. (shim은 01에서 생긴다)
+- 서버 코드 변경을 확인할 때는 `npm run build` 후 셸에 `ARCHDRAW_BIN=<레포>/dist/bin.js`를 둔다. 비어 있으면 스킬 shim이 npm에 게시된 고정 버전을 `npx`로 띄워 방금 고친 코드가 돌지 않는다. MCP 매니페스트도 shim을 거치므로 같은 변수로 바뀌지만, MCP 프로세스는 호스트가 띄우므로 호스트(claude/codex)를 그 변수가 있는 셸에서 시작해야 한다. 스킬 텍스트만 고칠 땐 불필요, npm 게시본이 없는 01 동안은 항상 필요. (shim은 01에서 생긴다)
 
 ## 커밋
 

@@ -24,4 +24,4 @@
 - [ ] md에 좌표 공식(열·행 → x,y)과 좌표·배치 한정 Do NOT 목록이 있고, "align·distribute로 다듬어라" 류의 사후 조정 지시가 없다
 - [ ] md에 "Diagram Type Templates" 절이 없고, dashed = async/optional/event 규칙이 없으며, PRD §3 선 표기가 들어 있다
 - [ ] md를 지우고 서버를 띄우면 시작 실패 원인이 로그에 나온다
-- [ ] Claude Code에 서버를 등록하면 세션 시스템 프롬프트의 MCP 지침 블록에 요약이 보인다. Codex에서는 `instructions`가 어디에 실리는지 01 설치 확인 때 함께 실측해 결과를 이 이슈 Comments에 남긴다
+- [ ] Claude Code에 서버를 등록하면 세션 시스템 프롬프트의 MCP 지침 블록에 요약이 보인다(Codex에서 `instructions`가 어디에 실리는지는 02 관찰 항목)
