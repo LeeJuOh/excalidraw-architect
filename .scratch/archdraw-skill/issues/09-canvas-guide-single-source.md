@@ -15,7 +15,7 @@
 
 **Blocked by:** 01 (플러그인 골격 — npm 패키지 이름·`files`·게시 경로가 정해져야 md 동봉 경로를 확정)
 
-**Status:** ready-for-agent
+**Status:** 닫힘 (2026-09-21)
 
 - [x] `npm pack` 산출물(tarball) 안에 규격 md가 들어 있고, 그 tarball을 설치해 띄운 서버가 md를 읽어 뜬다
 - [x] `initialize` 응답의 `instructions`가 2KB 이내이고, 앞 512자만 잘라 읽어도 바인딩 필수·최소 크기·간격이 들어 있으며, 끝에 `guide://canvas` 안내가 있다
@@ -24,7 +24,7 @@
 - [x] md에 좌표 공식(열·행 → x,y)과 좌표·배치 한정 Do NOT 목록이 있고, "align·distribute로 다듬어라" 류의 사후 조정 지시가 없다
 - [x] md에 "Diagram Type Templates" 절이 없고, dashed = async/optional/event 규칙이 없으며, PRD §3 선 표기가 들어 있다
 - [x] md를 지우고 서버를 띄우면 시작 실패 원인이 로그에 나온다
-- [ ] Claude Code에 서버를 등록하면 세션 시스템 프롬프트의 MCP 지침 블록에 요약이 보인다(Codex에서 `instructions`가 어디에 실리는지는 02 관찰 항목)
+- [x] Claude Code에 서버를 등록하면 세션 시스템 프롬프트의 MCP 지침 블록에 요약이 보인다(Codex에서 `instructions`가 어디에 실리는지는 02 관찰 항목)
 
 ## Comments
 
@@ -38,4 +38,4 @@
 - `check-pack-contents.mjs`가 npm 11의 `npm pack --json`(배열 아닌 객체)에서 깨져 있어 두 형태를 모두 받게 고쳤다. 기존 버그이고 CI(npm 10)에서는 드러나지 않았다.
 - 선 표기의 보이는 라벨은 PRD의 한국어 문자열(`[동기]` 등)을 박지 않고 의미로 적고 "사용자 언어로 쓴다"를 붙였다 — md는 영어이고 스킬이 사용자 언어로 말하는 기존 규약과 맞춘 판단. 다른 언어 사용자가 생기면 재고.
 - 09 범위 밖 2줄 수정: `skills/excalidraw-skill/`(03이 교체할 업스트림 스킬)이 지워진 `read_diagram_guide`를 부르라고 적고 있어 `guide://canvas`로 바꿨다. 규격 값 복사는 그대로 두었다 — 03 몫.
-- 남은 인수 1개는 호스트 확인이라 사용자 몫이다: Claude Code에서 플러그인을 다시 띄워 시스템 프롬프트 MCP 지침 블록에 요약이 보이는지.
+- 호스트 확인은 `ARCHDRAW_BIN`을 로컬 빌드로 두고 `claude -p`로 자식 세션을 띄워 했다 — 그 세션이 시스템 프롬프트의 archdraw MCP 지침을 그대로 뱉어 요약이 실린 것을 확인했다. 대화형 재시작 없이 이 방법으로 판정할 수 있다.
