@@ -141,7 +141,7 @@ If you find any issue: **stop, fix it, re-screenshot, then continue.** Say "I se
 
 ### Steps (CLI shown; MCP tools are 1:1 — see cheatsheet)
 
-1. Plan your coordinate grid — map out tiers and x-positions before writing JSON. (MCP mode: call `read_diagram_guide` for colors/sizing; the same guidance lives in `references/cheatsheet.md`.)
+1. Plan your coordinate grid — map out tiers and x-positions before writing JSON. (MCP mode: read the resource `guide://canvas` for colors/sizing; the same guidance lives in `references/cheatsheet.md`.)
 2. Optional fresh start: `npx -y mcp-excalidraw-server clear --yes`
 3. Create shapes and arrows in one call. Custom `id` fields (e.g. `"id": "auth-svc"`) make later updates easy:
    ```bash

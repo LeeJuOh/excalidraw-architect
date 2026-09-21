@@ -17,11 +17,25 @@
 
 **Status:** ready-for-agent
 
-- [ ] `npm pack` 산출물(tarball) 안에 규격 md가 들어 있고, 그 tarball을 설치해 띄운 서버가 md를 읽어 뜬다
-- [ ] `initialize` 응답의 `instructions`가 2KB 이내이고, 앞 512자만 잘라 읽어도 바인딩 필수·최소 크기·간격이 들어 있으며, 끝에 `guide://canvas` 안내가 있다
-- [ ] `resources/list`에 `guide://canvas`가 있고 `resources/read` 결과 본문이 md 파일 내용과 바이트 단위로 같다
-- [ ] `tools/list`에 `read_diagram_guide`가 없고, 레포에서 `design-guide` 문자열 상수가 사라졌다
-- [ ] md에 좌표 공식(열·행 → x,y)과 좌표·배치 한정 Do NOT 목록이 있고, "align·distribute로 다듬어라" 류의 사후 조정 지시가 없다
-- [ ] md에 "Diagram Type Templates" 절이 없고, dashed = async/optional/event 규칙이 없으며, PRD §3 선 표기가 들어 있다
-- [ ] md를 지우고 서버를 띄우면 시작 실패 원인이 로그에 나온다
+- [x] `npm pack` 산출물(tarball) 안에 규격 md가 들어 있고, 그 tarball을 설치해 띄운 서버가 md를 읽어 뜬다
+- [x] `initialize` 응답의 `instructions`가 2KB 이내이고, 앞 512자만 잘라 읽어도 바인딩 필수·최소 크기·간격이 들어 있으며, 끝에 `guide://canvas` 안내가 있다
+- [x] `resources/list`에 `guide://canvas`가 있고 `resources/read` 결과 본문이 md 파일 내용과 바이트 단위로 같다
+- [x] `tools/list`에 `read_diagram_guide`가 없고, 레포에서 `design-guide` 문자열 상수가 사라졌다
+- [x] md에 좌표 공식(열·행 → x,y)과 좌표·배치 한정 Do NOT 목록이 있고, "align·distribute로 다듬어라" 류의 사후 조정 지시가 없다
+- [x] md에 "Diagram Type Templates" 절이 없고, dashed = async/optional/event 규칙이 없으며, PRD §3 선 표기가 들어 있다
+- [x] md를 지우고 서버를 띄우면 시작 실패 원인이 로그에 나온다
 - [ ] Claude Code에 서버를 등록하면 세션 시스템 프롬프트의 MCP 지침 블록에 요약이 보인다(Codex에서 `instructions`가 어디에 실리는지는 02 관찰 항목)
+
+## Comments
+
+**2026-09-21 — 서버 구현 완료, 호스트 확인 1건 남음.**
+
+- 원본은 `docs/canvas-guide.md` 한 벌. `package.json` `files`에 그 경로만 넣어 ADR·조사 문서는 tarball에서 뺐다. `src/core/canvas-guide.ts`가 `../../docs/canvas-guide.md`를 읽는다 — `version.ts`가 `package.json`을 찾는 것과 같은 경로 형태라 `dist/`와 npm 설치본 양쪽에서 맞는다.
+- 요약은 md 안 `<!-- instructions:start -->`~`<!-- instructions:end -->` 구간을 그대로 잘라 쓴다. 코드에는 규격 값이 한 줄도 없다. 현재 1,294바이트.
+- md 읽기는 `index.ts`의 `runServer()`에서 한다. 커넥션마다 부르는 팩토리에만 두면 실패가 SDK 커넥션 오류로 들어가 `onerror` warn 한 줄로 끝나서, 시작 시점에 `logger.error` + stderr + `exit(1)`로 떨어지게 했다.
+- 인수 1~7은 `scripts/check-mcp-stdio.mjs`의 와이어 검사 3개(요약·리소스·md 없을 때 시작 실패)와 `scripts/check-pack-contents.mjs`로 자동 판정한다. 8개 전부 통과. md 없는 경우는 레포 안 임시 트리에 `dist`+`package.json`만 복사해 띄워 확인한다(레포의 md는 건드리지 않음).
+- tarball 확인은 레포 밖에서 했다(AGENTS.md gotcha): `npm pack` → 임시 프로젝트에 설치 → `initialize`에 요약이, `resources/list`에 `guide://canvas`가 나왔다.
+- `check-pack-contents.mjs`가 npm 11의 `npm pack --json`(배열 아닌 객체)에서 깨져 있어 두 형태를 모두 받게 고쳤다. 기존 버그이고 CI(npm 10)에서는 드러나지 않았다.
+- 선 표기의 보이는 라벨은 PRD의 한국어 문자열(`[동기]` 등)을 박지 않고 의미로 적고 "사용자 언어로 쓴다"를 붙였다 — md는 영어이고 스킬이 사용자 언어로 말하는 기존 규약과 맞춘 판단. 다른 언어 사용자가 생기면 재고.
+- 09 범위 밖 2줄 수정: `skills/excalidraw-skill/`(03이 교체할 업스트림 스킬)이 지워진 `read_diagram_guide`를 부르라고 적고 있어 `guide://canvas`로 바꿨다. 규격 값 복사는 그대로 두었다 — 03 몫.
+- 남은 인수 1개는 호스트 확인이라 사용자 몫이다: Claude Code에서 플러그인을 다시 띄워 시스템 프롬프트 MCP 지침 블록에 요약이 보이는지.

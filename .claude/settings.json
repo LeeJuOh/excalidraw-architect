@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm test)",
+      "Bash(npm run test:mcp)",
+      "Bash(npm run test:manifests)",
+      "Bash(npm run test:bind)",
+      "Bash(npm run test:data-dir)",
+      "Bash(npm run build)",
+      "Bash(npm run build:server)",
+      "Bash(npm run build:frontend)",
+      "Bash(npm run type-check)",
+      "Bash(npm run manifests)",
+      "Bash(npx tsc --noEmit)",
+      "Bash(npm pack --dry-run *)",
+      "Bash(node scripts/check-mcp-stdio.mjs)",
+      "Bash(node scripts/check-pack-contents.mjs)",
+      "Bash(node scripts/check-local-bind.mjs)",
+      "Bash(node scripts/check-data-dir.mjs)",
+      "mcp__claude-in-chrome__tabs_context_mcp",
+      "mcp__claude-in-chrome__get_page_text",
+      "mcp__claude-in-chrome__read_console_messages"
+    ]
+  }
+}

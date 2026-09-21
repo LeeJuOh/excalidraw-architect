@@ -37,7 +37,6 @@ import { buildSceneFile, importScene } from './scene-io.js';
 import { wrapSceneAsObsidianMd } from './obsidian-md.js';
 import { describeScene } from './describe.js';
 import { exportToExcalidrawUrl } from './share-url.js';
-import { DIAGRAM_DESIGN_GUIDE } from './design-guide.js';
 import { sceneState, ensureCanvasReadyForMcpTool, toolNeedsCanvasBeforeDispatch } from './canvas-state.js';
 
 // Points schema: accept both {x, y} objects and [x, y] tuples
@@ -643,12 +642,6 @@ export async function callExcalidrawTool(
           ]
         };
       }
-      case 'read_diagram_guide': {
-        return {
-          content: [{ type: 'text', text: DIAGRAM_DESIGN_GUIDE }]
-        };
-      }
-
       case 'export_to_excalidraw_url': {
         logger.info('Exporting to excalidraw.com URL');
 

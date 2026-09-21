@@ -120,7 +120,6 @@ JSON results on stdout — except `describe` (plain text) and raw-content output
 
 | Tool | Description | Required params |
 |------|-------------|-----------------|
-| `read_diagram_guide` | Get design best practices (colors, sizing, layout, anti-patterns) | (none) |
 
 ### Conversion
 
@@ -189,4 +188,4 @@ Stroke/fill pairs: `#e03131`/`#ffc9c9` red, `#2f9e44`/`#b2f2bb` green, `#1971c2`
 Styling: `"fillStyle": "solid"` for crisp flat fills (default is sketchy hachure); `"strokeStyle": "dashed"` for zone borders / async arrows.
 Sizing: shapes ≥ 120×60 with width ≥ `labelChars * 12`, fonts ≥ 16 (titles ≥ 20), gaps 40–80px (120px+ for labeled arrows), align to a 20px grid.
 Order of work: background zones → primary shapes (with `text`) → arrows (bound via ids) → annotations → refine (align/distribute/screenshot).
-MCP mode has the full guide behind the `read_diagram_guide` tool.
+MCP mode has the full guide in the resource `guide://canvas`.

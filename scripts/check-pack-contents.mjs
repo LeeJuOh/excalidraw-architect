@@ -14,6 +14,7 @@ const REQUIRED = [
   'dist/index.js',
   'dist/server.js',
   'dist/frontend/index.html',
+  'docs/canvas-guide.md',
   'plugin/skills/archdraw/SKILL.md',
   'plugin/skills/archdraw/scripts/archdraw',
   'plugin/skills/archdraw/agents/openai.yaml',
@@ -24,7 +25,10 @@ const raw = execFileSync('npm', ['pack', '--dry-run', '--json'], {
   encoding: 'utf-8',
   stdio: ['ignore', 'pipe', 'inherit']
 });
-const entries = JSON.parse(raw)[0].files.map((file) => file.path);
+// npm 10 reports an array of packages, npm 11 an object keyed by name.
+const report = JSON.parse(raw);
+const [pkg] = Array.isArray(report) ? report : Object.values(report);
+const entries = pkg.files.map((file) => file.path);
 
 const missing = REQUIRED.filter((path) => !entries.includes(path));
 if (missing.length > 0) {

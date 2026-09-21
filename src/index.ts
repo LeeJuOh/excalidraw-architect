@@ -11,11 +11,16 @@ import { isMainModule } from './core/entry.js';
 import { ENABLE_CANVAS_SYNC, EXCALIDRAW_NO_AUTOSTART } from './core/config.js';
 import { excalidrawMcpServerFactory } from './core/mcp-server.js';
 import { ensureCanvasReadyForMcpTool } from './core/canvas-state.js';
+import { canvasGuide } from './core/canvas-guide.js';
 
 // Start server
 async function runServer(): Promise<StdioServerHandle> {
   try {
     logger.info('Starting Excalidraw MCP server...');
+
+    // Read the drawing guide here so a missing file fails startup with a
+    // reason, instead of failing the first client connection.
+    canvasGuide();
 
     // `serveStdio` owns the era decision for the connection: an `initialize`
     // request pins a 2025-era instance, while a `server/discover` probe — or

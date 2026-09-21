@@ -425,14 +425,6 @@ export const tools: Tool[] = [
     }
   },
   {
-    name: 'read_diagram_guide',
-    description: 'Returns a comprehensive design guide for creating beautiful Excalidraw diagrams: color palette, sizing rules, layout patterns, arrow binding best practices, diagram templates, and anti-patterns. Call this before creating diagrams to produce professional results.',
-    inputSchema: {
-      type: 'object',
-      properties: {}
-    }
-  },
-  {
     name: 'export_to_excalidraw_url',
     description: 'Export the current canvas to a shareable excalidraw.com URL. The diagram is encrypted and uploaded; anyone with the URL can view it. Returns the shareable link.',
     inputSchema: {

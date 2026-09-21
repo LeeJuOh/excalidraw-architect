@@ -4,15 +4,17 @@ import logger from '../utils/logger.js';
 import { packageName, packageVersion } from './version.js';
 import { tools } from './mcp-tools.js';
 import { callExcalidrawTool } from './mcp-dispatch.js';
+import { canvasGuide, CANVAS_GUIDE_URI } from './canvas-guide.js';
 
 const SERVER_NAME = packageName();
 const SERVER_DESCRIPTION =
   'Programmatic canvas toolkit for Excalidraw with file I/O, image export, and real-time sync';
 const SERVER_VERSION = packageVersion();
 
-// `tools/list` and `server/discover` are cacheable results on 2026-07-28
-// (SEP-2549): both are derived from the static tool table in `mcp-tools.ts`, so
-// a short shared TTL is safe. Canvas contents are never described by these
+// `tools/list`, `server/discover` and the guide resource are cacheable results
+// on 2026-07-28 (SEP-2549): all are derived from static package contents — the
+// tool table in `mcp-tools.ts` and the markdown read once at startup — so a
+// short shared TTL is safe. Canvas contents are never described by these
 // results — element data only ever travels through `tools/call`, which is not
 // a cacheable operation.
 const STATIC_SURFACE_CACHE_HINT = { ttlMs: 300_000, cacheScope: 'public' as const };
@@ -28,6 +30,9 @@ const STATIC_SURFACE_CACHE_HINT = { ttlMs: 300_000, cacheScope: 'public' as cons
  * `_meta` envelope (2026-07-28).
  */
 export function createExcalidrawMcpServer(ctx?: McpRequestContext): McpServer {
+  // Throws if the guide file is gone, rather than serving no drawing spec.
+  const guide = canvasGuide();
+
   const server = new McpServer(
     {
       name: SERVER_NAME,
@@ -35,12 +40,27 @@ export function createExcalidrawMcpServer(ctx?: McpRequestContext): McpServer {
       description: SERVER_DESCRIPTION
     },
     {
-      capabilities: { tools: {} },
+      capabilities: { tools: {}, resources: {} },
+      instructions: guide.summary,
       cacheHints: {
         'tools/list': STATIC_SURFACE_CACHE_HINT,
-        'server/discover': STATIC_SURFACE_CACHE_HINT
+        'server/discover': STATIC_SURFACE_CACHE_HINT,
+        'resources/list': STATIC_SURFACE_CACHE_HINT,
+        'resources/read': STATIC_SURFACE_CACHE_HINT
       }
     }
+  );
+
+  server.registerResource(
+    'canvas-guide',
+    CANVAS_GUIDE_URI,
+    {
+      title: 'Canvas drawing guide',
+      description:
+        'Palette, sizing, coordinate formula, arrow binding and line notation for drawing on this canvas.',
+      mimeType: 'text/markdown'
+    },
+    uri => ({ contents: [{ uri: uri.href, mimeType: 'text/markdown', text: guide.text }] })
   );
 
   for (const tool of tools) {

@@ -105,6 +105,7 @@
     "dist/**/*",
     "skills/**/*",
     "plugin/**/*",
+    "docs/canvas-guide.md",
     "*.d.ts",
     "README.md",
     "LICENSE"

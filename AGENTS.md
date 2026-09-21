@@ -30,13 +30,14 @@ raw-articles  -> ../llm-wiki/raw/articles  # 원문 클립. 정확한 인용·�
 references    -> ../references             # 외부 레포 클론 24GB. 최후에, 좁혀서만
 ```
 
-sibling 레포 소유라 읽기만 한다. git에는 심링크째로 들어가 GitHub에선 깨진 링크로 보인다 — 정상.
+sibling 레포 소유라 읽기만 한다. git에는 심링크째로 들어가 GitHub에선 깨진 링크로 보인다 — 정상. 절대경로 대신 위 심링크 이름으로 읽는다 — 레포 밖 경로는 호출마다 승인을 묻는다.
 
 **`references/`는 24GB.** `ls references/ | grep <키워드>` → README → 하위 순으로 좁혀 들어가고, 넓은 탐색은 서브에이전트에 맡긴다. 레포 전체 `grep -r`/`find`는 금지.
 포크 근거 원문 사본: `references/mcp-excalidraw-yctimlin/`(업스트림 스냅샷), `references/excalidraw-diagram-skill/`(라이선스 없음 — 아이디어만 가져오고 문장은 새로 쓴다), `references/archify/`(MIT).
 
 ## Gotchas
 
+- 파일 생성·수정은 Write/Edit 도구로, Bash 한 호출에는 셸 구성 하나만. 히어독·`node -e`·반복문은 셸 파서가 분석하지 못해 호출마다 승인을 묻는다 — 여러 줄 스크립트는 `scripts/`에 커밋해 이름으로 부른다.
 - 업스트림 머지 때 되살아나면 다시 지울 것: `.gitignore`의 `docs/` 무시 줄, `read_diagram_guide` 툴과 `design-guide.ts`(ADR-0006).
 - 플러그인은 `plugin/` 아래에 산다. 루트 카탈로그 2개가 `./plugin`을 가리키고 호스트는 그 폴더만 복사한다. 레포 루트에서 설치하면 복사본에 `package.json`이 따라가 npx가 로컬 프로젝트로 착각해 MCP 서버가 `command not found`로 죽는다(ADR-0011).
 - 매니페스트 6개와 스킬 shim은 **생성물이다.** `package.json`을 고치고 `npm run manifests`로 재생성한다. `npm test`·CI가 드리프트와 shim 실행 권한을 검사한다.

@@ -15,11 +15,12 @@ public/dist/
 .idea/
 *.iml
 .cursor/
-.claude/
 .agent/
-# .agents/ is ignored except the Codex marketplace catalog, a generated
-# manifest (npm run manifests). git cannot re-include a file inside an
+# .claude/ and .agents/ are ignored except the shared permission allowlist and
+# the Codex marketplace catalog. git cannot re-include a file inside an
 # excluded directory, so exclude contents (`/*`) rather than the directory.
+.claude/*
+!.claude/settings.json
 .agents/*
 !.agents/plugins/
 .agents/plugins/*
@@ -34,3 +35,6 @@ public/dist/
 # Browser regression artifacts
 test-results/
 playwright-report/
+
+# Throwaway trees from scripts/check-mcp-stdio.mjs
+.mcp-stdio-check-*/
