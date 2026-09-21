@@ -21,7 +21,9 @@
 |---|---|---|
 | Claude Code 플러그인 | `/plugin marketplace add LeeJuOh/excalidraw-architect` 후 `/plugin install excalidraw-architect@excalidraw-architect` | `/excalidraw-architect:archdraw <그려줬으면 하는 것>` — 이름이 겹치지 않으면 `/archdraw` |
 | Codex 플러그인 | `codex plugin marketplace add LeeJuOh/excalidraw-architect` 후 `codex plugin add excalidraw-architect@excalidraw-architect` (`~/.codex/plugins`에 폴더만 두는 방식은 인식되지 않음) | `$excalidraw-architect:archdraw` 또는 `/skills`에서 선택. ChatGPT 데스크톱 Codex에서는 `@excalidraw-architect` 플러그인 선택 |
-| 그 외 Agent Skills 호스트 | `npx skills add LeeJuOh/excalidraw-architect` | 해당 호스트의 스킬 호출 방식 |
+| 그 외 Agent Skills 호스트 | `npx skills add LeeJuOh/excalidraw-architect --skill archdraw -g --agent <호스트> -y` | Codex는 `$archdraw`, Claude Code는 `/archdraw` |
+
+`<호스트>`에는 `codex` 또는 `claude-code`를 넣으세요. 자동 감지는 실행 중인 에이전트 하나에만 설치할 수 있으므로 `--agent`를 명시합니다. `-g`는 모든 프로젝트에서 쓰는 전역 설치이며, 현재 프로젝트에만 설치할 때만 뺍니다.
 
 이 스킬은 수동 전용입니다. 알아서 시작하지 않고, 사용자가 부른 뒤부터 그 대화에서 그림으로 답합니다.
 

@@ -21,7 +21,9 @@ Three channels, one skill folder. The two plugin channels register the MCP serve
 |---|---|---|
 | Claude Code plugin | `/plugin marketplace add LeeJuOh/excalidraw-architect`, then `/plugin install excalidraw-architect@excalidraw-architect` | `/excalidraw-architect:archdraw <what you want drawn>` — plain `/archdraw` when nothing else claims the name |
 | Codex plugin | `codex plugin marketplace add LeeJuOh/excalidraw-architect`, then `codex plugin add excalidraw-architect@excalidraw-architect` (a bare folder under `~/.codex/plugins` is not discovered) | `$excalidraw-architect:archdraw`, or pick it in `/skills`; in ChatGPT desktop pick the `@excalidraw-architect` plugin |
-| Any Agent Skills host | `npx skills add LeeJuOh/excalidraw-architect` | however that host invokes a skill by name |
+| Any Agent Skills host | `npx skills add LeeJuOh/excalidraw-architect --skill archdraw -g --agent <host> -y` | `$archdraw` in Codex; `/archdraw` in Claude Code |
+
+Use `codex` or `claude-code` for `<host>`. Keep `--agent` explicit: auto-detection can install the skill for only the agent that happens to be running. `-g` installs it for every project; omit `-g` only when you want the skill in the current project.
 
 The skill is manual only. It never starts itself — you call it, and then it keeps drawing for that conversation.
 

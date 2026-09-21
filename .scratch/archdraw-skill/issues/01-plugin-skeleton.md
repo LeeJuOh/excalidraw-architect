@@ -19,7 +19,7 @@
 - [x] CI에서 생성물이 스크립트 출력과 다르면 실패한다
 - [ ] `dist/`가 없고 `ARCHDRAW_BIN`이 비어 있는 환경에서, 세 채널(Claude 플러그인 / Codex 플러그인 / `npx skills add`) 각각 공통 SKILL.md와 Codex 설정 파일을 함께 설치 → 호스트별 표기로 `archdraw`에 "박스 하나 그려줘" 요청 → 브라우저 캔버스에 박스가 보인다. 플러그인 두 채널은 MCP 툴 호출로, `npx skills add`는 CLI 폴백으로 그려졌음을 호스트 로그로 확인한다. 이 과정에서 공통 파일의 로딩 호환성과 Codex에 표시된 호출 식별자를 확인하고 사용 안내에 반영한다
 - [ ] MCP 툴이 있는 세션에서 스킬이 Bash로 shim을 부르지 않고, MCP 툴이 없는 세션에서는 shim으로 넘어간다
-- [ ] Codex에서 SKILL.md의 호출 줄이 치환 없이 그대로 동작한다
+- [x] Codex에서 SKILL.md의 호출 줄이 치환 없이 그대로 동작한다 (2026-09-21 전역 `$archdraw` 호출 → `~/.agents/skills/archdraw/scripts/archdraw` CLI 실행 확인)
 - [ ] npx 캐시가 비고 인터넷이 끊긴 상태에서 첫 호출 시, 에이전트가 서버를 받지 못한 원인을 사용자에게 알린다
 - [ ] `ARCHDRAW_BIN=<레포>/dist/bin.js`를 둔 셸에서 호스트를 시작하면 MCP 경로와 CLI 폴백 모두 npm 게시본 대신 로컬 빌드가 뜬다
 - [x] `screenshot` 결과 png가 레포 안이 아니라 데이터 폴더 `tmp/`에 생긴다 (2026-09-21 Codex CLI 폴백 세션에서 `~/.excalidraw-architect/tmp/` 확인)
@@ -173,7 +173,7 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 **남은 인수 시험(순서대로, 사용자 실행 — 에이전트는 설치·제거 명령을 대신 치지 않는다. 사용자가 "명령어로 넣는 건 괜찮다"고 했으니 확인 명령은 돼도, 설치는 사용자가 결과를 봐야 하므로 사용자가 한다):**
 1. **Codex 재시험(새 `plugin/` 레이아웃).** 이 머신에는 에이전트가 `codex plugin add`로 로컬 경로 설치해 둔 상태(`codex plugin list` → `installed, enabled 0.1.0`, SOURCE `<레포>/plugin`). Codex를 완전히 종료 → 레포 밖 폴더에서 새로 켜기 → `$excalidraw-architect:archdraw 박스 하나 그려줘`. 판정은 First Action.
 2. **Claude 재시험(새 레이아웃).** `/plugin update excalidraw-architect` → `/excalidraw-architect:archdraw 박스 하나 그려줘`. 판정: `~/.claude/projects/<cwd>/*.jsonl` 최신 파일에 `mcp__plugin_excalidraw-architect_archdraw__batch_create_elements` 호출, Bash shim 호출 없음.
-3. **`npx skills add` 채널(CLI 폴백).** Claude 플러그인이 있으면 MCP가 잡히므로 먼저 `/plugin uninstall excalidraw-architect`. 레포 밖 폴더에서 `npx skills add LeeJuOh/excalidraw-architect --skill archdraw -y` → 같은 폴더에서 `claude` → `/archdraw 박스 하나 그려줘`. 판정: transcript에 Bash로 `scripts/archdraw add`(또는 `.claude/skills/archdraw/scripts/archdraw add`) 실행, MCP 툴 호출 없음, 박스 확인. 통과하면 체크박스 20·21·22번 줄(세 채널 / MCP 있음·없음 경로 / Codex 호출 줄) 체크.
+3. ✅ **`npx skills add` 채널(CLI 폴백) 통과.** 자동 감지는 실행 중인 Codex만 골랐으므로 전역·호스트 명시형으로 정정했다: Codex는 `npx skills add LeeJuOh/excalidraw-architect --skill archdraw -g --agent codex -y`, Claude Code는 같은 명령의 `--agent claude-code`. 두 호스트 모두 MCP 툴 없이 `scripts/archdraw`를 실행했고, 같은 캔버스에 도형을 그렸다. 상세는 아래 "인수 3/3" 기록.
 4. **오프라인 첫 호출 안내(선택).** `rm -rf ~/.npm/_npx`, 인터넷 끊고 시험 3 반복 → 에이전트가 "인터넷 없음"을 원인으로 말하면 체크박스 23번 줄 체크. Codex 샌드박스 변형은 01:08 세션에서 이미 확인됨.
 5. **`ARCHDRAW_BIN` 호스트 상속(선택, 개발용).** `npm run build` → `export ARCHDRAW_BIN=<레포>/dist/bin.js` → 같은 셸에서 `codex`(또는 `claude`) → 박스 하나 → 다른 터미널에서 `ps aux | grep 'dist/bin.js'`에 node 프로세스가 보이면 체크박스 24번 줄 체크.
 
@@ -184,7 +184,8 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 - ✅ Codex 채널 인수 통과(구 레이아웃, MCP 경로) — `ddde7a3`
 - ✅ 플러그인 `plugin/` 분리: 생성기 `PLUGIN_DIR`, 루트 카탈로그 2개 `./plugin`, `package.json` `files`에 `plugin/**/*`, shim `cd /` 제거, AGENTS.md gotcha, ADR-0011 — `e9dab40`
 - ✅ 체크박스: 17·18·19·25·26번 줄 체크됨
-- ⏳ 체크박스 20~24번 줄: 위 시험 1~5
+- ✅ 체크박스 22번 줄: Codex 전역 `$archdraw`가 치환 없이 shim CLI 실행
+- ⏳ 체크박스 20·21·23·24번 줄: 새 레이아웃 플러그인 재시험 2개, 엄격한 첫 실패 안내, `ARCHDRAW_BIN` 호스트 상속
 - ⏳ Claude 채널·Codex 채널 모두 **새 레이아웃으로 재확인 필요**(구 레이아웃 통과 기록은 유효하지만 경로가 바뀌었다)
 
 **Decisions Made.**
@@ -197,4 +198,15 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 
 **What Didn't Work.** ⚠️ Codex 재시작 없이 새 스레드만 열면 MCP 서버는 옛 상태 그대로 — 재시험은 반드시 프로세스 재시작. ⚠️ rollout의 마지막 assistant 줄만 보고 "실패"로 오판했다 — 전체 순서를 출력해 판정할 것. ⚠️ 에이전트가 사용자 몫 시험(플러그인 재설치)을 대신 실행하자 사용자가 불편해했다 — 설치·시험은 사용자, 에이전트는 판정. ⚠️ macOS에 `timeout` 없음. ⚠️ 레포 루트(또는 그 사본)에서 `npx excalidraw-architect`는 `command not found` — 이제 플러그인 복사본에는 해당 없고 레포 안 개발자만 해당.
 
-**Next Steps.** 시험 1~5 판정 → 체크박스·README 갱신 → 01 Status를 닫고 02 도그푸딩으로. 시험 중 README 표기(호출 식별자·설치 명령)가 다르면 두 언어 모두 고친다.
+**Next Steps.** 새 레이아웃의 Codex·Claude 플러그인 재시험(위 1·2) → 체크박스 20·21 판정. 선택 시험 4·5 중 4는 이번 Codex 시험에서 같은 실패를 한 번 조용히 재시도해 엄격 조건을 충족하지 못했고, 5는 미시험이다. 모두 판정한 뒤 01 Status를 닫고 다음 구현 순서인 09로 간다.
+
+---
+
+**2026-09-21 — 인수 3/3: `npx skills add` CLI 폴백 통과.**
+
+- 설치: `-g` 없이 실행하면 임시 프로젝트의 `.agents/skills/archdraw`에만 설치됐다. 전역 시험은 `-g`가 필요했고, 자동 감지가 Codex만 골라 Claude Code에는 설치되지 않았다. `--agent codex`와 `--agent claude-code`를 각각 명시한 뒤 `~/.agents/skills/archdraw`와 `~/.claude/skills/archdraw`를 확인했다. README 두 언어를 이 명령으로 수정했다.
+- Codex: `$archdraw 박스 네모 하나 추가해줘` → archdraw MCP 툴 없음 확인 → `references/canvas-ops.md` 읽기 → `scripts/archdraw describe`·`add`·`screenshot` 실행. rollout에 archdraw MCP 호출은 없고 `excalidraw-architect@0.1.0` CLI 실행과 사각형 생성이 있다. 처음 두 `describe`는 샌드박스의 npm DNS 차단(`ENOTFOUND`)으로 실패했고, 네트워크 승인을 받은 재시도는 성공했다.
+- Claude Code: `/archdraw`로 삼각형 요청 → archdraw MCP 툴 없이 `~/.claude/skills/archdraw/scripts/archdraw describe`·`add`·`screenshot` 실행. Excalidraw에 삼각형 기본 타입이 없어 닫힌 `line`으로 만들었다.
+- 화면 확인: 브라우저를 열기 전 두 호스트의 `screenshot`은 요구대로 실패했다. Chrome에서 `http://127.0.0.1:3000`을 연 뒤 CLI 스크린샷과 CUA REPL로 `Connected` 상태, 파란 삼각형과 흰 테두리 사각형이 같은 캔버스에 보이는 것을 확인했다. CLI `describe`는 요소 2개(`line(1)`, `rectangle(1)`)를 반환했다.
+- 남은 지적: Codex는 첫 `ENOTFOUND` 뒤 같은 명령을 한 번 조용히 재시도하고 나서 원인을 알렸다. 원인 안내 자체는 맞았지만 SKILL.md의 "Do not retry silently"와 체크박스 23의 엄격한 "첫 호출 시" 조건은 충족하지 않아 체크하지 않았다.
+- 정리: 시험 뒤 사용자 요청으로 전역 `archdraw`를 제거했고 `~/.agents/skills/archdraw`·`~/.claude/skills/archdraw`가 모두 사라진 것을 확인했다.
