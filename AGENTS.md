@@ -11,7 +11,7 @@ AI 에이전트와 개발할 때 개발자는 코드를 직접 보지 않고 에
 > yctimlin `mcp_excalidraw`(MIT) 포크. 서버 코드(그리는 손)는 업스트림 것, 내장 스킬을 **백엔드 실무 다이어그램 판단 스킬 `archdraw`**로 교체한 Claude Code / Codex 플러그인.
 > 업스트림: `https://github.com/yctimlin/mcp_excalidraw` — `git remote upstream`.
 >
-> **현 단계: 01 설치 골격 구현·npm `0.1.0` 게시됨, 판단 규칙은 아직 0줄.** `plugin/skills/archdraw/`에 최소 SKILL.md·shim·Codex 정책 파일·`references/canvas-ops.md`가 있고 매니페스트 6개가 생성된다. 라우팅·줌 레벨은 03에서 들어온다. 스펙은 `.scratch/archdraw-skill/spec.md`.
+> **현 단계: 01 설치 골격 완료(세 채널 인수 통과)·npm `0.1.0` 게시됨, 판단 규칙은 아직 0줄. 다음은 09.** `plugin/skills/archdraw/`에 최소 SKILL.md·shim·Codex 정책 파일·`references/canvas-ops.md`가 있고 매니페스트 6개가 생성된다. 라우팅·줌 레벨은 03에서 들어온다. 스펙은 `.scratch/archdraw-skill/spec.md`.
 
 ## SSOT 규약
 

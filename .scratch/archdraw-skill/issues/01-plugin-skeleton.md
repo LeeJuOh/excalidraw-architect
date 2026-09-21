@@ -12,16 +12,16 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-human
+**Status:** resolved (2026-09-21 — 필수 인수 전부 통과, 선택 시험 2개는 미실시로 닫음)
 
 - [x] `npm pack` 결과물에 `dist/bin.js`와 `dist/frontend/index.html`이 들어 있다
 - [x] `npm run manifests` 한 번으로 매니페스트 6개(2026-09-21 Codex 카탈로그 추가)와 shim 버전이 생성되고, 버전은 `package.json` 한 곳만 바꾸면 전부 따라온다
 - [x] CI에서 생성물이 스크립트 출력과 다르면 실패한다
-- [ ] `dist/`가 없고 `ARCHDRAW_BIN`이 비어 있는 환경에서, 세 채널(Claude 플러그인 / Codex 플러그인 / `npx skills add`) 각각 공통 SKILL.md와 Codex 설정 파일을 함께 설치 → 호스트별 표기로 `archdraw`에 "박스 하나 그려줘" 요청 → 브라우저 캔버스에 박스가 보인다. 플러그인 두 채널은 MCP 툴 호출로, `npx skills add`는 CLI 폴백으로 그려졌음을 호스트 로그로 확인한다. 이 과정에서 공통 파일의 로딩 호환성과 Codex에 표시된 호출 식별자를 확인하고 사용 안내에 반영한다
-- [ ] MCP 툴이 있는 세션에서 스킬이 Bash로 shim을 부르지 않고, MCP 툴이 없는 세션에서는 shim으로 넘어간다
+- [x] `dist/`가 없고 `ARCHDRAW_BIN`이 비어 있는 환경에서, 세 채널(Claude 플러그인 / Codex 플러그인 / `npx skills add`) 각각 공통 SKILL.md와 Codex 설정 파일을 함께 설치 → 호스트별 표기로 `archdraw`에 "박스 하나 그려줘" 요청 → 브라우저 캔버스에 박스가 보인다. 플러그인 두 채널은 MCP 툴 호출로, `npx skills add`는 CLI 폴백으로 그려졌음을 호스트 로그로 확인한다. 이 과정에서 공통 파일의 로딩 호환성과 Codex에 표시된 호출 식별자를 확인하고 사용 안내에 반영한다
+- [x] MCP 툴이 있는 세션에서 스킬이 Bash로 shim을 부르지 않고, MCP 툴이 없는 세션에서는 shim으로 넘어간다 (2026-09-21 새 `plugin/` 레이아웃으로 Codex·Claude 플러그인 채널 MCP 경로 통과, `npx skills add` 채널 CLI 폴백 통과)
 - [x] Codex에서 SKILL.md의 호출 줄이 치환 없이 그대로 동작한다 (2026-09-21 전역 `$archdraw` 호출 → `~/.agents/skills/archdraw/scripts/archdraw` CLI 실행 확인)
-- [ ] npx 캐시가 비고 인터넷이 끊긴 상태에서 첫 호출 시, 에이전트가 서버를 받지 못한 원인을 사용자에게 알린다
-- [ ] `ARCHDRAW_BIN=<레포>/dist/bin.js`를 둔 셸에서 호스트를 시작하면 MCP 경로와 CLI 폴백 모두 npm 게시본 대신 로컬 빌드가 뜬다
+- [ ] npx 캐시가 비고 인터넷이 끊긴 상태에서 첫 호출 시, 에이전트가 서버를 받지 못한 원인을 사용자에게 알린다 (선택, 미실시로 닫음 — Codex 샌드박스 변형에서 원인 안내는 확인됐으나 조용한 재시도 1회로 엄격 조건 미충족. 02 도그푸딩에서 재관찰)
+- [ ] `ARCHDRAW_BIN=<레포>/dist/bin.js`를 둔 셸에서 호스트를 시작하면 MCP 경로와 CLI 폴백 모두 npm 게시본 대신 로컬 빌드가 뜬다 (선택·개발용, 미실시로 닫음 — shim 단독 실행은 확인됨. 서버 코드를 처음 고치는 이슈에서 확인)
 - [x] `screenshot` 결과 png가 레포 안이 아니라 데이터 폴더 `tmp/`에 생긴다 (2026-09-21 Codex CLI 폴백 세션에서 `~/.excalidraw-architect/tmp/` 확인)
 - [x] 기존 `npm test`가 그대로 통과한다
 
@@ -210,3 +210,16 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 - 화면 확인: 브라우저를 열기 전 두 호스트의 `screenshot`은 요구대로 실패했다. Chrome에서 `http://127.0.0.1:3000`을 연 뒤 CLI 스크린샷과 CUA REPL로 `Connected` 상태, 파란 삼각형과 흰 테두리 사각형이 같은 캔버스에 보이는 것을 확인했다. CLI `describe`는 요소 2개(`line(1)`, `rectangle(1)`)를 반환했다.
 - 남은 지적: Codex는 첫 `ENOTFOUND` 뒤 같은 명령을 한 번 조용히 재시도하고 나서 원인을 알렸다. 원인 안내 자체는 맞았지만 SKILL.md의 "Do not retry silently"와 체크박스 23의 엄격한 "첫 호출 시" 조건은 충족하지 않아 체크하지 않았다.
 - 정리: 시험 뒤 사용자 요청으로 전역 `archdraw`를 제거했고 `~/.agents/skills/archdraw`·`~/.claude/skills/archdraw`가 모두 사라진 것을 확인했다.
+
+---
+
+**2026-09-21 — 인수 4/4·5/5: 새 `plugin/` 레이아웃으로 플러그인 두 채널 재시험 통과.** 두 호스트 모두 GitHub에서 새로 설치했다(`e9dab40` 레이아웃). 시험 폴더는 레포 밖 `claude-code-zero`.
+
+- Codex: `codex plugin marketplace add` → `codex plugin add` → 재시작 → `$excalidraw-architect:archdraw 세모 박스 하나 더 추가해줘`. 캐시 경로는 `~/.codex/plugins/cache/excalidraw-architect/excalidraw-architect/0.1.0/skills/archdraw/SKILL.md`로 `package.json` 없이 `plugin/` 내용만 복사됐다. rollout의 툴 호출은 `exec` 6회뿐인데 전부 Codex의 통합 exec(JS 런타임)에서 `tools.mcp__archdraw__describe_scene`·`get_canvas_screenshot`·`get_element`·`duplicate_elements`를 부른 것이고, 셸 명령이나 `scripts/archdraw` 실행은 없다. 로그의 `scripts/archdraw` 문자열 1건은 SKILL.md frontmatter `allowed-tools`가 컨텍스트로 들어간 것. **판정 주의:** Codex는 이제 MCP 툴을 `exec` 안의 함수로 부르므로 `"name":"exec"` 개수만 보고 shim 실행으로 오판하지 말 것. 스크립트 본문에 `tools.mcp__archdraw__*`가 있으면 MCP 경로다.
+- Claude Code: `/plugin marketplace add` → `/plugin install` → `/reload-plugins` → `/excalidraw-architect:archdraw 네모박스 하나더추가해줘`. 캐시 경로 `~/.claude/plugins/cache/excalidraw-architect/excalidraw-architect/0.1.0/skills/archdraw`. transcript에 `mcp__plugin_excalidraw-architect_archdraw__describe_scene`·`get_canvas_screenshot`·`create_element` 호출, Bash 호출 0회. 스킬 본문의 `ToolSearch`로 MCP 툴을 먼저 로드한 뒤 썼다.
+- 캔버스: Codex가 선 삼각형을 복제해 오른쪽에, Claude가 사각형(300,360)을 아래에 추가. `describe_scene`이 Claude 세션 시작 시 요소 3개(`line(2)`, `rectangle(1)`)를 반환해 두 호스트가 같은 캔버스를 봤음이 확인된다.
+- 결과: 체크박스 20·21번 줄 체크. 남은 미체크는 선택 시험 23(오프라인 엄격 조건)·24(`ARCHDRAW_BIN` 호스트 상속) 둘뿐.
+
+---
+
+**2026-09-21 — 닫음.** 필수 인수 조건 전부 통과(세 채널 모두 새 `plugin/` 레이아웃 기준). 선택 시험 2개(오프라인 엄격 조건·`ARCHDRAW_BIN` 호스트 상속)는 사용자 결정으로 미실시. 두 플러그인은 설치 상태로 둔다 — 이후 이슈의 재시험에 그대로 쓴다. 다음: 구현 순서 2의 09.
