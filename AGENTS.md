@@ -10,22 +10,17 @@ AI 에이전트와 개발할 때 개발자는 코드를 직접 보지 않고 에
 
 > yctimlin `mcp_excalidraw`(MIT) 포크 — `git remote upstream`. 서버 코드는 업스트림 것이고 내장 스킬만 `archdraw`로 바꾼 Claude Code / Codex 플러그인.
 
-## SSOT 규약
+## 이 파일
 
-- **이 파일이 맵이다. 백과사전이 아니다.** 프로젝트 목적과 접근, 규약·구조·gotcha 포인터를 둔다. 상세는 `docs/`로 분리하고 여기서 가리킨다.
-- `CLAUDE.md`는 `@AGENTS.md` 한 줄 — import 전용. 내용 쓰지 말 것.
-- 레포 보면 아는 것(디렉터리 목록, 빌드 명령)은 적지 않는다. 토큰은 gotcha에 쓴다.
-- 빈 비계 금지 — 디렉터리는 첫 내용이 생길 때 만든다.
+맵이다. 레포를 봐서는 알 수 없는 것만 적는다 — 규약, 문서 포인터, gotcha. 상세는 `docs/`에 두고 여기서 가리킨다. `CLAUDE.md`는 `@AGENTS.md` 한 줄로 이 파일을 불러온다. 디렉터리는 첫 파일과 함께 만든다.
 
 ## 문서 위치
 
-| 무엇 | 어디 |
-|---|---|
-| 스펙(PRD)·구현 슬라이스 | `.scratch/<feature-slug>/` — slug는 기능명(프로젝트명 X). 현재 `archdraw-skill/spec.md` |
-| 용어 사전 | `CONTEXT.md` |
-| 결정 기록 | `docs/adr/` |
-
-구현 순서는 스펙의 구현 순서 표를 따른다.
+| 언제 | 무엇 | 어디 |
+|---|---|---|
+| 구현 착수 전 | 스펙(PRD)과 구현 순서 표, 이슈 티켓 | `.scratch/<feature-slug>/` — slug는 기능명. 현재 `archdraw-skill/spec.md`, `issues/` |
+| 이슈 파일을 만들거나 `Status:`를 바꿀 때 | 티켓 파일 규약, 라벨 문자열 5종 | `docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md` |
+| 코드 탐색 전 | 용어 사전과 결정 기록 읽는 순서 | `docs/agents/domain.md` → `CONTEXT.md`, `docs/adr/` |
 
 ## 지식 소스 — 심링크 3종 (읽기 전용)
 
@@ -35,34 +30,20 @@ raw-articles  -> ../llm-wiki/raw/articles  # 원문 클립. 정확한 인용·�
 references    -> ../references             # 외부 레포 클론 24GB. 최후에, 좁혀서만
 ```
 
-sibling 레포 소유. **생성·수정·삭제 금지.** git에는 심링크째로 들어가 GitHub에선 깨진 링크로 보인다 — 정상.
+sibling 레포 소유라 읽기만 한다. git에는 심링크째로 들어가 GitHub에선 깨진 링크로 보인다 — 정상.
 
-**⚠️ `references/`는 24GB.** 레포 전체 `grep -r`/`find` 금지. `ls references/ | grep <키워드>` → README → 하위 순으로 좁힌다. 넓은 탐색은 서브에이전트에 위임.
-포크 근거 원문 사본: `references/mcp-excalidraw-yctimlin/`(업스트림 스냅샷), `references/excalidraw-diagram-skill/`(라이선스 없음 — 문장 복사 금지), `references/archify/`(MIT).
+**`references/`는 24GB.** `ls references/ | grep <키워드>` → README → 하위 순으로 좁혀 들어가고, 넓은 탐색은 서브에이전트에 맡긴다. 레포 전체 `grep -r`/`find`는 금지.
+포크 근거 원문 사본: `references/mcp-excalidraw-yctimlin/`(업스트림 스냅샷), `references/excalidraw-diagram-skill/`(라이선스 없음 — 아이디어만 가져오고 문장은 새로 쓴다), `references/archify/`(MIT).
 
 ## Gotchas
 
-- 업스트림 `.gitignore`는 `docs/`를 무시했다. 포크에서 그 줄을 뺐다 — 업스트림 머지 시 되살아나면 다시 뺄 것. 같은 이유로 업스트림 `read_diagram_guide` 툴·`design-guide.ts`도 머지 때 되살아나면 지운다(ADR-0006, 이슈 09).
-- 플러그인은 `plugin/` 아래에 산다. 루트의 카탈로그 2개(`.claude-plugin/marketplace.json`·`.agents/plugins/marketplace.json`)가 `./plugin`을 가리키고, 호스트는 그 폴더만 복사한다 — 레포 루트에서 설치하면 복사본에 `package.json`이 따라가 npx가 로컬 프로젝트로 착각해 MCP 서버가 `command not found`로 죽는다(ADR-0011).
-- 매니페스트 6개(루트 카탈로그 2개, `plugin/` 안 `.claude-plugin/plugin.json`·`.mcp.json`·`plugin.json`·`mcp.json`)와 스킬 shim(`plugin/skills/archdraw/scripts/archdraw`)은 **생성물이다.** 손으로 고치지 말고 `package.json`을 고친 뒤 `npm run manifests`. `npm test`·CI가 `--check`로 드리프트와 shim 실행 권한을 검사한다.
-- `gh`는 기본 레포를 `upstream`(yctimlin)으로 잡는다. 이 클론은 `gh repo set-default LeeJuOh/excalidraw-architect`로 고정했지만 새 클론은 다시 해야 한다. 이슈·라벨 작업 전 `gh repo view`로 확인.
-- 서버 코드 변경을 확인할 때는 `npm run build` 후 셸에 `ARCHDRAW_BIN=<레포>/dist/bin.js`를 둔다. 비어 있으면 스킬 shim이 npm 게시본을 `npx`로 띄워 방금 고친 코드가 돌지 않는다. MCP 프로세스는 호스트가 띄우므로 호스트(claude/codex)도 그 변수가 있는 셸에서 시작한다. 스킬 텍스트만 고칠 땐 불필요.
+- 업스트림 머지 때 되살아나면 다시 지울 것: `.gitignore`의 `docs/` 무시 줄, `read_diagram_guide` 툴과 `design-guide.ts`(ADR-0006).
+- 플러그인은 `plugin/` 아래에 산다. 루트 카탈로그 2개가 `./plugin`을 가리키고 호스트는 그 폴더만 복사한다. 레포 루트에서 설치하면 복사본에 `package.json`이 따라가 npx가 로컬 프로젝트로 착각해 MCP 서버가 `command not found`로 죽는다(ADR-0011).
+- 매니페스트 6개와 스킬 shim은 **생성물이다.** `package.json`을 고치고 `npm run manifests`로 재생성한다. `npm test`·CI가 드리프트와 shim 실행 권한을 검사한다.
+- `gh`는 기본 레포를 `upstream`(yctimlin)으로 잡는다. 새 클론마다 `gh repo set-default LeeJuOh/excalidraw-architect`. 이슈·라벨 작업 전 `gh repo view`로 확인.
+- 서버 코드 변경 확인은 `npm run build` 후 `ARCHDRAW_BIN=<레포>/dist/bin.js`를 둔 셸에서 호스트(claude/codex)를 시작한다. 비어 있으면 shim이 npm 게시본을 `npx`로 띄워 방금 고친 코드가 돌지 않는다. 스킬 텍스트만 고칠 땐 불필요.
 - npm 게시본은 **레포 밖 디렉터리**에서 검증한다. 레포 안에서는 npx가 같은 이름의 로컬 패키지를 잡아 `command not found`가 난다.
 
 ## 커밋
 
-영어 1~2문장. `Co-Authored-By` 없음. push는 지시 있을 때만.
-
-## Agent skills
-
-### Issue tracker
-
-로컬 markdown, `.scratch/<feature-slug>/` (원본 스킬 구조 그대로). See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-기본 5종 (`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`), 이슈 파일의 `Status:` 줄에 기록. See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-single-context — 루트 `CONTEXT.md` + `docs/adr/`. See `docs/agents/domain.md`.
+영어 1~2문장, 트레일러 없음(`Co-Authored-By` 포함). push는 지시 있을 때만.
