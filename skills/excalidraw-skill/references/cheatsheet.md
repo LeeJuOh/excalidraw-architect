@@ -116,11 +116,6 @@ JSON results on stdout — except `describe` (plain text) and raw-content output
 |------|-------------|-----------------|
 | `set_viewport` | Control camera: zoom-to-fit all/selected elements, center one element without changing zoom, or manual zoom/scroll (needs browser); specify one mode per request | (optional) `scrollToContent`, `scrollToElementIds`, `viewportZoomFactor` (0, 1], `scrollToElementId`, `zoom`, `offsetX`, `offsetY` |
 
-### Design Guide
-
-| Tool | Description | Required params |
-|------|-------------|-----------------|
-
 ### Conversion
 
 | Tool | Description | Required params |

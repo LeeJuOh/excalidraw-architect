@@ -125,16 +125,18 @@ of whether it is confirmed.
 
 | Situation                    | Line and arrowhead                       | Visible label                  |
 |------------------------------|------------------------------------------|--------------------------------|
-| Confirmed synchronous call   | solid, `endArrowhead: "triangle"` (filled)| call name + a sync marker     |
-| Confirmed asynchronous event | solid, `endArrowhead: "arrow"` (open)     | event name + an async marker  |
+| Confirmed synchronous call   | solid, `endArrowhead: "triangle"` (filled)| call name + `[sync]`          |
+| Confirmed asynchronous event | solid, `endArrowhead: "arrow"` (open)     | event name + `[async]`        |
 | Confirmed response           | solid, `endArrowhead: "arrow"` (open)     | `response: <result>`          |
 | Inferred relationship        | dashed                                    | relationship name + `inferred`|
 | Failed code-evidence check   | dashed                                    | relationship name + `no evidence: A -> B` |
 
-Write the visible labels in the user's language.
+These label strings are fixed — write them exactly as shown, in English,
+whatever language the conversation is in. Only the names you fill in (the call,
+the event, the result) come from the code.
 
-- A line that goes dashed keeps its arrowhead and its sync/async or response
-  label.
+- A line that goes dashed keeps its arrowhead and its `[sync]` / `[async]` or
+  response label.
 - If you could not confirm how two things communicate, leave the marker off.
   Do not guess one.
 - A line whose evidence is a plan rather than code stays solid and takes the

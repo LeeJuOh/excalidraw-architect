@@ -15,7 +15,7 @@
 
 **Blocked by:** 01 (플러그인 골격 — npm 패키지 이름·`files`·게시 경로가 정해져야 md 동봉 경로를 확정)
 
-**Status:** 닫힘 (2026-09-21)
+**Status:** resolved (2026-09-21 — 인수 8개 전부 통과)
 
 - [x] `npm pack` 산출물(tarball) 안에 규격 md가 들어 있고, 그 tarball을 설치해 띄운 서버가 md를 읽어 뜬다
 - [x] `initialize` 응답의 `instructions`가 2KB 이내이고, 앞 512자만 잘라 읽어도 바인딩 필수·최소 크기·간격이 들어 있으며, 끝에 `guide://canvas` 안내가 있다
@@ -36,6 +36,6 @@
 - 인수 1~7은 `scripts/check-mcp-stdio.mjs`의 와이어 검사 3개(요약·리소스·md 없을 때 시작 실패)와 `scripts/check-pack-contents.mjs`로 자동 판정한다. 8개 전부 통과. md 없는 경우는 레포 안 임시 트리에 `dist`+`package.json`만 복사해 띄워 확인한다(레포의 md는 건드리지 않음).
 - tarball 확인은 레포 밖에서 했다(AGENTS.md gotcha): `npm pack` → 임시 프로젝트에 설치 → `initialize`에 요약이, `resources/list`에 `guide://canvas`가 나왔다.
 - `check-pack-contents.mjs`가 npm 11의 `npm pack --json`(배열 아닌 객체)에서 깨져 있어 두 형태를 모두 받게 고쳤다. 기존 버그이고 CI(npm 10)에서는 드러나지 않았다.
-- 선 표기의 보이는 라벨은 PRD의 한국어 문자열(`[동기]` 등)을 박지 않고 의미로 적고 "사용자 언어로 쓴다"를 붙였다 — md는 영어이고 스킬이 사용자 언어로 말하는 기존 규약과 맞춘 판단. 다른 언어 사용자가 생기면 재고.
+- 선 표기의 보이는 라벨은 **영어 5종으로 고정**한다(`[sync]`·`[async]`·`response:`·`inferred`·`no evidence:`) — 사용자 결정(2026-09-22). PRD §3의 한국어 문자열(`[동기]` 등)과 다르며, 캔버스에 영어 라벨이 보인다. 이유: 라벨이 매 그림 같아야 하고, 대화 언어에 따라 흔들리면 안 된다. 초안에서 3종만 영어로 박고 2종은 "사용자 언어로"라고 둔 것이 모순이라 코드 리뷰에서 잡혔다. PRD §3 표도 이에 맞춰 고칠지는 03에서 정한다.
 - 09 범위 밖 2줄 수정: `skills/excalidraw-skill/`(03이 교체할 업스트림 스킬)이 지워진 `read_diagram_guide`를 부르라고 적고 있어 `guide://canvas`로 바꿨다. 규격 값 복사는 그대로 두었다 — 03 몫.
 - 호스트 확인은 `ARCHDRAW_BIN`을 로컬 빌드로 두고 `claude -p`로 자식 세션을 띄워 했다 — 그 세션이 시스템 프롬프트의 archdraw MCP 지침을 그대로 뱉어 요약이 실린 것을 확인했다. 대화형 재시작 없이 이 방법으로 판정할 수 있다.

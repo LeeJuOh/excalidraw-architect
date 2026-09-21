@@ -15,7 +15,8 @@ const serverPath = join(repoRoot, 'dist', 'index.js');
 const PACKAGE_NAME = JSON.parse(readFileSync(join(repoRoot, 'package.json'), 'utf-8')).name;
 const runtime = process.env.MCP_RUNTIME || process.execPath;
 const runtimeName = basename(runtime).toLowerCase();
-const runtimeArgs = runtimeName.includes('bun') ? ['run', serverPath] : [serverPath];
+const argsFor = script => (runtimeName.includes('bun') ? ['run', script] : [script]);
+const runtimeArgs = argsFor(serverPath);
 
 const MODERN_VERSION = '2026-07-28';
 const LEGACY_VERSION = '2025-06-18';
@@ -346,7 +347,7 @@ async function checkMissingGuideFails() {
     });
     cpSync(join(repoRoot, 'package.json'), join(sandbox, 'package.json'));
 
-    const child = spawn(runtime, [join(sandbox, 'dist', 'index.js')], {
+    const child = spawn(runtime, argsFor(join(sandbox, 'dist', 'index.js')), {
       cwd: sandbox,
       env: { ...process.env, ENABLE_CANVAS_SYNC: 'false', EXCALIDRAW_NO_AUTOSTART: '1', LOG_LEVEL: 'error' },
       stdio: ['pipe', 'pipe', 'pipe']
