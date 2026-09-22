@@ -97,16 +97,16 @@
 
 본문·references를 쓰고, 문서·파일을 읽어 판정되는 인수 5건만 닫았다. 나머지 인수는 캔버스를 띄워야 하거나 04~07이 필요해 **미시험**으로 남겼다(슬라이스 B).
 
-산출물: `plugin/skills/archdraw/SKILL.md`(297줄) · `references/routing-table.md`(21행) · `references/zoom-levels.md` · `references/canvas-ops.md`(툴↔CLI 대응표). 삭제: `skills/excalidraw-skill/`, `install-skill` CLI 커맨드와 `scripts/sync-skills.mjs`, `package.json`의 `sync:skills`·`files`의 `skills/**/*`.
+산출물: `plugin/skills/archdraw/SKILL.md`(296줄) · `references/routing-table.md`(상황 21개) · `references/zoom-levels.md` · `references/canvas-ops.md`(툴↔CLI 대응표). 삭제: `skills/excalidraw-skill/`, `install-skill` CLI 커맨드와 `scripts/sync-skills.mjs`, `package.json`의 `sync:skills`·`files`의 `skills/**/*`.
 
-드리프트를 막는 검사는 `scripts/check-skill-docs.mjs`에 넣어 `npm test`에 물렸다 — 500줄 한도, 21행과 행별 4칸, px·색·크기 리터럴 부재, `guide://canvas` 포인터, ADR-0012 라벨 문자열 부재, 업스트림 스킬·커맨드 부재.
+드리프트를 막는 검사는 `scripts/check-skill-docs.mjs`에 넣어 `npm test`에 물렸다 — 500줄 한도, 상황 21개와 상황별 4칸, px·색·크기 리터럴 부재, `guide://canvas` 포인터, ADR-0012 라벨 문자열 부재, 업스트림 스킬·커맨드 부재.
 
 | 인수 | 판정 | 확인 방법 |
 |---|---|---|
 | px·색 없음 + `guide://canvas` 지시 | 통과 | `check-skill-docs.mjs`가 hex·px·`NxN`·`"width": n`을 두 파일에서 찾고 포인터 존재를 확인. 리뷰가 잡은 노드 크기 예시(`"width":200,"height":60`)와 가이드 문장 복사 3곳은 제거 |
-| 21행 전부 + 행별 질문·종류·필수요소·라우팅 예외 | 통과 | 스크립트가 `###` 21개와 행별 4칸 존재를 확인. 스펙 §1과 행 단위 대조는 별도 리뷰 에이전트가 ①~⑧·③-a/b까지 전수 확인 |
+| 21행 전부 + 행별 질문·종류·필수요소·라우팅 예외 | 통과 | 스크립트가 `###` 21개와 상황별 4칸 존재를 확인. 스펙 §1과 행 단위 대조는 별도 리뷰 에이전트가 ①~⑧·③-a/b까지 전수 확인 |
 | 업스트림 스킬·`install-skill` 없음 | 통과 | 디렉터리·파일 부재와 `run.ts` 문자열 부재를 스크립트로, `node dist/bin.js help` 출력으로 커맨드 목록 확인 |
-| 500줄 이하 + 01 호출 규약 + 툴↔CLI 대응표 | 통과 | 297줄. 프런트매터의 `disable-model-invocation`·`allowed-tools`와 MCP 우선·shim 폴백 문구를 스크립트로 확인 |
+| 500줄 이하 + 01 호출 규약 + 툴↔CLI 대응표 | 통과 | 296줄. 프런트매터의 `disable-model-invocation`·`allowed-tools`와 MCP 우선·shim 폴백 문구를 스크립트로 확인 |
 | 점선 = 비동기·optional·응답 규칙 없음 | 통과 | 스킬 4파일과 `docs/canvas-guide.md`의 `dash|dotted` 전체를 읽음. 전부 "확인되지 않음"에 묶여 있고, 가이드의 유일한 async·optional 언급은 금지 문장 |
 
 임의로 정한 것과 앞으로 확인할 것:
@@ -126,8 +126,9 @@
 
 ### 진행 상태 (git 기준)
 
-- 브랜치 `main`, 커밋 `ebca557` 하나. 미커밋은 `.claude/settings.json` 하나뿐 — 이번 세션 권한 승인이고 03과 무관해 일부러 커밋에서 뺐다.
-- 산출물: `plugin/skills/archdraw/SKILL.md`(297줄, §1~§11 + Developing) · `references/routing-table.md`(21행) · `references/zoom-levels.md` · `references/canvas-ops.md`(툴↔CLI 대응표·요소 포맷·오류 복구).
+- 브랜치 `main`, `origin/main`까지 푸시됨. 이 작업의 커밋은 둘 — `ebca557`(슬라이스 A 산출물과 삭제) · `07b0e53`(이 핸드오프). 그 앞의 `main` 이력은 09까지의 작업이다.
+- 미커밋은 `.claude/settings.json` 하나 — 이번 세션 권한 승인이고 03과 무관해 일부러 커밋에서 뺐다.
+- 산출물: `plugin/skills/archdraw/SKILL.md`(296줄, §1~§11 + Developing) · `references/routing-table.md`(상황 21개) · `references/zoom-levels.md` · `references/canvas-ops.md`(툴↔CLI 대응표·요소 포맷·오류 복구).
 - 삭제: `skills/excalidraw-skill/` · `src/cli/commands/install-skill.ts`와 `src/cli/run.ts`의 등록 · `scripts/sync-skills.mjs` · `package.json`의 `sync:skills`와 `files`의 `skills/**/*`.
 - 검사: `scripts/check-skill-docs.mjs`를 `npm test`의 `test:skill-docs`로 물렸다. `npm test` 5종과 `tsc --noEmit` 통과.
 - 인수: 문서 판정 5건 통과(위 체크박스 34·35·46·47·52), 근거는 위 Comments 표. 나머지는 전부 미시험.

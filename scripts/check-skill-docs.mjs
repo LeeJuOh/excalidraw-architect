@@ -41,7 +41,9 @@ const DRAWING_FILES = ['SKILL.md', 'references/canvas-ops.md'];
 
 // --- SKILL.md size and invocation contract -------------------------------
 
-const skillLines = skill.split('\n').length;
+// Counted the way `wc -l` counts, so the number printed here matches the one
+// anyone checking by hand will see.
+const skillLines = skill.split('\n').length - (skill.endsWith('\n') ? 1 : 0);
 assert.ok(
   skillLines <= SKILL_MAX_LINES,
   `SKILL.md is ${skillLines} lines, over the ${SKILL_MAX_LINES}-line budget`
