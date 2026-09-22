@@ -18,7 +18,9 @@ const REQUIRED = [
   'plugin/skills/archdraw/SKILL.md',
   'plugin/skills/archdraw/scripts/archdraw',
   'plugin/skills/archdraw/agents/openai.yaml',
-  'plugin/skills/archdraw/references/canvas-ops.md'
+  'plugin/skills/archdraw/references/canvas-ops.md',
+  'plugin/skills/archdraw/references/routing-table.md',
+  'plugin/skills/archdraw/references/zoom-levels.md'
 ];
 
 const raw = execFileSync('npm', ['pack', '--dry-run', '--json'], {

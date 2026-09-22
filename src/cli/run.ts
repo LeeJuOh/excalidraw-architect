@@ -5,7 +5,6 @@ import * as elements from './commands/elements.js';
 import * as scene from './commands/scene.js';
 import { snapshot } from './commands/snapshot.js';
 import { arrange } from './commands/arrange.js';
-import { installSkill } from './commands/install-skill.js';
 
 interface Command {
   handler: (argv: string[]) => Promise<void>;
@@ -31,8 +30,7 @@ const COMMANDS: Record<string, Command> = {
   snapshot: { handler: snapshot, summary: 'Save / list / restore named canvas snapshots', usage: 'snapshot save|list|restore [name]' },
   arrange: { handler: arrange, summary: 'Align, distribute, group, lock, duplicate elements', usage: 'arrange align|distribute|group|ungroup|lock|unlock|duplicate --ids a,b,c [--to left|horizontal|...]' },
   share: { handler: scene.share, summary: 'Export to a shareable excalidraw.com URL', usage: 'share' },
-  clear: { handler: scene.clear, summary: 'Clear the whole canvas', usage: 'clear --yes' },
-  'install-skill': { handler: installSkill, summary: 'Install the bundled agent skill', usage: 'install-skill [--dir <skills-root>] [--target claude|codex|<skills-root>] [--print-source]' }
+  clear: { handler: scene.clear, summary: 'Clear the whole canvas', usage: 'clear --yes' }
 };
 
 function printHelp(): void {

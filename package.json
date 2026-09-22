@@ -20,8 +20,8 @@
     "dev:server": "npx tsc --watch",
     "production": "npm run build && npm run canvas",
     "prepublishOnly": "npm run build",
-    "sync:skills": "node scripts/sync-skills.mjs",
-    "test": "npm run test:manifests && npm run test:mcp && npm run test:bind && npm run test:data-dir",
+    "test": "npm run test:manifests && npm run test:skill-docs && npm run test:mcp && npm run test:bind && npm run test:data-dir",
+    "test:skill-docs": "node scripts/check-skill-docs.mjs",
     "test:bind": "npm run build:server && node scripts/check-local-bind.mjs",
     "test:data-dir": "npm run build:server && node scripts/check-data-dir.mjs",
     "test:mcp": "npm run build:server && node scripts/check-mcp-stdio.mjs",
@@ -103,7 +103,6 @@
   "files": [
     "src/**/*",
     "dist/**/*",
-    "skills/**/*",
     "plugin/**/*",
     "docs/canvas-guide.md",
     "*.d.ts",
