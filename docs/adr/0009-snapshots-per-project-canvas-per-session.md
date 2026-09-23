@@ -10,5 +10,5 @@
 
 ## Consequences
 
-- 데이터 폴더는 `$CLAUDE_PLUGIN_DATA` → `$PLUGIN_DATA` → `~/.excalidraw-architect/` 순이다. 스크린샷 임시 png도 그 아래 `tmp/`에 둔다.
+- 데이터 폴더는 `~/.excalidraw-architect/`다([ADR-0013](0013-data-folder-fixed-under-home.md)). 스크린샷 임시 png도 그 아래 `tmp/`에 둔다.
 - 이름 없는 스냅샷은 `YYYY-MM-DD_HHmmssZ_<영어 이름>`이며 이름은 에이전트가 정한다. 같은 초·같은 이름은 동명 거부 규칙을 따른다.

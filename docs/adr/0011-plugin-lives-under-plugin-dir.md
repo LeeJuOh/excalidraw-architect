@@ -1,6 +1,8 @@
 # 플러그인은 레포 루트가 아니라 `plugin/` 하위에 두고, 루트 카탈로그가 그곳을 가리킨다
 
-Claude Code와 Codex는 마켓플레이스 카탈로그의 `source`가 가리키는 폴더를 통째로 복사해 플러그인 루트로 삼고, MCP 서버를 그 루트를 cwd로 띄운다. 처음엔 `source`를 `./`로 두어 레포 루트 = 플러그인 루트였다. 그러면 복사본에 `package.json`이 따라가는데, 그 `name`이 npm 게시 패키지와 같아 shim의 `npx -y excalidraw-architect@<버전>`이 로컬 프로젝트로 해석되고, bin이 링크돼 있지 않아 `sh: excalidraw-architect: command not found`로 서버가 죽었다(2026-09-21 Codex 실측). 그래서 플러그인 파일(`.claude-plugin/plugin.json`·`.mcp.json`·`plugin.json`·`mcp.json`·`skills/`)을 `plugin/`로 옮기고, 루트의 카탈로그 2개가 `./plugin`을 가리키게 했다. 복사본에 `package.json`이 없으니 npx는 항상 게시본을 받는다. 두 호스트 공식 문서 모두 하위 폴더 `source`를 예시로 든다(Claude `./plugins/my-plugin`, Codex `{"source":"local","path":"./plugins/my-plugin"}`). `npx skills add`는 루트 Claude 카탈로그의 `source` 아래 `skills/`를 탐색하므로 영향 없다.
+Claude Code와 Codex는 마켓플레이스 카탈로그의 `source`가 가리키는 폴더를 통째로 복사해 플러그인 루트로 삼는다. MCP 서버의 cwd는 Codex가 플러그인 루트, Claude Code가 세션 폴더다(두 호스트 공식 문서에 없음, 실측). 처음엔 `source`를 `./`로 두어 레포 루트 = 플러그인 루트였다. 그러면 복사본에 `package.json`이 따라가는데, 그 `name`이 npm 게시 패키지와 같아 shim의 `npx -y excalidraw-architect@<버전>`이 로컬 프로젝트로 해석되고, bin이 링크돼 있지 않아 `sh: excalidraw-architect: command not found`로 서버가 죽었다(2026-09-21 Codex 실측). 그래서 플러그인 파일(`.claude-plugin/plugin.json`·`.mcp.json`·`plugin.json`·`mcp.json`·`skills/`)을 `plugin/`로 옮기고, 루트의 카탈로그 2개가 `./plugin`을 가리키게 했다. 복사본에 `package.json`이 없으니 npx는 항상 게시본을 받는다. 두 호스트 공식 문서 모두 하위 폴더 `source`를 예시로 든다(Claude `./plugins/my-plugin`, Codex `{"source":"local","path":"./plugins/my-plugin"}`). `npx skills add`는 루트 Claude 카탈로그의 `source` 아래 `skills/`를 탐색하므로 영향 없다.
+
+2026-09-24: Claude Code는 세션 폴더를 cwd로 쓰기 때문에, 이 레포에서 켠 claude에서는 `plugin/` 분리만으로 같은 실패를 막지 못한다(2026-09-23 MCP 로그 `cwd`, 2026-09-24 v2.1.280 `CONNECTION_CLOSED` 재현). 그래서 shim이 npx에 `--prefix`를 준다. 이 옵션은 실행 폴더를 바꾸지 않는다.
 
 ## Considered Options
 
