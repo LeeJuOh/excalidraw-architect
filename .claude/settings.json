@@ -1,9 +1,14 @@
 {
   "permissions": {
+    "additionalDirectories": [
+      "/Users/leejuo/Desktop/project/llm-wiki",
+      "/Users/leejuo/Desktop/project/references"
+    ],
     "allow": [
       "Bash(npm test)",
       "Bash(npm run test:mcp)",
       "Bash(npm run test:manifests)",
+      "Bash(npm run test:skill-docs)",
       "Bash(npm run test:bind)",
       "Bash(npm run test:data-dir)",
       "Bash(npm run build)",
@@ -17,9 +22,12 @@
       "Bash(node scripts/check-pack-contents.mjs)",
       "Bash(node scripts/check-local-bind.mjs)",
       "Bash(node scripts/check-data-dir.mjs)",
+      "Bash(node scripts/check-skill-docs.mjs)",
+      "Bash(node scripts/generate-manifests.mjs --check)",
       "mcp__claude-in-chrome__tabs_context_mcp",
       "mcp__claude-in-chrome__get_page_text",
-      "mcp__claude-in-chrome__read_console_messages"
+      "mcp__claude-in-chrome__read_console_messages",
+      "mcp__claude-in-chrome__read_page"
     ]
   }
 }
