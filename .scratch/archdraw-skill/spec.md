@@ -1,6 +1,6 @@
 # PRD 001 — excalidraw-architect: 백엔드 실무 다이어그램 판단 스킬 `archdraw` (yctimlin 캔버스 위)
 
-> **설계 수정·구현 착수 전:** [1차 검수](review.md)·[2차 검수](review-02-handoff.md)의 대상 이슈별 지적과 완료 조건을 확인한다. 두 검수 모두 처리 완료(2026-09-19), 미해결 지적 없음. 다음 작업은 이슈 01 착수.
+> **설계 수정·구현 착수 전:** [1차 검수](review.md)·[2차 검수](review-02-handoff.md)의 대상 이슈별 지적과 완료 조건을 확인한다. 두 검수 모두 처리 완료(2026-09-19), 미해결 지적 없음. 다음 작업은 맨 끝 "구현 이슈와 진행 순서"의 "지금 할 일"을 따른다.
 
 > 생성: 2026-09-05 · 출처: excalidraw 레포 3종 비교 + 방법론 서치 세션
 > 구현 이슈: [01~10](issues/) 작성됨. 순서 = 01 → 09 → 03 → 04~08·10 → 02 도그푸딩. 세부 의존성과 검증 시점은 각 이슈를 따른다.
@@ -260,17 +260,29 @@ yctimlin 캔버스 위에서 동작하는 **판단 전용 스킬.** 다섯 가�
 
 포크·문서 이관·용어 사전·ADR·이슈 작성은 완료됐다. 남은 검수 지적은 [검수 인계](review.md)를 따라 정리하고, 구현은 아래 기존 이슈에서 진행한다.
 
-| 순서 | 이슈 | 역할 |
+**지금 할 일 (2026-09-24 기준 — 작업을 끝낼 때마다 이 목록과 아래 표의 상태를 고친다):**
+
+1. 01 슬라이스 1~4 구현
+2. 09 사후 검수 결함 1~3 그릴 — 아직 결정 전. 01처럼 결정을 문서에 반영한 뒤 09 안에 슬라이스로 넣는다
+3. 04 착수 전 질문 Q1~Q6 그릴
+4. 04 구현 → 05 구현
+5. 03 슬라이스 B(캔버스로 확인하는 인수)
+6. 06(05 뒤)·07·08·10 구현
+7. 02 도그푸딩
+
+사람 몫: npm Trusted Publisher 등록 → 01 슬라이스가 들어간 뒤 첫 릴리즈(스펙 7-5d).
+
+| 이슈 | 역할 | 상태 |
 |---|---|---|
-| 1 | [01 설치 골격](issues/01-plugin-skeleton.md) | 플러그인 설치와 실행 준비 |
-| 2 | [09 규격 단일 원본](issues/09-canvas-guide-single-source.md) | 서버 md 한 벌을 `instructions`·`resources`로. 03 앞 |
-| 2 | [03 판단 스킬 본문](issues/03-archdraw-skill-body.md) | 라우팅·줌 레벨·캔버스 우선 규칙 |
-| 3 | [04 캔버스 세션](issues/04-session-per-canvas.md) | 캔버스 세션 분리와 재개 |
-| 3 | [05 frame](issues/05-frame-element.md) | 그림 구분과 글꼴 기본값 |
-| 3 | [06 저장](issues/06-snapshot-and-export-persistence.md) | 스냅샷·export·재로드. 05 완료 후 진행 |
-| 3 | [07 근거 검사](issues/07-evidence-check.md) | 근거 확인과 점선 처리 |
-| 3 | [08 기록 스킬](issues/08-dogfooding-report-skill.md) | 도그푸딩 이슈를 에이전트가 대신 씀 |
-| 3 | [10 MCP 직접 등록](issues/10-mcp-only-gets-archdraw-judgement.md) | MCP만 등록해도 판단을 prompt·resource로 받음 |
-| 4 | [02 도그푸딩](issues/02-dogfooding-round-zero.md) | 구현 후 실사용하고 수정 사항을 해당 이슈에 전달 |
+| [01 설치 골격](issues/01-plugin-skeleton.md) | 플러그인 설치와 실행 준비 | 완료. 사후 검수 결함은 결정 끝, 슬라이스 1~4 구현 대기 |
+| [09 규격 단일 원본](issues/09-canvas-guide-single-source.md) | 서버 md 한 벌을 `instructions`·`resources`로 | 완료. 사후 검수 결함 3개 그릴 전 |
+| [03 판단 스킬 본문](issues/03-archdraw-skill-body.md) | 라우팅·줌 레벨·캔버스 우선 규칙 | 슬라이스 A 완료, B는 04·05 뒤 |
+| [04 캔버스 세션](issues/04-session-per-canvas.md) | 캔버스 세션 분리와 재개 | 착수 전 질문 Q1~Q6 그릴 전 |
+| [05 frame](issues/05-frame-element.md) | 그림 구분과 글꼴 기본값 | 착수 가능 |
+| [06 저장](issues/06-snapshot-and-export-persistence.md) | 스냅샷·export·재로드 | 05 뒤 |
+| [07 근거 검사](issues/07-evidence-check.md) | 근거 확인과 점선 처리 | 착수 가능 |
+| [08 기록 스킬](issues/08-dogfooding-report-skill.md) | 도그푸딩 이슈를 에이전트가 대신 씀 | 착수 가능 |
+| [10 MCP 직접 등록](issues/10-mcp-only-gets-archdraw-judgement.md) | MCP만 등록해도 판단을 prompt·resource로 받음 | 착수 가능 |
+| [02 도그푸딩](issues/02-dogfooding-round-zero.md) | 구현 후 실사용하고 수정 사항을 해당 이슈에 전달 | 맨 마지막, 사람 |
 
 각 이슈의 `Blocked by`가 착수 의존성의 기준이다. 통합 확인은 필요한 구현이 준비된 뒤 수행하고, with/without 비교 eval은 02 뒤 03의 후속 검증으로 수행한다.

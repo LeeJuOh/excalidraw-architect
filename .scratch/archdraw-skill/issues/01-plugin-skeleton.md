@@ -395,6 +395,6 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 1. ✅ 첫 행동(스펙의 `--prefix` 폴더 한 줄).
 2. ✅ `/to-tickets`로 위 재료를 슬라이스 2~4 초안으로 보여 주고, 승인받으면 이 파일의 슬라이스 1 아래에 넣는다.
 3. ✅ 사용자 승인 후 이슈 10 파일을 만든다(`.scratch/archdraw-skill/issues/10-<slug>.md`). 스펙 스토리와 7-7의 수정 범위도 같이 정한다.
-4. 커밋은 사용자 확인 후에 한다. 04의 옛 핸드오프 변경을 같은 커밋에 넣을지 묻는다. 메시지는 영어 1~2문장, 트레일러 없이.
+4. ✅ 커밋은 사용자 확인 후에 한다. 04의 옛 핸드오프 변경을 같은 커밋에 넣을지 묻는다. 메시지는 영어 1~2문장, 트레일러 없이.
 5. 다음 구현 세션: `/implement .scratch/archdraw-skill/issues/01-plugin-skeleton.md`로 슬라이스 1~4를 TDD로 구현한다.
 6. 사람 몫: Trusted Publisher 등록 → 버전을 올리고 첫 릴리즈. 순서는 스펙 7-5d, 확인 항목은 Testing Decisions를 따른다.
