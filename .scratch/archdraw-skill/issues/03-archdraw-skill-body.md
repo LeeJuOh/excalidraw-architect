@@ -168,3 +168,7 @@
 2. 05 뒤: 슬라이스 B에서 지금 돌 수 있는 12건 실행 — 라우팅 3종·선택 이유·성능 병목 병렬·가독성 자가 수정·좌표 유지·기존 그림 보존·정방향/역방향/초안/끌고 가기/경계·허용 디테일·의존 선언만일 때 점선
 3. 06·07 뒤: 저장·스냅샷·근거 인수
 4. 02 도그푸딩 → 03 수정 → 03 닫기
+
+---
+
+**2026-09-23 — 01·09 사후 검수 중 발견: 스킬과 규격의 충돌.** `SKILL.md:73`의 "Align only the elements you are drawing now"는 `docs/canvas-guide.md:68`("Do not run `align_elements` or `distribute_elements` to clean up a diagram you just placed")과 요약 절 20행의 align 금지에 어긋난다. 09가 뺀 사후 정렬 지시를 스킬이 되살리는 셈이다. 문장의 뜻은 "사용자가 옮긴 요소는 건드리지 말고, 지금 그리는 요소만 배치하라"로 보인다. `Align`을 다른 동사로 바꿀 것. `check-skill-docs.mjs`는 이런 충돌을 잡지 못한다.

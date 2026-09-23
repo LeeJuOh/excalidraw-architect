@@ -223,3 +223,18 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 ---
 
 **2026-09-21 — 닫음.** 필수 인수 조건 전부 통과(세 채널 모두 새 `plugin/` 레이아웃 기준). 선택 시험 2개(오프라인 엄격 조건·`ARCHDRAW_BIN` 호스트 상속)는 사용자 결정으로 미실시. 두 플러그인은 설치 상태로 둔다 — 이후 이슈의 재시험에 그대로 쓴다. 다음: 구현 순서 2의 09.
+
+---
+
+**2026-09-23 — 사후 검수에서 나온 결함 (01·09 범위 `76ef137...ec75a59`).** Status는 그대로 뒀다. 아래 항목은 남은 이슈(03~08)를 다 구현해도 해소되지 않는다. 6번만 04에서 같이 다룰 수 있다.
+
+1. **[높음] CLI 스크린샷이 다른 플러그인의 데이터 폴더에 저장된다.** `src/core/data-dir.ts:22`는 환경 변수 `CLAUDE_PLUGIN_DATA`를 그대로 믿는다. 그런데 Claude Code의 Bash 환경에는 다른 플러그인의 값이 들어 있을 수 있다(실측값 `~/.claude/plugins/data/codex-openai-codex`). CLI는 에이전트의 Bash에서 돌기 때문에, `npx skills add` 채널의 `screenshot` png가 그 폴더에 저장된다. 인수 25는 Codex에서만 확인했다. 06이 같은 우선순위로 스냅샷을 저장하므로, 고치지 않으면 결함이 06으로 번진다.
+2. **[중간] 유효한 `PLUGIN_DATA`를 건너뛴다.** 같은 줄의 `??`는 값이 `undefined`일 때만 다음 후보로 넘어간다. 그래서 `CLAUDE_PLUGIN_DATA`가 빈 문자열이거나 치환되지 않은 `${...}`이면 `PLUGIN_DATA`를 보지 않고 홈으로 간다. 검사는 trim한 값으로 하면서 반환은 trim 전 값을 한다.
+3. **[중간] 게시 전에 타르볼 검사가 없다.** 수동 `npm publish`(`prepublishOnly`는 build만 실행)와 `npm-publish.yml` 둘 다 `check-pack-contents`·`test:manifests`를 돌리지 않는다. 09 이후로는 `docs/canvas-guide.md`가 빠진 채 게시되면 게시본 서버가 시작하자마자 `exit 1`로 죽는다. `prepublishOnly`에 두 검사를 붙이면 두 게시 경로를 모두 막을 수 있다.
+4. **[낮음] CI가 `test:data-dir`를 돌리지 않는다.** `ci.yml`에 없다. `test:bind`·`test:skill-docs`도 빠져 있다.
+5. **[낮음] ADR-0011의 cwd 서술이 Claude Code에 대해 틀렸다.** ADR은 "Claude Code와 Codex는 … 그 루트를 cwd로 띄운다"고 적었지만, Claude Code는 MCP 서버를 세션 cwd에서 띄운다. 그래서 이 레포에서 claude를 켜면 설치된 플러그인의 MCP가 `sh: excalidraw-architect: command not found`로 죽는다. npm이 레포의 `package.json`을 로컬 프로젝트로 잡기 때문이다(2026-09-23 이 레포 세션의 MCP 로그). 개발자에게만 해당하고 `ARCHDRAW_BIN`으로 피할 수 있다. ADR 문장과 AGENTS.md gotcha를 고칠 것.
+6. **[낮음] 에러 문구가 실행할 수 없는 명령을 안내한다.** `src/core/spawn.ts:45`의 연결 실패 문구는 `excalidraw-architect start`를 권하는데, 이 명령은 어느 채널에서도 PATH에 없다. 04의 Q3(업스트림 `start`/`stop`/`status` 처리)에서 같이 볼 것.
+
+보류: npm 게시본 0.1.0에는 09가 없다(`design-guide.js`와 `read_diagram_guide`는 있고 `guide://canvas`는 없다). 다음 게시 때 해소된다. 순서는 버전 올리기 → `npm run manifests` → **게시 먼저, push는 그다음**이다. 반대로 하면 shim이 아직 없는 버전을 가리킨다.
+
+정리함: 커밋 트레일러가 붙은 커밋 7개(`78cb304`·`a0e174a`·`e4ef4eb`, 03 작업의 4개)는 이미 push돼 그대로 둔다. 원인은 전역 `~/.claude/settings.json`의 `attribution` 빈 값으로 막았다.
