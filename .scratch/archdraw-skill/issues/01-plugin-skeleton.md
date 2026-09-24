@@ -310,10 +310,10 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 
 **Blocked by:** None (can start immediately)
 
-**Status:** resolved (2026-09-24 — 로컬 `npm test` 통과, 첫 push CI 확인 남음)
+**Status:** resolved (2026-09-25 — 인수 2개 통과)
 
 - [x] CI에 개별 테스트 단계(매니페스트, MCP stdio) 대신 `npm test` 한 단계가 있다
-- [ ] 첫 push에서 CI가 통과한다. 특히 `test:bind`가 GitHub 러너에서 포트를 여는지 확인한다(미확인)
+- [x] 첫 push에서 CI가 통과한다. 특히 `test:bind`가 GitHub 러너에서 포트를 여는지 확인한다 (2026-09-25 `9d0ac66` push의 CI 실행 36027382267: 20.x·22.x·Lint 모두 success. 20.x 로그에 "Local bind check passed on port 33926", "npm tarball carries all 11 required paths")
 
 **2026-09-24 — 구현(에이전트).** `ci.yml`의 "Build and Type Check" 잡에서 "Check generated manifests are current"와 "Run MCP stdio wire tests"를 지우고, 빌드 뒤 원래 MCP 자리에 "Run tests"(`npm test`)를 넣었다. 나머지 단계는 그대로다. 로컬 `npm test`는 5개(manifests·skill-docs·mcp·bind·data-dir) 모두 통과했다. 처음엔 `| tail`을 붙여 돌려 허용 규칙 `Bash(npm test)`와 맞지 않았고 권한 분류기에 막혔다(AGENTS.md "Bash 한 호출에는 셸 구성 하나만" 위반). 코드 리뷰 두 축 모두 위반은 없었다. 비용만 드는 부수 효과가 둘 있어 그대로 뒀다: 매니페스트 드리프트 검사가 타입 검사·빌드 뒤로 밀렸고, `test:mcp`·`test:bind`·`test:data-dir`가 각자 `build:server`를 다시 돌린다(`package.json`, 범위 밖).
 
@@ -332,68 +332,49 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 - [x] 생성기에서 shim의 npx 줄에 `--prefix`(shim 자기 폴더)가 들어가고, 재생성한 shim이 커밋된다
 - [x] AGENTS.md Gotchas의 플러그인 위치·게시본 검증 두 줄이 새 동작에 맞는다(`writing-for-agents` 스킬 기준)
 - [x] `npm test` 통과
-- [ ] 다음 릴리즈 뒤: 이 레포에서 claude를 켜면 archdraw MCP가 붙는다
+- [ ] 다음 릴리즈 뒤: 플러그인을 설치하고 이 레포에서 claude를 켜면 `/mcp`에 archdraw가 connected로 뜬다 (2026-09-25 기준 이 머신의 Claude Code에는 플러그인이 설치돼 있지 않다 — `installed_plugins.json`에 항목 없음, 캐시 폴더만 남음)
 
 **2026-09-24 — 구현(에이전트).** 생성기 shim 템플릿의 npx 줄에 `--prefix "$(dirname "$0")"`를 넣고 재생성했다. 주석은 넣지 않았다(이유는 ADR-0011). 재생성 전 `test:manifests`는 shim 드리프트로 red였다. 로컬 확인은 `ARCHDRAW_BIN`을 비우고 레포 루트 cwd에서 했다. shim `--version` → `0.1.0`, 맨 `npx -y excalidraw-architect@0.1.0 --version` → `command not found`, 스킬 루트에서 `scripts/archdraw --version`(상대 `$0`) → `0.1.0`, `sh <절대 경로 shim>`에 MCP `initialize` → `serverInfo` `excalidraw-architect 0.1.0`. shim 폴더에 `node_modules`나 lock 파일은 생기지 않았다(`ls`, `git status --ignored`). AGENTS.md는 플러그인 줄에서 더는 사실이 아닌 실패 서술을 지웠고, 게시본 줄은 "shim으로 검증, 맨 npx는 실패"로 바꿨다. 리뷰가 찾은 옛 npx 줄(`--prefix` 없음) 2곳도 고쳤다: ADR-0002 5행은 `--prefix`를 넣고 ADR-0011을 가리키게, `check-pack-contents.mjs` 3행 주석은 명령을 적지 않게.
 
 ---
 
-## 핸드오프 — 사후 검수 슬라이스 2 구현 (2026-09-25, 8차)
+## 핸드오프 — 첫 릴리즈로 01 닫기 (2026-09-25, 9차)
 
-**목표.** 01 사후 검수의 마지막 에이전트 슬라이스인 2(릴리즈 한 경로)를 구현한다. 결정은 모두 끝났고, 사용자가 다음 세션에서 구현하라고 승인했다. 로드맵은 `1 ✅ → 4 ✅ → 3 ✅ → 2 ▶`다.
+**목표.** 01의 남은 칸 두 개(슬라이스 2 사람 칸, 슬라이스 4 마지막 칸)를 첫 릴리즈로 판정하고 01을 완전히 닫는다. 에이전트 구현은 네 슬라이스 모두 끝났다. 로드맵은 `1 ✅ → 4 ◐ → 3 ✅ → 2 ◐`다(◐ = 릴리즈 뒤 판정할 칸이 남음).
 
-**첫 행동.** `git status`를 본다. 작업 트리가 깨끗하면 슬라이스 2의 `Status:`를 `claimed`로 바꾸고 구현을 시작한다. 범위는 슬라이스 2 인수 6칸 중 사람 칸을 뺀 5칸, 그리고 그 밑 두 기록("착수 전 결정", "Docker 이미지 게시")이 전부다. 거기 적힌 것은 다시 묻지 않는다. 작업 트리에 변경이 있으면 이 세션의 문서 변경(아래 진행 상태)이 커밋되지 않은 것이다. 그때는 구현 전에 커밋할지 먼저 묻는다.
+**첫 행동.** 사용자에게 npmjs.com Trusted Publisher 등록을 했는지 묻는다. 등록 위치는 npmjs.com → 패키지 `excalidraw-architect` → Settings → Trusted Publisher → GitHub Actions이고, 레포 `LeeJuOh/excalidraw-architect`, 워크플로 파일 `npm-publish.yml`을 넣는다. 계정 로그인이 필요해서 사람 몫이다. 등록했다고 하면 릴리즈 순서(아래 남은 단계 1)를 안내한다. 에이전트는 등록·릴리즈를 대신하지 않는다.
 
-**구현 지도 (2026-09-25 코드 기준).**
-- `.github/workflows/npm-publish.yml`
-  - 지울 것: `on:`의 `workflow_dispatch` 블록, "Verify NPM publish token" 단계, "Publish to NPM (Manual)" 단계, 게시 단계의 `NODE_AUTH_TOKEN` env와 `--provenance`, "Create GitHub Release Assets"·"Upload Release Assets" 단계.
-  - 바꿀 것: `permissions.contents`는 `write`에서 `read`로. "Setup Node.js"의 `node-version`은 `'20.x'`에서 22로, 그 뒤에 npm을 11.5.1 이상으로 올리는 단계. "Verify build artifacts"는 `node scripts/check-pack-contents.mjs`로(이 스크립트가 `dist/index.js`·`dist/server.js`·`dist/frontend/index.html`를 포함함을 확인했다).
-  - 더할 것: 게시 단계보다 앞에 `npm test` 단계.
-  - 그대로: "Verify release tag", "Check if version exists on NPM", "Skip publishing", `notify` 잡, `registry-url`, 파일 이름. 수동 경로가 없어지면 `if: github.event_name == 'release'` 조건은 항상 참이다. 남길지는 구현하면서 판단한다.
-- `package.json` `scripts`: `version` 훅이 없다. `"version": "npm run manifests && git add -u"`를 넣는다. `prepublishOnly`(`npm run build`)는 결정 기록에 없으니 그대로 둔다.
-- 삭제: `.github/workflows/docker.yml`, `Dockerfile`, `Dockerfile.canvas`, `docker-compose.yml`, `.dockerignore`.
-
-**맥락.**
-- `npm version <버전>` 인수 확인: 깨끗한 작업 트리가 필요하고, 커밋과 태그를 만든다. main이 아닌 임시 브랜치나 워크트리에서 돌려, 버전 커밋에 생성물이 들어갔는지와 `test:manifests` 통과를 본다. 태그와 브랜치는 사용자 확인 뒤에 지운다. `npm version`은 `.claude/settings.json` 허용 목록에 없어 승인 프롬프트가 뜬다.
-- Actions: 사용자가 `8ff7930`을 push한 뒤에 레포 Actions를 켰다. 그래서 실행 기록이 0건이다(2026-09-25 `gh api repos/LeeJuOh/excalidraw-architect/actions/runs` → `total_count` 0). 슬라이스 3의 둘째 칸(첫 push CI, `test:bind`)은 다음 push에서 판정한다.
-- 사람 몫(구현 뒤): npmjs.com에 Trusted Publisher 등록(레포 `LeeJuOh/excalidraw-architect`, 워크플로 파일 `npm-publish.yml`) → 첫 릴리즈.
+**맥락.** 이 세션은 슬라이스 2를 구현했다(`9d0ac66`). push 때 처음 돈 CI(실행 36027382267)로 슬라이스 3도 닫았다. 게시는 이제 GitHub 릴리즈로만 일어난다. push만으로는 CI만 돈다. 그래서 첫 릴리즈 전까지 npm 게시본은 0.1.0이고, 슬라이스 4의 `--prefix` 수정은 사용자에게 아직 닿지 않았다. 이 머신의 Claude Code에는 플러그인이 설치돼 있지 않다(`~/.claude/plugins/installed_plugins.json`에 항목 없음, 캐시 폴더만 남음). 그래서 슬라이스 4 확인에는 설치가 먼저 필요하다.
 
 ### 진행 상태 (git 기준)
 
-- 브랜치 `main`. `origin/main`보다 앞선 커밋은 `5857955`(슬라이스 2 결정 기록)와 `4bbf4bf`(7차 핸드오프) 두 개다. push는 사용자 지시가 있을 때만 한다.
-- ✅ 슬라이스 1 `8421776`, 슬라이스 4 `cfb09e4`, 슬라이스 3 `baeea70`. 3·4의 남은 칸은 push와 첫 릴리즈 뒤에 판정한다.
-- 이 세션의 문서 변경(핸드오프 작성 시점에 커밋 안 됨):
-  - 이 티켓: 슬라이스 2에 "Docker 이미지 게시" 결정 기록과 인수 칸 1개, 그리고 이 핸드오프(7차를 대체).
-  - PRD 7-5d: 기각 목록 끝에 "업스트림 Docker 이미지 게시 유지" 한 줄.
-  - `AGENTS.md` Gotchas: "업스트림 머지 때 되살아나면 다시 지울 것" 줄에 Docker 파일 이름과 PRD 7-5d 포인터.
-- ⏳ 슬라이스 2 구현: 코드 변경 없음. `Status: ready-for-agent`.
+- 브랜치 `main`. `9d0ac66`까지 push됨. 이 핸드오프 커밋도 push한다(사용자 지시).
+- ✅ 슬라이스 1 `8421776`, 슬라이스 4 `cfb09e4`, 슬라이스 3 `baeea70`, 슬라이스 2 `9d0ac66`.
+- ✅ 슬라이스 3 둘째 칸: CI 실행 36027382267에서 20.x·22.x·Lint가 success. `test:bind` 러너 통과.
+- ⏳ 슬라이스 2 사람 칸, 슬라이스 4 마지막 칸: 첫 릴리즈 전이라 판정 불가.
 
 ### 결정
 
-- Docker(사용자 A1): 워크플로와 루트 Docker 파일을 지운다. `.dockerignore`도 Docker 빌드에서만 쓰여서 같이 지운다. 근거는 슬라이스 2 기록에 있다.
-- ADR은 쓰지 않는다. 되돌리기 쉽고(이미지 게시 0건), ADR-0002("서버는 npm에서만 받는다")의 결과이고, 실제 트레이드오프가 없었다.
-- `AGENTS.md`의 업스트림 머지 목록에는 파일 이름과 근거 포인터만 둔다. 목록이 더 길어지면 별도 문서로 빼고 `AGENTS.md`에는 포인터만 둔다. 업스트림 머지는 가끔만 하는 작업이라서다(`writing-for-agents` 기준).
-- 앞 세션 결정은 유지한다. 기존 PRD는 `/to-spec` 없이 직접 고친다. `pluginDataDir()` 개명은 06에서 한다. 사람 칸만 남은 슬라이스는 `Status: resolved (날짜 — 남은 칸 설명)`으로 닫는다. 코드 주석과 ADR은 셸 명령 대신 ADR 포인터를 쓴다.
+- `version` 훅의 `git add -u`는 그대로 둔다. Standards 리뷰는 범위가 넓다고 짚었지만, "구현 기본값"에서 이미 정했다. `npm version`은 작업 트리가 깨끗해야 돌아서 무관한 파일이 섞이지 않는다.
+- "Verify release tag"의 `if: github.event_name == 'release'`는 지웠다. 트리거가 하나뿐이다.
+- ci.yml의 인라인 dist 검사는 게시 워크플로에 두지 않았다. 필수 파일 검사가 같은 세 파일을 본다.
 
 ### 통한 것
 
-- 구현 흐름: 시작 보고 → 코드 → `npm test` → `/code-review` 서브에이전트 2개(Standards·Spec) 병렬 → 지적 반영 → 끝 보고 → 사용자 확인 뒤 커밋. 스킬 목록에 `/implement`는 없다.
-- 낯선 대상 설명은 "업스트림에서는 왜 있었나 / 여기서는 왜 필요 없나" 두 묶음으로 쓰면 한 번에 통했다.
-- 결정을 바꾼 뒤에는 `src`·`scripts`·`plugin`·`docs`·`.scratch`에서 옛 문자열을 grep한다.
+- `npm version` 인수는 임시 워크트리와 임시 브랜치에서 prerelease 버전(`0.1.1-check.0`)으로 확인했다. 실제 릴리즈 번호와 태그가 부딪히지 않는다. `generate-manifests.mjs`는 스크립트 위치로 루트를 잡아서, 워크트리 경로로 부르면 그 워크트리를 검사한다. 확인 뒤 워크트리·브랜치·태그를 지웠다.
+- `gh run list`는 빈 출력을 냈다. `gh api repos/LeeJuOh/excalidraw-architect/actions/runs`로 교차확인했다. CI 판정은 `gh run watch --exit-status <id>`를 백그라운드로 돌리고 잡 로그를 grep했다.
 
 ### 안 통한 것
 
-- ⚠️ **질문 전에 맥락부터 쓴다.** Docker 질문을 선택지 도구로 바로 띄웠다가 거절당했고 "먼소리야 맥락담아"를 들었다. 대상이 무엇이고, 어디서 왔고, 왜 지금 문제인지를 두세 줄로 먼저 쓰고 질문은 하나만 한다.
-- ⚠️ **추천 하나를 먼저 낸다.** "넣을지 말지 정해 주세요"로 끝냈다가 "그래서 어떻게하자고"를 들었다.
-- ⚠️ **`AGENTS.md`나 스킬 문구를 제안하기 전에 `writing-for-agents` 스킬을 먼저 불러 기준으로 삼는다.** 부르지 않고 제안했다가 "이 스킬지시대로야?"를 들었다.
-- ⚠️ 보고는 결론 한 줄과 질문 하나로 짧게 쓴다. 문서 반영과 구현은 따로 승인받는다(이번 구현은 승인됨).
-- ⚠️ `npm test`는 파이프나 리다이렉트 없이 그대로 친다. `.claude/settings.json`의 `Bash(npm test)`와 같아야 분류기를 통과한다. 권한이 거절되면 원인을 추측하지 말고 허용 목록부터 본다.
-- ⚠️ 빈 Bash 출력은 확인 실패로 본다. 보고할 때는 코드 문제인지 문서 문제인지 먼저 밝히고, `spec.md`는 **PRD**라고 부르고, 경로는 절대경로로 쓴다.
+- ⚠️ **보고는 짧게.** 끝 보고가 표와 설명으로 길어져 "장황하게말하지마"를 들었다. 로드맵 한 줄, 문제 유무, 질문 하나만 쓴다.
+- ⚠️ **로드맵은 사용자가 준 형식 그대로.** `1 ✅ → 2a ▶ → 2b → 3`처럼 한 줄에 전체와 현재 위치를 적는다. 산문으로 풀어 "지금 어디까지 했냐고"를 들었다.
+- ⚠️ **사람 몫 용어는 처음 쓸 때 풀어 쓴다.** "Trusted Publisher 등록 → 첫 릴리즈"만 적었다가 "이게머야"를 들었다.
+- ⚠️ **설치 상태를 가정하지 않는다.** 01 닫을 때 "플러그인은 설치 상태로 둔다"는 기록을 믿고 "이 레포에서 claude를 켜 확인"이라고 안내했다가 "플러그인 설치 안되어잇는데"를 들었다. 인수 안내 전에 `installed_plugins.json`부터 확인한다.
 
 ### 남은 단계
 
-1. 첫 행동(슬라이스 2 구현). 끝 보고에서 push할지 묻는다.
-2. push하면 첫 CI 실행으로 슬라이스 3의 둘째 칸을 판정한다. `test:bind`가 실패하면 그 출력부터 본다.
-3. 사람 몫: Trusted Publisher 등록 → `npm version <버전>` → `git push --follow-tags` → `gh release create v<버전>` → Actions 로그에서 검사 → 게시 순서 확인 → `npm view`. 그 뒤 슬라이스 2의 사람 칸과 슬라이스 4의 마지막 칸을 판정한다.
-4. 01 슬라이스가 모두 끝나면 PRD "지금 할 일" 1번과 이슈 표의 01 행을 고친다. 다음은 09 사후 검수 그릴이다.
+1. 사람: Trusted Publisher 등록 → `npm version 0.1.1` → `git push --follow-tags` → `gh release create v0.1.1`. 버전 번호는 사용자에게 확인한다.
+2. 에이전트: 게시 워크플로 실행 로그에서 `Run tests` → `Check npm tarball contents` → `Publish to NPM` 순서로 통과했는지 보고, `npm view excalidraw-architect version`을 확인한다. 둘 다 맞으면 슬라이스 2 사람 칸을 체크한다. 게시가 인증에서 실패하면 Trusted Publisher 등록의 워크플로 파일 이름부터 본다.
+3. 사람: 플러그인 설치(`/plugin marketplace add LeeJuOh/excalidraw-architect` → `/plugin install excalidraw-architect`) → 이 레포에서 claude 재시작 → `/mcp`. 에이전트가 connected면 슬라이스 4 마지막 칸을 체크한다.
+4. 01 닫기: PRD `.scratch/archdraw-skill/spec.md`의 "지금 할 일" 1번과 이슈 표 01 행을 고친다. 다음은 "지금 할 일" 2번, 09 사후 검수 결함 1~3 그릴이다.
 
