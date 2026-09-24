@@ -7,7 +7,7 @@
 - 매니페스트 5개(Claude 플러그인·마켓플레이스·MCP, Codex 플러그인·MCP)와 shim의 고정 버전은 손으로 쓰지 않고 `package.json`을 단일 소스로 생성 스크립트가 만든다. MCP 매니페스트는 npx를 직접 부르지 않고 shim을 인자 없이 실행한다 — command는 셸, args는 호스트 변수로 가리킨 shim 경로(Claude `${CLAUDE_PLUGIN_ROOT}`, Codex `${PLUGIN_ROOT}`; 매니페스트 args는 두 호스트 모두 치환). bin은 인자가 없으면 MCP stdio 모드라 `mcp` 서브커맨드는 만들지 않는다. 그래서 `ARCHDRAW_BIN`이 MCP 경로에도 적용된다. 생성물은 커밋하고, CI가 "생성물이 최신인가"를 diff로 검사한다. (스펙 §7-5b)
 - SKILL.md는 첫 턴 서버 명령 전에 "캔버스 서버 준비 중, 처음이면 다운로드로 오래 걸림"을 한 줄 알리고, 실패하면 원인(인터넷·Codex 권한)으로 옮겨 알린다. README에 설치 채널 셋과 "첫 실행에 인터넷 필요"를 적는다.
 - 수동 호출 정책은 스펙 "수동 스킬"(검수 R11)을 따른다. 공통 `skills/archdraw/SKILL.md`에 Claude용 `disable-model-invocation: true`, 같은 스킬 폴더의 `agents/openai.yaml`에 Codex용 `policy.allow_implicit_invocation: false`를 넣어 세 채널에 함께 배포한다. README·스킬 사용 안내에 Claude 플러그인의 `/excalidraw-architect:archdraw`(충돌 없으면 `/archdraw`)와 Codex CLI/IDE의 `$archdraw`(또는 `/skills` 선택), ChatGPT 데스크톱 Codex의 `@excalidraw-architect` 플러그인 선택을 구분해 적는다(2026-09-20 문서 확인: 공식 문서는 `$<skill-name>`만 있고 플러그인 접두 형식은 없다. openai/codex#39166에서 플러그인 스킬을 `$<skill-name>`으로 CLI 호출 확인, 데스크톱은 `@플러그인명`). 기존 설치 확인 때 실제 표시가 다르면 안내를 고친다. 별도 자동 호출 차단 실행 시험은 추가하지 않으며, 후속 대화의 그림 우선 적용은 02 도그푸딩이 확인한다.
-- 캔버스 스크린샷 png는 레포가 아니라 데이터 폴더(`$CLAUDE_PLUGIN_DATA`, Codex `$PLUGIN_DATA`, 둘 다 없으면 홈 아래) `tmp/`에 떨어진다. (스펙 §7-5c) → **2026-09-24 대체:** 호스트 변수를 읽지 않고 항상 `~/.excalidraw-architect/tmp/`다([ADR-0013](../../../docs/adr/0013-data-folder-fixed-under-home.md), 아래 슬라이스 1).
+- 캔버스 스크린샷 png는 레포가 아니라 데이터 폴더(`$CLAUDE_PLUGIN_DATA`, Codex `$PLUGIN_DATA`, 둘 다 없으면 홈 아래) `tmp/`에 떨어진다. (스펙 §7-5c) → **2026-09-24 대체:** 스크린샷 png는 OS 임시 폴더(`os.tmpdir()`)에 둔다. 데이터 폴더 `~/.excalidraw-architect/`는 호스트 변수를 읽지 않고 06 스냅샷만 쓴다([ADR-0013](../../../docs/adr/0013-data-folder-fixed-under-home.md), 아래 슬라이스 1).
 - 업스트림 `excalidraw-skill`은 이 티켓에서 건드리지 않는다. 새 `archdraw` 스킬을 옆에 둔다. 교체는 03.
 
 **Blocked by:** None (can start immediately)
@@ -22,7 +22,7 @@
 - [x] Codex에서 SKILL.md의 호출 줄이 치환 없이 그대로 동작한다 (2026-09-21 전역 `$archdraw` 호출 → `~/.agents/skills/archdraw/scripts/archdraw` CLI 실행 확인)
 - [ ] npx 캐시가 비고 인터넷이 끊긴 상태에서 첫 호출 시, 에이전트가 서버를 받지 못한 원인을 사용자에게 알린다 (선택, 미실시로 닫음 — Codex 샌드박스 변형에서 원인 안내는 확인됐으나 조용한 재시도 1회로 엄격 조건 미충족. 02 도그푸딩에서 재관찰)
 - [ ] `ARCHDRAW_BIN=<레포>/dist/bin.js`를 둔 셸에서 호스트를 시작하면 MCP 경로와 CLI 폴백 모두 npm 게시본 대신 로컬 빌드가 뜬다 (선택·개발용, 미실시로 닫음 — shim 단독 실행은 확인됨. 서버 코드를 처음 고치는 이슈에서 확인)
-- [x] `screenshot` 결과 png가 레포 안이 아니라 데이터 폴더 `tmp/`에 생긴다 (2026-09-21 Codex CLI 폴백 세션에서 `~/.excalidraw-architect/tmp/` 확인)
+- [x] `screenshot` 결과 png가 레포 안이 아니라 데이터 폴더 `tmp/`에 생긴다 (2026-09-21 Codex CLI 폴백 세션에서 `~/.excalidraw-architect/tmp/` 확인) → **2026-09-24 대체:** 기본 위치는 OS 임시 폴더(아래 슬라이스 1)
 - [x] 기존 `npm test`가 그대로 통과한다
 
 ## Comments
@@ -230,7 +230,7 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 
 1. **[높음] CLI 스크린샷이 다른 플러그인의 데이터 폴더에 저장된다.** `src/core/data-dir.ts:22`는 환경 변수 `CLAUDE_PLUGIN_DATA`를 그대로 믿는다. 그런데 Claude Code의 Bash 환경에는 다른 플러그인의 값이 들어 있을 수 있다(실측값 `~/.claude/plugins/data/codex-openai-codex`). CLI는 에이전트의 Bash에서 돌기 때문에, `npx skills add` 채널의 `screenshot` png가 그 폴더에 저장된다. 인수 25는 Codex에서만 확인했다. 06이 같은 우선순위로 스냅샷을 저장하므로, 고치지 않으면 결함이 06으로 번진다.
 2. **[중간] 유효한 `PLUGIN_DATA`를 건너뛴다.** 같은 줄의 `??`는 값이 `undefined`일 때만 다음 후보로 넘어간다. 그래서 `CLAUDE_PLUGIN_DATA`가 빈 문자열이거나 치환되지 않은 `${...}`이면 `PLUGIN_DATA`를 보지 않고 홈으로 간다. 검사는 trim한 값으로 하면서 반환은 trim 전 값을 한다.
-   ✅ **1·2 처리 (2026-09-24 그릴):** 데이터 폴더를 호스트 변수 없이 항상 `~/.excalidraw-architect/`로 정했다([ADR-0013](../../../docs/adr/0013-data-folder-fixed-under-home.md)). Claude·Codex·CLI 모두 같은 폴더를 쓴다. 덮어쓰기는 테스트용 `ARCHDRAW_DATA_DIR` 하나다. 문서(ADR-0009, 스펙의 "데이터 폴더:"·7-2·7-5 (c), 06 티켓)는 반영했고, 코드와 스킬 문구는 아래 슬라이스로 구현한다.
+   ✅ **1·2 처리 (2026-09-24 그릴):** 데이터 폴더를 호스트 변수 없이 항상 `~/.excalidraw-architect/`로 정했다([ADR-0013](../../../docs/adr/0013-data-folder-fixed-under-home.md)). Claude·Codex·CLI 모두 같은 폴더를 쓴다. 같은 날 재그릴로 스크린샷은 데이터 폴더에서 빼 OS 임시 폴더로 되돌렸고, 덮어쓰기 변수 `ARCHDRAW_DATA_DIR`는 두지 않는다(슬라이스 1 핸드오프 Q1·Q2). 문서(ADR-0009·0013, 스펙의 "데이터 폴더:"·7-5 (c)·Testing Decisions)와 코드·스킬 문구 모두 슬라이스 1에서 반영했다.
 3. **[중간] 게시 전에 타르볼 검사가 없다.** 수동 `npm publish`(`prepublishOnly`는 build만 실행)와 `npm-publish.yml` 둘 다 `check-pack-contents`·`test:manifests`를 돌리지 않는다. 09 이후로는 `docs/canvas-guide.md`가 빠진 채 게시되면 게시본 서버가 시작하자마자 `exit 1`로 죽는다. `prepublishOnly`에 두 검사를 붙이면 두 게시 경로를 모두 막을 수 있다.
    ✅ **처리 (2026-09-24 그릴):** 로컬 게시를 없애고 GitHub 릴리즈 → 게시 워크플로 하나로 정했다. 워크플로는 `npm test`와 필수 파일 검사를 통과해야 게시하고, 인증은 Trusted Publishing이다(레포 Actions secrets는 비어 있음, 2026-09-24 `gh secret list`). 상세·대안은 스펙 7-5d, 테스트 경계는 스펙 Testing Decisions. 코드는 슬라이스로 구현한다.
 4. **[낮음] CI가 `test:data-dir`를 돌리지 않는다.** `ci.yml`에 없다. `test:bind`·`test:skill-docs`도 빠져 있다.
@@ -248,19 +248,22 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 
 ### 슬라이스 1 — 데이터 폴더를 한 곳으로 (사후 검수 1·2)
 
-**What to build:** Claude Code·Codex·CLI 폴백 어디서 찍든 스크린샷 png가 `~/.excalidraw-architect/tmp/`에 생긴다. 다른 플러그인이 셸에 넣은 `CLAUDE_PLUGIN_DATA`가 있어도 따라가지 않는다([ADR-0013](../../../docs/adr/0013-data-folder-fixed-under-home.md)).
+**What to build:** 데이터 폴더는 어느 호스트·채널에서든 `~/.excalidraw-architect/`다. 다른 플러그인이 셸에 넣은 `CLAUDE_PLUGIN_DATA`가 있어도 따라가지 않는다([ADR-0013](../../../docs/adr/0013-data-folder-fixed-under-home.md)). 데이터 폴더는 06 스냅샷만 쓴다. CLI 스크린샷 png의 기본 위치는 데이터 폴더가 아니라 OS 임시 폴더다(스펙 7-5 (c)).
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** resolved (2026-09-24 — 1차 구현 뒤 Q1·Q2 결정으로 재작업, 인수 4개 통과)
 
-**테스트 경계(합의됨):** 데이터 폴더를 돌려주는 공개 함수 `pluginDataDir()`. 기대값은 `HOME`을 임시 폴더로 고정하고 문자열 그대로 적는다.
+**테스트 경계(합의됨):** 데이터 폴더를 돌려주는 공개 함수 `pluginDataDir()`. 기대값은 `HOME`을 임시 폴더로 고정하고 문자열 그대로 적는다. 스크린샷 기본 위치는 브라우저 탭이 있어야 찍혀 테스트하지 않는다.
 
-- [ ] `CLAUDE_PLUGIN_DATA`·`PLUGIN_DATA`가 남의 폴더를 가리켜도 데이터 폴더는 홈 아래 `.excalidraw-architect`다
-- [ ] 호스트 변수가 없어도 같은 폴더다
-- [ ] `ARCHDRAW_DATA_DIR`를 주면 그 폴더를 쓰고, 빈 값이면 무시한다
-- [ ] 스킬의 CLI 폴백 안내가 스크린샷 위치를 새 규칙으로 적는다
-- [ ] `npm test` 통과
+- [x] `CLAUDE_PLUGIN_DATA`·`PLUGIN_DATA`가 남의 폴더를 가리켜도 데이터 폴더는 홈 아래 `.excalidraw-architect`다
+- [x] 호스트 변수가 없어도 같은 폴더다
+- [x] CLI `screenshot`의 기본 출력 경로가 OS 임시 폴더이고, 스킬의 CLI 폴백 안내도 그렇게 적는다
+- [x] `npm test` 통과
+
+**2026-09-24 — 구현(에이전트).** `src/core/data-dir.ts`의 `pluginDataDir()`는 `~/.excalidraw-architect`만 돌려준다. 호스트 변수와 `${...}` 치환 안 된 값을 거르던 가드는 지웠다. `scripts/check-data-dir.mjs`는 합의된 경계대로 다시 썼다. 첫 단언은 옛 코드에서 red였다(남의 `CLAUDE_PLUGIN_DATA`를 그대로 반환). `generate-manifests.mjs`의 "MCP 경로는 데이터 폴더가 필요 없다" 주석은 옛 규칙을 전제해 지웠다.
+
+**2026-09-24 — 재작업(에이전트, Q1·Q2).** 1차 구현은 `ARCHDRAW_DATA_DIR` 덮어쓰기와 `pluginTmpDir()`(스크린샷을 `~/.excalidraw-architect/tmp/`에)를 두었다. 둘 다 뺐다. `src/cli/commands/scene.ts`의 `screenshot()` 기본 경로를 업스트림 값 `os.tmpdir()`로 되돌렸고, `check-data-dir.mjs`에서 두 기능의 단언 4개를 지웠다. `canvas-ops.md`는 "Screenshots land in the OS temp folder unless `--out` is given."으로 바꿨다. 재작업 뒤 `pluginDataDir()`를 부르는 프로덕션 코드는 없다 — 06 스냅샷이 쓸 함수이고 합의된 경계라 남겼다. `npm run type-check`·`npm test` 통과.
 
 ---
 
@@ -311,90 +314,116 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 
 ---
 
-## 핸드오프 — 결정 반영 완료, 슬라이스 2~4 초안·이슈 10 생성 대기 (2026-09-24, 2차)
+## 핸드오프 — 슬라이스 1 재작업: 스크린샷은 OS 임시 폴더, `ARCHDRAW_DATA_DIR` 제거 (2026-09-24, 3차 — 처리 완료, 슬라이스 1 재작업 기록 참조)
 
-**목표.** 사후 검수 결함 1~6의 결정은 문서에 다 들어갔다. 코드는 아직 HEAD 그대로다. 남은 순서: 슬라이스 2~4 초안 승인 → 이슈 10 생성 → 커밋 → 다음 구현 세션에서 슬라이스 1~4 구현.
+**목표.** 사후 검수 슬라이스 1~4를 `/implement`로 구현하는 중이다. 로드맵은 `1 ▶ → 4 → 3 → 2`. 슬라이스 1은 1차 구현을 마쳤다. 그 뒤 사용자가 Q1·Q2를 정해서 재작업한다.
 
-**첫 행동.** `.scratch/archdraw-skill/spec.md` 인터페이스 절의 shim 문단에서 "가리킬 폴더는 01 슬라이스 4에서 정한다."를 "가리킬 폴더는 shim 자기 폴더(`"$(dirname "$0")"`)다."로 바꾸고, 사용자에게 한 줄로 보고한다. 이 폴더는 2026-09-24에 사용자가 정했다. 근거는 아래 "결정"의 5번에 있다.
+**첫 행동.** 코드 파일 3개를 고친다.
+- `src/cli/commands/scene.ts` → `screenshot()`: 기본 출력 경로를 `` path.join(os.tmpdir(), `excalidraw-screenshot-${Date.now()}.png`) ``로 되돌린다. `import os from 'os'`를 넣고 `pluginTmpDir` import를 뺀다.
+- `src/core/data-dir.ts`: `pluginDataDir()`의 `ARCHDRAW_DATA_DIR` 분기와 `pluginTmpDir()`를 지운다.
+- `scripts/check-data-dir.mjs`: `ARCHDRAW_DATA_DIR` 단언 2개와 `pluginTmpDir` 단언 2개를 지운다. `ENV_KEYS`의 항목도 뺀다.
 
-**당시 판단.** 이 세션은 앞 핸드오프의 첫 행동(ADR-0011, 04 Q1·Q3)을 처리했다. 그다음 `/to-spec`·`/domain-modeling`으로 스펙과 ADR을 결정에 맞췄고, `/to-tickets`로 슬라이스 구성을 제안하던 중이었다. 슬라이스 4의 `--prefix` 폴더를 묻다가 설명이 길어졌다. 그 과정에서 두 가지가 나왔다. MCP만 직접 등록한 사용자는 shim을 거치지 않는다. 그리고 그 사용자는 archdraw 판단을 받지 못한다. 후자는 01 범위 밖이라 새 이슈 10으로 빼기로 했다.
+그다음 `npm run type-check`와 `npm test`를 돌린다.
+
+**당시 판단.**
+- 1차 구현은 인수 5개를 통과했고 두 축(표준·스펙) 코드 리뷰 지적도 반영했다. 내용은 세 가지다.
+  - 호스트 변수를 무시한다.
+  - `ARCHDRAW_DATA_DIR`로 데이터 폴더를 덮어쓴다.
+  - 스크린샷을 `~/.excalidraw-architect/tmp/`에 둔다.
+- 리뷰가 남긴 위험을 사용자와 그릴했다. `ARCHDRAW_DATA_DIR`가 상대경로면 png가 프로젝트 안에 생긴다는 것이다. 그 과정에서 두 가지가 드러났다.
+  - 이 변수를 쓰는 곳이 없다. 테스트는 `HOME`을 바꿔 격리한다.
+  - 스크린샷을 홈 폴더로 옮긴 근거가 약했다. 업스트림 기본값 `os.tmpdir()`도 이미 레포 밖이었다. 홈 폴더에는 파일을 지우는 코드가 없다.
+- 결론: 데이터 폴더가 꼭 필요한 곳은 06의 스냅샷뿐이다.
 
 ### 진행 상태 (git 기준)
 
-- `main`, HEAD `f076d2f`. 이 세션의 커밋은 없다. 코드(`src/`·`scripts/`·`plugin/`)는 바꾸지 않았다.
-- 커밋 안 된 변경 8개:
-  - `docs/adr/0013-data-folder-fixed-under-home.md` — 새 파일(결정 1·2)
-  - `docs/adr/0009-…` — 데이터 폴더 줄이 ADR-0013을 가리킴(결정 1·2)
-  - `docs/adr/0011-…` — 첫 문단의 cwd 서술을 고침(Codex는 플러그인 루트, Claude Code는 세션 폴더). "2026-09-24:" 문단을 덧붙임(결정 5)
-  - `docs/adr/0002-…` — Consequences 첫 줄을 고침. "스킬만 바꿀 때는 게시 불필요"를 "스킬만 바꿔도 버전을 올려 게시"로(결정 3, 스펙 7-5d)
-  - `.scratch/archdraw-skill/spec.md` — 데이터 폴더 세 줄, 스토리 34·35, 7-5d, Testing Decisions 세 줄(릴리즈, CI `npm test`, shim `--prefix`). 인터페이스 절 shim 문단에 `--prefix`를 추가했고, 7-5b 카탈로그 `source`를 `./plugin`으로 고쳤다
-  - `04-…` — 이전 세션의 04 핸드오프 절과 Q4 한 문장. 이 세션에서 Q1(MCP 서버 cwd 실측)과 Q3(`src/core/spawn.ts` → `unreachableError()` 문구)을 고쳤다
-  - `06-…` — 데이터 폴더 한 줄(결정 1·2)
-  - 이 파일 — 사후 검수 ✅들, 슬라이스 1, 이 핸드오프
+- `main`, HEAD `09f0934`. 이 에이전트 세션의 커밋이고 push하지 않았다. 01 티켓의 옛 서술 3곳에 "대체" 표시를 붙인 커밋이다.
+- 커밋하지 않은 변경이 5개 있다. 슬라이스 1의 1차 구현이며, 사용자 커밋 확인 전이다.
+  - `src/core/data-dir.ts`: 호스트 변수를 읽지 않는다. `ARCHDRAW_DATA_DIR`(빈 값이면 무시) 다음에 `~/.excalidraw-architect` 순서로 본다. `pluginTmpDir()`는 남아 있다. ← 첫 행동으로 일부 되돌린다
+  - `scripts/check-data-dir.mjs`: 합의된 경계대로 다시 썼다(`HOME`을 고정하고 기대값을 문자열로 적는다). ← 첫 행동으로 줄인다
+  - `plugin/skills/archdraw/references/canvas-ops.md`: 스크린샷 위치 줄을 `~/.excalidraw-architect/tmp/`로 바꿨다. ← Q1에 따라 다시 바꾼다
+  - `scripts/generate-manifests.mjs`: MCP 매니페스트에 `env`가 없는 이유를 적은 주석을 ADR-0013 기준으로 고쳤다. 그대로 둔다. → 재작업에서 사용자 선호(필수 아닌 주석 없음)로 지웠다.
+  - 이 파일: 슬라이스 1의 Status·체크박스·구현 기록, 이 핸드오프.
+- 1차 구현 상태에서 `npm run type-check`와 `npm test`는 exit 0이었다(이 에이전트 세션에서 확인). 재작업 뒤에 다시 돌린다.
 
-### 결정 (자세한 내용은 가리키는 곳에)
+### 결정 (2026-09-24 그릴, 사용자)
 
-- **1·2 데이터 폴더:** [ADR-0013](../../../docs/adr/0013-data-folder-fixed-under-home.md), 슬라이스 1.
-- **3 게시:** 스펙 7-5d와 Testing Decisions. ADR-0002 Consequences도 맞췄다.
-- **4 CI:** 스펙 Testing Decisions.
-- **5 shim `--prefix`:** shim의 npx 줄을 `exec npx --prefix "$(dirname "$0")" -y <패키지>@<버전> "$@"`로 바꾼다.
-  - 폴더 조건은 두 가지다. 폴더가 실제로 있어야 하고(없는 폴더는 `ENOENT`, 2026-09-24 실측), 그 안에 같은 이름의 `package.json`이 없어야 한다.
-  - shim 폴더는 shim이 실행 중이면 반드시 있다. 데이터 폴더를 쓰면 `mkdir -p`가 필요하다. README 명령과 같은 폴더를 쓴다는 이점도 없다. README 등록 명령 안에서는 `mkdir`을 할 수 없기 때문이다.
-  - npx는 `--prefix` 폴더에 파일을 쓰지 않는다(빈 폴더 실측).
-  - 인자 없이 실행하는 MCP 모드도 실측했다. 이 레포 cwd에서 `--prefix <빈 폴더>`로 `initialize` 응답을 받았다(2026-09-24).
-  - 테스트: 새 테스트는 없다(스펙 Testing Decisions).
-  - 적용 범위: Claude 플러그인, Codex 플러그인, `npx skills add` 세 경로가 해결된다. 셋 다 shim을 실행한다(`plugin/.mcp.json`·`plugin/mcp.json`의 args, `npx skills add`는 SKILL.md가 Bash로). MCP 직접 등록은 이슈 10에서 README 명령으로 해결한다.
-- **6 에러 문구:** 04 Q3.
-- **ADR·용어 사전:** 새 ADR은 만들지 않았고 CONTEXT.md도 고치지 않았다(`/domain-modeling` 기준 판단).
+- **Q1: 스크린샷 기본 위치는 OS 임시 폴더다.** `os.tmpdir()`로, 업스트림 원래 값이다.
+  - 에이전트가 찍고 바로 한 번 보는 일회용이다.
+  - OS가 치운다.
+  - 레포 밖이라 스펙 7-5(c)의 "레포 오염 방지"도 지킨다.
+  - 남기고 싶으면 `screenshot --out <경로>`를 쓴다.
+- **Q2: `ARCHDRAW_DATA_DIR`를 뺀다.**
+  - 테스트용으로 만들었지만 쓰는 테스트가 없다.
+  - 상대경로를 주면 png가 프로젝트 안에 생기는 구멍도 같이 사라진다.
+  - 06에서 필요해지면 그때 넣는다.
+- **그대로인 것:**
+  - 데이터 폴더 `~/.excalidraw-architect/`는 호스트 변수를 읽지 않는다. ADR-0013의 본 결정이다.
+  - 데이터 폴더는 06 스냅샷(`snapshots/`)만 쓴다.
+  - export는 06에서 사용자가 지정한 경로에 저장하며 데이터 폴더와 무관하다(ADR-0009).
 
-### 슬라이스 2~4 초안 재료 (`/to-tickets`로 사용자 승인 필요, 막는 티켓은 모두 없음)
+### 수정 범위
 
-- **슬라이스 2 — 릴리즈 경로(3).**
-  - `.github/workflows/npm-publish.yml`: Node `20.x`를 22.14 이상으로, npm은 11.5.1 이상(Trusted Publishing 요건). `NPM_TOKEN` 검사 단계와 `NODE_AUTH_TOKEN` env를 뺀다. `id-token: write`는 이미 있다. 게시 전에 `npm test`와 `node scripts/check-pack-contents.mjs`를 넣는다.
-  - `package.json`에 `version` 훅: `npm run manifests`를 돌리고 생성물을 버전 커밋에 넣는다.
-  - 사람 몫: npmjs.com에 Trusted Publisher를 등록하고, 1·3·4가 들어간 뒤 첫 릴리즈를 낸다.
-- **슬라이스 3 — CI(4).** `.github/workflows/ci.yml`의 `npm run test:manifests` 단계와 `node scripts/check-mcp-stdio.mjs` 단계를 `npm test` 한 단계로 바꾼다. `test:bind`가 GitHub 러너에서 포트를 열 수 있는지는 확인하지 않았다(unverified). 첫 push에서 본다.
-- **슬라이스 4 — shim `--prefix`(5).**
-  - shim은 생성물이다. `scripts/generate-manifests.mjs`의 `exec npx -y ${pkg.name}@${pkg.version} "$@"` 줄을 고친 뒤 `npm run manifests`를 돌린다.
-  - AGENTS.md Gotchas의 두 줄도 같이 고친다("플러그인은 `plugin/` 아래에 산다 …", "npm 게시본은 **레포 밖 디렉터리**에서 검증한다 …"). 고칠 때는 `writing-for-agents` 스킬을 따른다.
+**Q1 (스크린샷 → OS 임시 폴더)**
+- `src/cli/commands/scene.ts` → `screenshot()`의 기본 경로, import, 주석
+- `src/core/data-dir.ts` → `pluginTmpDir()` 삭제
+- `scripts/check-data-dir.mjs` → `pluginTmpDir` import와 단언 삭제
+- `plugin/skills/archdraw/references/canvas-ops.md` → "Screenshots land in …" 줄
+- `.scratch/archdraw-skill/spec.md` → "데이터 폴더:" 줄의 `+ tmp/(…)`, 7-5 (c)
+- `docs/adr/0009-snapshots-per-project-canvas-per-session.md` → Consequences의 "스크린샷 임시 png도 그 아래 `tmp/`에 둔다"
+- `docs/adr/0013-data-folder-fixed-under-home.md`
+  - 첫 문장 괄호 "(스크린샷 `tmp/`, 스냅샷 `snapshots/`)"를 고친다.
+  - Considered Options에 "스크린샷도 데이터 폴더 `tmp/`"를 넣고 기각 이유를 적는다. 이유는 일회용이라는 것과 지우는 코드가 없다는 것이다.
+- 이 파일
+  - 본문 목록의 "캔버스 스크린샷 png는…" 항목 끝 "2026-09-24 대체" 문장
+  - 사후 검수 1·2의 "✅ 1·2 처리" 문장
+  - 슬라이스 1의 What to build와 체크박스
 
-### 이슈 10 재료 (파일은 아직 없다. 01과 별개)
+**Q2 (`ARCHDRAW_DATA_DIR` 제거)**
+- `src/core/data-dir.ts` → `pluginDataDir()`의 덮어쓰기 분기와 주석 문장
+- `scripts/check-data-dir.mjs` → `ENV_KEYS` 항목과 단언 2개
+- `docs/adr/0013-…` → 첫 문단 끝 "덮어쓰기는 `ARCHDRAW_DATA_DIR` 하나이며 테스트용이다". Considered Options 첫 항목은 기각된 대안을 설명하는 문장이라 그대로 둔다.
+- 이 파일
+  - "✅ 1·2 처리"의 덮어쓰기 문장
+  - 슬라이스 1 체크박스 "`ARCHDRAW_DATA_DIR`를 주면…" 삭제
+  - 구현 기록의 해당 문장
 
-- **문제:** MCP를 직접 등록한 사용자(`claude mcp add archdraw -- npx -y excalidraw-architect`)는 그리기 툴과 캔버스 규격 요약만 받는다. 캔버스 규격 요약은 `docs/canvas-guide.md`를 서버 `instructions`로 보내는 것이다. archdraw 판단(`plugin/skills/archdraw/SKILL.md`, `references/`)은 받지 못한다. README에도 이 등록 방법이 없다.
-- **할 일 후보:**
-  1. README 두 언어에 MCP 직접 등록 절차를 적는다. 명령에 `--prefix ~`를 넣는다. 이 레포 폴더에서 켤 때 생기는 npx 착각을 막기 위해서다.
-  2. 서버에 MCP prompt `archdraw`를 추가한다. 호출되면 패키지 안의 SKILL.md를 읽어 돌려준다. 원본은 하나로 유지한다. `package.json` `files`에 `plugin/**/*`가 이미 있다.
-  3. `references/*.md`를 MCP resource로 연다. `guide://canvas`와 같은 방식이다.
-  4. 스펙 7-7의 "스킬 없이 MCP만 등록한 사용자도 같은 툴을 쓴다"를 고친다.
-- **근거:**
-  - 참고 레포 조사(2026-09-24, 서브에이전트): skill과 MCP를 둘 다 내는 yctimlin·drawio-mcp·notebooklm-mcp-cli는 모두 MCP 전용 경로를 정식으로 안내한다. drawio-mcp는 `shared/xml-reference.md` 하나를 스킬과 서버가 함께 쓴다.
-  - 선행 조사 `docs/research/2026-09-19-mcp-guidance-delivery.md`: Claude Code는 `instructions`와 툴 description을 2KB에서 자른다. 그래서 판단 본문은 prompt나 resource로 보내야 한다.
-- **업스트림도 같다:** `references/mcp-excalidraw-yctimlin` 폴더 안에서 `npx -y mcp-excalidraw-server --version`을 실행하면 `command not found`가 난다(2026-09-24 실측).
-- **미확인:**
-  - Claude Desktop·Cursor에서 MCP prompt가 어떻게 보이는지
-  - 모델이 resource를 스스로 읽는지
-  - SKILL.md의 "MCP 툴이 없으면 CLI" 문구가 MCP 전용 사용자에게 어떻게 읽히는지
+새 ADR과 CONTEXT.md 변경은 없다. ADR-0013을 고치는 것으로 충분하다.
+
+### 에이전트 판단 (사용자가 확인하지 않음)
+
+- 재작업 뒤 `pluginDataDir()`를 부르는 프로덕션 코드가 없어진다. 합의된 테스트 경계이고 06 스냅샷이 쓸 함수라 남긴다.
+- 스크린샷 기본 위치에는 테스트를 두지 않는다. `screenshot`은 브라우저 탭이 필요하고, 합의된 테스트 경계가 없다. 코드만 바꾼다. 테스트가 필요하다고 보이면 새 경계이므로 멈추고 사용자에게 묻는다.
 
 ### 통한 것
 
-- 실제로 실행되는 파일과 명령을 그대로 보여 주는 설명이 통했다. `plugin/.mcp.json`의 `command`·`args`, shim 본문, "플러그인 설치 → shim 실행 → 그 안의 npx" 같은 코드블록이 그 예다.
-- ELI5 요청에는 "npx는 먼저 지금 폴더를 둘러본다" 식의 짧은 단락이 통했다.
-- 한 줄 실측이 논쟁을 끝냈다. MCP 모드 `--prefix`, 없는 폴더의 `ENOENT`, 업스트림의 같은 실패가 그 예다.
-- 참고 레포 비교는 서브에이전트에 맡기고 표로 보고했다.
-- 사용자는 `/to-spec`, `/domain-modeling`, `/to-tickets`, `/grill-with-docs`, `/show-me`를 부르며 "스킬 지시대로" 판단하기를 원했다.
+- 한 줄 실측이 문제를 바로 보여 줬다. 가짜 프로젝트 폴더에서 `ARCHDRAW_DATA_DIR=.`로 실행하니 `pluginTmpDir()`가 `tmp`를 돌려주고 그 폴더에 `tmp/`를 만들었다.
+- 파일 종류(스크린샷·스냅샷·export)마다 "원래 → 지금 → 계획"을 나눈 블록이 결정을 끌어냈다. 같은 내용을 표로 냈을 때는 "이해안가"가 왔다.
+- 짧은 질문에 추천 한 줄(➡️)을 붙이니 바로 결정으로 이어졌다.
+- 코드 리뷰는 표준·스펙 서브에이전트 둘을 병렬로 돌렸다.
 
 ### 안 통한 것
 
-- ⚠️ 한계만 반복하고 해결책을 말하지 않았다. "MCP 직접 등록은 못 고친다"고 여러 번 말했지만, README 명령에 `--prefix`를 넣으면 된다는 답과 drawio 방식은 사용자가 물은 뒤에야 나왔다. 사용자 반응: "왜 이런걸 말을 안하지?", "그걸 왜 말을 안한거야?" 한계를 말할 때는 해결책을 같은 문장에 붙인다.
-- ⚠️ 사용자의 모호한 반응("이건 좀 아닌거같은데")을 거절로 읽고 추천을 (a)에서 (b)로 바꿨다. 그러자 "하드코딩으로 바뀜?"이라는 되물음이 왔다. 모호한 반응에는 무엇이 걸리는지 묻고, 추천은 그대로 둔다.
-- ⚠️ shim, npx, `--prefix`, "shim을 거친다", MCP 직접 등록이 모두 되물음을 받았다. 추상적인 말 대신 실행되는 파일이나 명령을 먼저 보여 준다.
-- ⚠️ "장황하게 말하지마"가 여러 번 나왔다. 결과 한두 줄에 질문 하나로 답한다.
+- ⚠️ "장황하게말하지마"가 또 나왔다. 끝 보고는 로드맵 한 줄, 조건 결과 한 줄, 남은 것 한 줄, 질문 하나로 쓴다.
+- ⚠️ 리뷰가 남긴 위험을 "새 결정 필요"로만 적고 무엇이 문제인지 설명하지 않았다. "문제잇엇어?"에 없었다고 답했다가 되물음을 받았다.
+  - 남은 위험은 문제로 말한다.
+  - 처음 나오는 변수나 용어는 무엇이고 원래 있던 것인지부터 말한다. 사용자 반응: "먼소리하는거야 맥락담아", "ARCHDRAW_DATA_DIR 이건머야".
+- ⚠️ `codex sandbox`로 Codex 샌드박스가 홈 폴더 쓰기를 막는지 실측하려 했지만 실패했다.
+  - `-P <profile>`가 필수이고, `-P workspace-write`는 `default_permissions requires a [permissions] table`로 실패했다.
+  - 01 범위에서는 필요 없어서 미확인으로 둔다.
+- 새 테스트 2개는 앞 구현이 이미 동작을 채워서 red 없이 통과했다. 끝 보고에 그대로 적었다.
 
 ### 남은 단계
 
-1. ✅ 첫 행동(스펙의 `--prefix` 폴더 한 줄).
-2. ✅ `/to-tickets`로 위 재료를 슬라이스 2~4 초안으로 보여 주고, 승인받으면 이 파일의 슬라이스 1 아래에 넣는다.
-3. ✅ 사용자 승인 후 이슈 10 파일을 만든다(`.scratch/archdraw-skill/issues/10-<slug>.md`). 스펙 스토리와 7-7의 수정 범위도 같이 정한다.
-4. ✅ 커밋은 사용자 확인 후에 한다. 04의 옛 핸드오프 변경을 같은 커밋에 넣을지 묻는다. 메시지는 영어 1~2문장, 트레일러 없이.
-5. 다음 구현 세션: `/implement .scratch/archdraw-skill/issues/01-plugin-skeleton.md`로 슬라이스 1~4를 TDD로 구현한다.
-6. 사람 몫: Trusted Publisher 등록 → 버전을 올리고 첫 릴리즈. 순서는 스펙 7-5d, 확인 항목은 Testing Decisions를 따른다.
+1. 첫 행동(코드 3개) → `npm run type-check` → `npm test`.
+2. 위 "수정 범위"의 문서를 고친다. 슬라이스 1의 What to build와 체크박스를 새 기준으로 다시 쓰고 Status를 `resolved`로 바꾼다.
+3. `/code-review`(HEAD 대비 작업 트리)를 돌리고 반영한다.
+4. 끝 보고(사용자 형식): 로드맵 한 줄, 조건별 통과/미통과와 근거, 문제, 체크박스·Status 갱신.
+   - **커밋은 사용자 확인 후에 한다.** 영어 1~2문장, 트레일러 없이.
+   - 1차 구현과 재작업은 한 커밋으로 묶는다.
+5. 사용자가 승인하면 슬라이스 4 → 3 → 2 순서로 간다. `/implement` 진행 규칙은 이렇다.
+   - 슬라이스는 하나씩 한다.
+   - 착수 전에 관련 스펙과 ADR을 읽는다.
+   - 합의된 경계는 `/tdd`로 한다.
+   - 멈춤 조건이면 선택지 2~3개와 추천 하나로 보고한다.
+6. 사람 몫: Trusted Publisher를 등록하고, 슬라이스 1·3·4가 들어간 뒤 첫 릴리즈를 낸다(스펙 7-5d).

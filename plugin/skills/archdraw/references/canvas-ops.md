@@ -102,8 +102,7 @@ echo '[{"type":"rectangle","x":100,"y":100,"text":"Order API"}]' | scripts/archd
 scripts/archdraw screenshot
 ```
 
-Screenshots land in the data folder (`$CLAUDE_PLUGIN_DATA`, `$PLUGIN_DATA`, or
-`~/.excalidraw-architect`) under `tmp/` unless `--out` is given.
+PNG screenshots land in the OS temp folder unless `--out` is given.
 
 Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser tab
 required.

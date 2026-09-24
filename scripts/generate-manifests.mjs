@@ -72,8 +72,6 @@ const pluginManifest = (schema) => json({
 // Both hosts launch the same shim with no arguments. `command` stays one
 // executable token because Agent Plugins 1.0 §7.2.1 forbids placeholder
 // expansion there; the shim path travels in `args`, which both hosts expand.
-// No `env`: the MCP screenshot comes back inline, so nothing on this path
-// needs the data folder, and §9.2 forbids PLUGIN_DATA there anyway.
 const mcpManifest = ({ schema, rootVar }) => json({
   ...(schema ? { $schema: schema } : {}),
   mcpServers: {
