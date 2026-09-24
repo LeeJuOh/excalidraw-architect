@@ -314,116 +314,72 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 
 ---
 
-## 핸드오프 — 슬라이스 1 재작업: 스크린샷은 OS 임시 폴더, `ARCHDRAW_DATA_DIR` 제거 (2026-09-24, 3차 — 처리 완료, 슬라이스 1 재작업 기록 참조)
+## 핸드오프 — 사후 검수 슬라이스 4 → 3 → 2 (2026-09-24, 4차)
 
-**목표.** 사후 검수 슬라이스 1~4를 `/implement`로 구현하는 중이다. 로드맵은 `1 ▶ → 4 → 3 → 2`. 슬라이스 1은 1차 구현을 마쳤다. 그 뒤 사용자가 Q1·Q2를 정해서 재작업한다.
+**목표.** 사후 검수 슬라이스를 `/implement`로 하나씩 구현한다. 로드맵은 `1 ✅ → 4 ▶ → 3 → 2`다.
 
-**첫 행동.** 코드 파일 3개를 고친다.
-- `src/cli/commands/scene.ts` → `screenshot()`: 기본 출력 경로를 `` path.join(os.tmpdir(), `excalidraw-screenshot-${Date.now()}.png`) ``로 되돌린다. `import os from 'os'`를 넣고 `pluginTmpDir` import를 뺀다.
-- `src/core/data-dir.ts`: `pluginDataDir()`의 `ARCHDRAW_DATA_DIR` 분기와 `pluginTmpDir()`를 지운다.
-- `scripts/check-data-dir.mjs`: `ARCHDRAW_DATA_DIR` 단언 2개와 `pluginTmpDir` 단언 2개를 지운다. `ENV_KEYS`의 항목도 뺀다.
+**첫 행동.** 아래 "미결" 항목(스크린샷 임시 파일)이 아직 이 절에 남아 있으면 먼저 사용자에게 묻고 답대로 처리한다. 그다음 슬라이스 4에 착수한다.
+1. 위 슬라이스 4의 `Status:`를 `claimed`로 바꾼다.
+2. 두 문서를 읽는다: `spec.md`의 "CLI 폴백 호출 줄" 문단과 [ADR-0011](../../../docs/adr/0011-plugin-lives-under-plugin-dir.md)의 2026-09-24 문단. 둘 다 `--prefix` 결정을 이미 반영했다.
+3. `scripts/generate-manifests.mjs` → `const shim` 템플릿의 마지막 줄을 고친다.
+   - 지금: `` exec npx -y ${pkg.name}@${pkg.version} "$@" ``
+   - 바꿀 것: `--prefix "$(dirname "$0")"`를 `npx` 바로 뒤에 넣는다.
+   - JS 템플릿 리터럴이라 `${`만 보간된다. `$(`와 `$0`은 이스케이프 없이 그대로 쓴다.
+4. `npm run manifests`로 `plugin/skills/archdraw/scripts/archdraw`를 재생성한다.
+5. `npm test`를 돌린다.
 
-그다음 `npm run type-check`와 `npm test`를 돌린다.
-
-**당시 판단.**
-- 1차 구현은 인수 5개를 통과했고 두 축(표준·스펙) 코드 리뷰 지적도 반영했다. 내용은 세 가지다.
-  - 호스트 변수를 무시한다.
-  - `ARCHDRAW_DATA_DIR`로 데이터 폴더를 덮어쓴다.
-  - 스크린샷을 `~/.excalidraw-architect/tmp/`에 둔다.
-- 리뷰가 남긴 위험을 사용자와 그릴했다. `ARCHDRAW_DATA_DIR`가 상대경로면 png가 프로젝트 안에 생긴다는 것이다. 그 과정에서 두 가지가 드러났다.
-  - 이 변수를 쓰는 곳이 없다. 테스트는 `HOME`을 바꿔 격리한다.
-  - 스크린샷을 홈 폴더로 옮긴 근거가 약했다. 업스트림 기본값 `os.tmpdir()`도 이미 레포 밖이었다. 홈 폴더에는 파일을 지우는 코드가 없다.
-- 결론: 데이터 폴더가 꼭 필요한 곳은 06의 스냅샷뿐이다.
+**맥락.**
+- 슬라이스 4는 생성기 한 줄, 재생성, AGENTS.md 두 줄로 끝나는 작은 일이다.
+- 게시본 0.1.0이 npm에 있으므로 릴리즈 없이도 로컬 확인이 된다(추측, 미실측). 레포 루트 cwd에서 재생성한 shim을 `--version`으로 실행해 `0.1.0`이 나오면 된다.
+- 로컬 확인 때 shim 폴더(`plugin/skills/archdraw/scripts/`)에 `node_modules`나 lock 파일이 생기지 않는지 `git status`로 본다. 사후 검수 5의 실측은 빈 폴더였다. shim 파일이 든 폴더에서는 아직 안 봤다.
+- 인수 마지막 칸("다음 릴리즈 뒤…")은 슬라이스 2의 첫 릴리즈 뒤에 사람이 확인한다.
 
 ### 진행 상태 (git 기준)
 
-- `main`, HEAD `09f0934`. 이 에이전트 세션의 커밋이고 push하지 않았다. 01 티켓의 옛 서술 3곳에 "대체" 표시를 붙인 커밋이다.
-- 커밋하지 않은 변경이 5개 있다. 슬라이스 1의 1차 구현이며, 사용자 커밋 확인 전이다.
-  - `src/core/data-dir.ts`: 호스트 변수를 읽지 않는다. `ARCHDRAW_DATA_DIR`(빈 값이면 무시) 다음에 `~/.excalidraw-architect` 순서로 본다. `pluginTmpDir()`는 남아 있다. ← 첫 행동으로 일부 되돌린다
-  - `scripts/check-data-dir.mjs`: 합의된 경계대로 다시 썼다(`HOME`을 고정하고 기대값을 문자열로 적는다). ← 첫 행동으로 줄인다
-  - `plugin/skills/archdraw/references/canvas-ops.md`: 스크린샷 위치 줄을 `~/.excalidraw-architect/tmp/`로 바꿨다. ← Q1에 따라 다시 바꾼다
-  - `scripts/generate-manifests.mjs`: MCP 매니페스트에 `env`가 없는 이유를 적은 주석을 ADR-0013 기준으로 고쳤다. 그대로 둔다. → 재작업에서 사용자 선호(필수 아닌 주석 없음)로 지웠다.
-  - 이 파일: 슬라이스 1의 Status·체크박스·구현 기록, 이 핸드오프.
-- 1차 구현 상태에서 `npm run type-check`와 `npm test`는 exit 0이었다(이 에이전트 세션에서 확인). 재작업 뒤에 다시 돌린다.
+- 브랜치 `main`. `origin/main`보다 앞선 커밋은 `09f0934`, `8421776`, 그리고 이 핸드오프를 담은 커밋이다. push하지 않았고, push는 지시가 있을 때만 한다.
+- ✅ 슬라이스 1: `8421776`. 1차 구현과 Q1·Q2 재작업을 한 커밋에 담았다. 내용은 위 슬라이스 1 구현·재작업 기록에 있다.
+  - PRD 183행("데이터 폴더:")·7-5 (c)·Testing Decisions를 고쳤다.
+  - ADR-0009·0013, `canvas-ops.md`, 코드 3개(`data-dir.ts`, `scene.ts`, `check-data-dir.mjs`)도 고쳤다. `generate-manifests.mjs`에서는 옛 규칙을 전제한 주석 2줄을 지웠다(생성물은 그대로).
+  - 두 축 코드 리뷰 지적을 반영했다.
+- ⏳ 슬라이스 4·3·2: 미착수. 셋 다 `Status: ready-for-agent`다.
 
-### 결정 (2026-09-24 그릴, 사용자)
+### 결정
 
-- **Q1: 스크린샷 기본 위치는 OS 임시 폴더다.** `os.tmpdir()`로, 업스트림 원래 값이다.
-  - 에이전트가 찍고 바로 한 번 보는 일회용이다.
-  - OS가 치운다.
-  - 레포 밖이라 스펙 7-5(c)의 "레포 오염 방지"도 지킨다.
-  - 남기고 싶으면 `screenshot --out <경로>`를 쓴다.
-- **Q2: `ARCHDRAW_DATA_DIR`를 뺀다.**
-  - 테스트용으로 만들었지만 쓰는 테스트가 없다.
-  - 상대경로를 주면 png가 프로젝트 안에 생기는 구멍도 같이 사라진다.
-  - 06에서 필요해지면 그때 넣는다.
-- **그대로인 것:**
-  - 데이터 폴더 `~/.excalidraw-architect/`는 호스트 변수를 읽지 않는다. ADR-0013의 본 결정이다.
-  - 데이터 폴더는 06 스냅샷(`snapshots/`)만 쓴다.
-  - export는 06에서 사용자가 지정한 경로에 저장하며 데이터 폴더와 무관하다(ADR-0009).
-
-### 수정 범위
-
-**Q1 (스크린샷 → OS 임시 폴더)**
-- `src/cli/commands/scene.ts` → `screenshot()`의 기본 경로, import, 주석
-- `src/core/data-dir.ts` → `pluginTmpDir()` 삭제
-- `scripts/check-data-dir.mjs` → `pluginTmpDir` import와 단언 삭제
-- `plugin/skills/archdraw/references/canvas-ops.md` → "Screenshots land in …" 줄
-- `.scratch/archdraw-skill/spec.md` → "데이터 폴더:" 줄의 `+ tmp/(…)`, 7-5 (c)
-- `docs/adr/0009-snapshots-per-project-canvas-per-session.md` → Consequences의 "스크린샷 임시 png도 그 아래 `tmp/`에 둔다"
-- `docs/adr/0013-data-folder-fixed-under-home.md`
-  - 첫 문장 괄호 "(스크린샷 `tmp/`, 스냅샷 `snapshots/`)"를 고친다.
-  - Considered Options에 "스크린샷도 데이터 폴더 `tmp/`"를 넣고 기각 이유를 적는다. 이유는 일회용이라는 것과 지우는 코드가 없다는 것이다.
-- 이 파일
-  - 본문 목록의 "캔버스 스크린샷 png는…" 항목 끝 "2026-09-24 대체" 문장
-  - 사후 검수 1·2의 "✅ 1·2 처리" 문장
-  - 슬라이스 1의 What to build와 체크박스
-
-**Q2 (`ARCHDRAW_DATA_DIR` 제거)**
-- `src/core/data-dir.ts` → `pluginDataDir()`의 덮어쓰기 분기와 주석 문장
-- `scripts/check-data-dir.mjs` → `ENV_KEYS` 항목과 단언 2개
-- `docs/adr/0013-…` → 첫 문단 끝 "덮어쓰기는 `ARCHDRAW_DATA_DIR` 하나이며 테스트용이다". Considered Options 첫 항목은 기각된 대안을 설명하는 문장이라 그대로 둔다.
-- 이 파일
-  - "✅ 1·2 처리"의 덮어쓰기 문장
-  - 슬라이스 1 체크박스 "`ARCHDRAW_DATA_DIR`를 주면…" 삭제
-  - 구현 기록의 해당 문장
-
-새 ADR과 CONTEXT.md 변경은 없다. ADR-0013을 고치는 것으로 충분하다.
-
-### 에이전트 판단 (사용자가 확인하지 않음)
-
-- 재작업 뒤 `pluginDataDir()`를 부르는 프로덕션 코드가 없어진다. 합의된 테스트 경계이고 06 스냅샷이 쓸 함수라 남긴다.
-- 스크린샷 기본 위치에는 테스트를 두지 않는다. `screenshot`은 브라우저 탭이 필요하고, 합의된 테스트 경계가 없다. 코드만 바꾼다. 테스트가 필요하다고 보이면 새 경계이므로 멈추고 사용자에게 묻는다.
+- `/to-spec`은 기존 PRD 수정에 쓰지 않는다. 새 spec 파일을 만드는 스킬이라 중복 spec이 생긴다. PRD는 직접 고친다.
+- `pluginDataDir()` → `dataDir()` 개명(리뷰 제안)은 06으로 미룬다. PRD와 티켓에 테스트 경계 이름으로 박혀 있어서다.
 
 ### 통한 것
 
-- 한 줄 실측이 문제를 바로 보여 줬다. 가짜 프로젝트 폴더에서 `ARCHDRAW_DATA_DIR=.`로 실행하니 `pluginTmpDir()`가 `tmp`를 돌려주고 그 폴더에 `tmp/`를 만들었다.
-- 파일 종류(스크린샷·스냅샷·export)마다 "원래 → 지금 → 계획"을 나눈 블록이 결정을 끌어냈다. 같은 내용을 표로 냈을 때는 "이해안가"가 왔다.
-- 짧은 질문에 추천 한 줄(➡️)을 붙이니 바로 결정으로 이어졌다.
-- 코드 리뷰는 표준·스펙 서브에이전트 둘을 병렬로 돌렸다.
+- `/implement` 흐름이 끝까지 통했다: 코드 → type-check → `npm test` → `/code-review`(표준·스펙 서브에이전트 병렬) → 지적 반영 → 테스트 재실행 → 커밋. 이번엔 리뷰 반영 뒤 바로 커밋했고 사용자 이의는 없었다.
+- 업스트림 파일로 되돌릴 때는 blob 해시를 비교했다: `git rev-parse upstream/main:<경로>`와 `git hash-object <경로>`. 빈 `git diff` 출력보다 확실하다.
+- 결정을 바꾸기 전과 후에 잔재를 grep했다. 대상은 `src`·`scripts`·`plugin`·`docs`·`.scratch`이고, 옛 규칙 문자열을 찾는다.
 
 ### 안 통한 것
 
-- ⚠️ "장황하게말하지마"가 또 나왔다. 끝 보고는 로드맵 한 줄, 조건 결과 한 줄, 남은 것 한 줄, 질문 하나로 쓴다.
-- ⚠️ 리뷰가 남긴 위험을 "새 결정 필요"로만 적고 무엇이 문제인지 설명하지 않았다. "문제잇엇어?"에 없었다고 답했다가 되물음을 받았다.
-  - 남은 위험은 문제로 말한다.
-  - 처음 나오는 변수나 용어는 무엇이고 원래 있던 것인지부터 말한다. 사용자 반응: "먼소리하는거야 맥락담아", "ARCHDRAW_DATA_DIR 이건머야".
-- ⚠️ `codex sandbox`로 Codex 샌드박스가 홈 폴더 쓰기를 막는지 실측하려 했지만 실패했다.
-  - `-P <profile>`가 필수이고, `-P workspace-write`는 `default_permissions requires a [permissions] table`로 실패했다.
-  - 01 범위에서는 필요 없어서 미확인으로 둔다.
-- 새 테스트 2개는 앞 구현이 이미 동작을 채워서 red 없이 통과했다. 끝 보고에 그대로 적었다.
+- ⚠️ **주석은 필수일 때만 쓴다(사용자 요청).** 남기는 건 "일부러 안 하는 이유"처럼 코드만 봐서는 되돌리고 싶어지는 곳 한 줄뿐이다. 무엇을 하는지 설명하는 주석은 쓰지 않는다. shim에 `--prefix` 이유 주석이 필요하면 ADR-0011을 가리키는 한 줄로 쓴다.
+- ⚠️ 보고가 길면 "장황하게말하지마"가 또 온다. 보고는 로드맵 한 줄, 결과, 문제, 질문 하나로 쓴다.
+- ⚠️ `.scratch/archdraw-skill/spec.md`는 **PRD**라고 부른다. "spec 183행"이라고 썼다가 "prd는 안고쳐?"라는 되물음을 받았다.
+- 보고 끝에 붙인 질문은 답을 못 받고 넘어가기도 했다. "스크린샷 테스트 없이 가도 되나"가 그랬고, 다음 지시("고치자")를 승인으로 읽었다. 꼭 답이 필요한 질문은 따로 묻는다.
+
+### 미결 — 사용자에게 물을 것
+
+- **스크린샷 임시 파일이 심볼릭 링크를 따라간다.** `8421776` 커밋 뒤 자동 보안 리뷰가 잡았다.
+  - `scene.ts` → `screenshot()`은 `os.tmpdir()` 아래 `excalidraw-screenshot-<ms>.png`라는 예측 가능한 이름에 `fs.writeFileSync`로 쓴다. 기본 플래그 `w`는 같은 이름의 심볼릭 링크를 따라가 그 대상을 덮어쓴다.
+  - 문제가 되는 곳: 공용 `/tmp`를 쓰는 Linux 다중 사용자 머신. macOS의 `os.tmpdir()`는 사용자별 폴더라 해당하지 않는다(추측, 미실측). 많은 Linux 배포판의 `fs.protected_symlinks` 기본값이 이 공격을 막는지도 미확인이다.
+  - 업스트림 원래 코드와 같다. Q1 재작업으로 되돌아왔다. 직전 규칙(`~/.excalidraw-architect/tmp/`)은 공용 폴더가 아니었다.
+  - 선택지: (A) 기본 경로일 때만 `{ flag: 'wx' }`(이미 있으면 실패) / (B) `fs.mkdtempSync`로 만든 폴더 안에 쓴다 / (C) 그대로 둔다(업스트림과 동일, 위험 낮음).
+  - A·B는 업스트림과 한두 줄 달라진다. 슬라이스 4 전에 묻는다.
 
 ### 남은 단계
 
-1. 첫 행동(코드 3개) → `npm run type-check` → `npm test`.
-2. 위 "수정 범위"의 문서를 고친다. 슬라이스 1의 What to build와 체크박스를 새 기준으로 다시 쓰고 Status를 `resolved`로 바꾼다.
-3. `/code-review`(HEAD 대비 작업 트리)를 돌리고 반영한다.
-4. 끝 보고(사용자 형식): 로드맵 한 줄, 조건별 통과/미통과와 근거, 문제, 체크박스·Status 갱신.
-   - **커밋은 사용자 확인 후에 한다.** 영어 1~2문장, 트레일러 없이.
-   - 1차 구현과 재작업은 한 커밋으로 묶는다.
-5. 사용자가 승인하면 슬라이스 4 → 3 → 2 순서로 간다. `/implement` 진행 규칙은 이렇다.
-   - 슬라이스는 하나씩 한다.
-   - 착수 전에 관련 스펙과 ADR을 읽는다.
-   - 합의된 경계는 `/tdd`로 한다.
-   - 멈춤 조건이면 선택지 2~3개와 추천 하나로 보고한다.
-6. 사람 몫: Trusted Publisher를 등록하고, 슬라이스 1·3·4가 들어간 뒤 첫 릴리즈를 낸다(스펙 7-5d).
+1. 슬라이스 4 마무리.
+   - AGENTS.md Gotchas에서 "플러그인은 `plugin/` 아래에 산다" 줄과 "npm 게시본은 레포 밖 디렉터리에서 검증한다" 줄을 새 동작에 맞춘다(`writing-for-agents` 기준). shim은 이제 레포 안에서도 돌지만, 맨 `npx excalidraw-architect`는 여전히 로컬 패키지를 잡는다.
+   - 체크박스를 갱신하고, 리뷰·커밋 흐름은 슬라이스 1과 같게 간다.
+2. 슬라이스 3: `.github/workflows/ci.yml`의 개별 테스트 단계를 `npm test` 한 단계로 바꾼다. PRD Testing Decisions에 근거가 있다. `test:bind`가 GitHub 러너에서 통과하는지는 첫 push에서 본다.
+3. 슬라이스 2: `.github/workflows/npm-publish.yml`을 Trusted Publishing으로 바꾼다.
+   - `npm test`와 필수 파일 검사가 게시 단계보다 앞에 오게 하고, `NPM_TOKEN` 검사와 토큰 env를 뺀다.
+   - `npm version` 훅으로 `npm run manifests`를 돌린다.
+   - 근거는 PRD 7-5d다.
+4. 사람 몫: npmjs.com에 Trusted Publisher를 등록하고 첫 릴리즈를 낸다(PRD 7-5d). 그 뒤 슬라이스 2의 사람 칸과 슬라이스 4의 마지막 칸을 확인한다.
+5. 01 슬라이스가 모두 끝나면 PRD "지금 할 일" 목록과 이슈 표의 01 행을 고친다. 다음은 09 사후 검수 그릴이다.
+
