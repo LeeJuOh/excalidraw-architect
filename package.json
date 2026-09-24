@@ -20,6 +20,7 @@
     "dev:server": "npx tsc --watch",
     "production": "npm run build && npm run canvas",
     "prepublishOnly": "npm run build",
+    "version": "npm run manifests && git add -u",
     "test": "npm run test:manifests && npm run test:skill-docs && npm run test:mcp && npm run test:bind && npm run test:data-dir",
     "test:skill-docs": "node scripts/check-skill-docs.mjs",
     "test:bind": "npm run build:server && node scripts/check-local-bind.mjs",

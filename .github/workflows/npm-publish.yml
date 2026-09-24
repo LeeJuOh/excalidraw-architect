@@ -3,12 +3,6 @@ name: Publish to NPM
 on:
   release:
     types: [published]
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Tag to publish (e.g., latest, beta, next)'
-        required: true
-        default: 'latest'
 
 jobs:
   publish:
@@ -19,7 +13,7 @@ jobs:
       package_version: ${{ steps.package-version.outputs.version }}
       version_exists: ${{ steps.check-version.outputs.exists }}
     permissions:
-      contents: write
+      contents: read
       id-token: write
 
     steps:
@@ -29,9 +23,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
+          node-version: '22.x'
           registry-url: 'https://registry.npmjs.org'
           cache: 'npm'
+
+      - name: Upgrade npm for Trusted Publishing
+        run: npm install -g npm@^11.5.1
 
       - name: Install dependencies
         run: npm ci
@@ -42,13 +39,11 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Verify build artifacts
-        run: |
-          echo "Verifying build artifacts..."
-          test -f dist/index.js || (echo "ERROR: dist/index.js not found" && exit 1)
-          test -f dist/server.js || (echo "ERROR: dist/server.js not found" && exit 1)
-          test -d dist/frontend || (echo "ERROR: dist/frontend not found" && exit 1)
-          echo "All required artifacts present!"
+      - name: Run tests
+        run: npm test
+
+      - name: Check npm tarball contents
+        run: node scripts/check-pack-contents.mjs
 
       - name: Get package name and version
         id: package-version
@@ -57,7 +52,6 @@ jobs:
           echo "name=$(node -p "require('./package.json').name")" >> $GITHUB_OUTPUT
 
       - name: Verify release tag
-        if: github.event_name == 'release'
         env:
           PACKAGE_VERSION: ${{ steps.package-version.outputs.version }}
           RELEASE_TAG: ${{ github.event.release.tag_name }}
@@ -91,46 +85,14 @@ jobs:
             exit "$npm_status"
           fi
 
-      - name: Verify NPM publish token
+      - name: Publish to NPM
         if: steps.check-version.outputs.exists == 'false'
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "::error::NPM_TOKEN is not configured in this repository's Actions secrets"
-            exit 1
-          fi
-
-      - name: Publish to NPM (Release)
-        if: github.event_name == 'release' && steps.check-version.outputs.exists == 'false'
-        run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish to NPM (Manual)
-        if: github.event_name == 'workflow_dispatch' && steps.check-version.outputs.exists == 'false'
-        run: npm publish --tag ${{ github.event.inputs.tag }} --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public
 
       - name: Skip publishing (version exists)
         if: steps.check-version.outputs.exists == 'true'
         run: |
           echo "Skipping NPM publish - version ${{ steps.package-version.outputs.version }} already exists"
-
-      - name: Create GitHub Release Assets
-        if: github.event_name == 'release'
-        run: |
-          tar -czf ${{ steps.package-version.outputs.name }}-${{ steps.package-version.outputs.version }}.tar.gz dist/
-
-      - name: Upload Release Assets
-        if: github.event_name == 'release'
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            ${{ steps.package-version.outputs.name }}-${{ steps.package-version.outputs.version }}.tar.gz
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   notify:
     name: Publish Notification

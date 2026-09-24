@@ -275,15 +275,15 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** resolved (2026-09-25 — 에이전트 인수 5개 통과, 사람 칸은 Trusted Publisher 등록과 첫 릴리즈 뒤 확인)
 
 **테스트 경계(합의됨):** 새 시임 없음. 게시 관문은 기존 `npm test`와 필수 파일 검사다(스펙 Testing Decisions).
 
-- [ ] `npm version <버전>`을 실행하면 버전 커밋 하나에 매니페스트·shim의 새 버전이 들어가고, 이어서 `test:manifests`가 통과한다
-- [ ] 게시 워크플로는 릴리즈 생성으로만 실행된다. 수동 실행 경로와 릴리즈 첨부 파일 단계가 없다
-- [ ] 게시 워크플로가 Node 22에서 npm을 11.5.1 이상으로 올리고, `NPM_TOKEN` 검사와 토큰 env가 없다
-- [ ] 게시 워크플로에서 `npm test`와 필수 파일 검사가 게시 단계보다 앞에 있다
-- [ ] `docker.yml`과 루트 Docker 파일 4개(`Dockerfile`·`Dockerfile.canvas`·`docker-compose.yml`·`.dockerignore`)가 없다
+- [x] `npm version <버전>`을 실행하면 버전 커밋 하나에 매니페스트·shim의 새 버전이 들어가고, 이어서 `test:manifests`가 통과한다
+- [x] 게시 워크플로는 릴리즈 생성으로만 실행된다. 수동 실행 경로와 릴리즈 첨부 파일 단계가 없다
+- [x] 게시 워크플로가 Node 22에서 npm을 11.5.1 이상으로 올리고, `NPM_TOKEN` 검사와 토큰 env가 없다
+- [x] 게시 워크플로에서 `npm test`와 필수 파일 검사가 게시 단계보다 앞에 있다
+- [x] `docker.yml`과 루트 Docker 파일 4개(`Dockerfile`·`Dockerfile.canvas`·`docker-compose.yml`·`.dockerignore`)가 없다
 - [ ] 사람 몫(별도 체크): npmjs.com에 Trusted Publisher 등록 → 슬라이스 1·3·4가 들어간 뒤 첫 릴리즈 → Actions 로그에서 검사 → 게시 순서를 확인하고 `npm view`로 게시를 확인
 
 **2026-09-25 — 착수 전 결정(그릴, 사용자).** 세 가지 모두 A.
@@ -299,6 +299,8 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 - 업스트림 "Verify build artifacts" 단계는 필수 파일 검사로 바꾼다. 필수 파일 검사가 같은 세 파일을 포함한다.
 - `version` 훅은 `npm run manifests && git add -u`다. 훅은 버전을 올린 뒤, 커밋 전에 돈다(npm 문서 npm-version 4단계). `-u`는 추적 중인 변경 파일만 올리므로 생성물 목록을 생성기와 두 벌로 두지 않는다.
 - 워크플로 파일 이름은 바꾸지 않는다. npmjs.com에 등록하는 이름과 똑같아야 한다(같은 문서).
+
+**2026-09-25 — 구현(에이전트).** `npm-publish.yml`에서 `workflow_dispatch`, 토큰 검사, 수동 게시, 릴리즈 첨부 두 단계, 토큰 env, `--provenance`를 지웠다. `contents: read`로 바꾸고, Node는 `22.x`, 그 뒤에 `npm install -g npm@^11.5.1` 단계를 넣었다. build 뒤에 `npm test`와 `check-pack-contents.mjs`를 두어 게시보다 앞서 돌게 했다. "Verify release tag"의 `if: github.event_name == 'release'`는 트리거가 하나뿐이라 지웠다. `package.json`에 `version` 훅을 넣었고, Docker 파일 5개를 지웠다. 확인: `npm test` 통과. 임시 워크트리(브랜치 `tmp/version-check`)에서 `npm version 0.1.1-check.0`을 돌리자 커밋 하나에 `package.json`·`package-lock.json`·`plugin/.claude-plugin/plugin.json`·`plugin/plugin.json`·shim이 들어갔고, 그 뒤 작업 트리는 깨끗했으며 `--check`도 통과했다. 코드 리뷰는 두 축 모두 위반이 없었다. Standards는 `git add -u` 범위가 넓다고 짚었지만 위 "구현 기본값"에서 이미 정한 방식이라 그대로 뒀다. 그 워크트리·브랜치와 태그 `v0.1.1-check.0`은 사용자 확인 뒤 지운다.
 
 ---
 
