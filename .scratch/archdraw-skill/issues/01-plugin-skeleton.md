@@ -320,34 +320,40 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 
 ---
 
-## 핸드오프 — 사후 검수 슬라이스 3 → 2 (2026-09-24, 5차)
+## 핸드오프 — 사후 검수 슬라이스 2 (2026-09-24, 6차)
 
-**목표.** 01 사후 검수 슬라이스 중 남은 두 개를 `/implement`로 하나씩 구현한다. 로드맵은 `1 ✅ → 4 ✅ → 3 ▶ → 2`다.
+**목표.** 01 사후 검수의 마지막 에이전트 슬라이스인 2(릴리즈 한 경로)를 `/implement`로 구현한다. 로드맵은 `1 ✅ → 4 ✅ → 3 ✅ → 2 ▶`다.
 
-**첫 행동.** `/implement`로 슬라이스 3에 착수한다.
-1. 위 슬라이스 3의 `Status:`를 `claimed`로 바꾼다.
-2. 근거를 읽는다: PRD(`spec.md`) Testing Decisions의 "push CI는 테스트를 하나씩 나열하지 않고" 항목.
-3. `.github/workflows/ci.yml`의 "Build and Type Check" 잡을 고친다.
-   - 빼는 단계: "Check generated manifests are current"(`npm run test:manifests`), "Run MCP stdio wire tests"(`node scripts/check-mcp-stdio.mjs`).
-   - 넣는 단계: `npm test` 하나. 추천 위치는 빌드 뒤, 원래 MCP 단계 자리.
-   - 그대로 두는 단계: 타입 검사 2개, 빌드, 브라우저 회귀, 빌드 산출물 검사, 타르볼 검사.
-4. 로컬에서 `npm test`를 돌린다.
+**첫 행동.** `/implement`로 슬라이스 2에 착수한다.
+1. 위 슬라이스 2의 `Status:`를 `claimed`로 바꾼다.
+2. 근거를 읽는다: PRD(`spec.md`)의 "7-5d 릴리즈" 항목, Testing Decisions의 "릴리즈(7-5d)는 새 시임을 만들지 않는다" 항목.
+3. 시작 보고에 아래 "착수 전 결정"을 질문으로 올린다. 답을 받기 전에는 워크플로를 고치지 않는다.
+
+**착수 전 결정 (티켓에 없음 → 멈춤 조건).** `.github/workflows/npm-publish.yml`에는 릴리즈 트리거 말고 `workflow_dispatch` 수동 게시 경로도 있다(입력 `tag`, "Publish to NPM (Manual)" 단계). 7-5d는 "게시 경로는 하나다"라고 적었지만, 티켓과 PRD 모두 이 수동 경로를 지울지 말하지 않는다.
+- (A) 지운다: 7-5d의 "한 경로"와 맞는다. 실패한 릴리즈 게시는 Actions의 re-run으로 다시 돌릴 수 있다(추측, GitHub 문서로 확인할 것). `run:`에 입력값 `${{ github.event.inputs.tag }}`를 직접 넣는 줄도 함께 사라진다.
+- (B) 둔다: 태그(`beta` 등)를 달리 게시할 여지를 남긴다. 대신 두 번째 게시 경로가 남는다.
+- 추천: A.
 
 **맥락.**
-- 슬라이스 3은 CI 파일 하나만 고친다. 두 번째 칸("첫 push에서 CI 통과, `test:bind`가 GitHub 러너에서 포트를 여는지")은 push해야 확인된다. push는 사용자 지시가 있을 때만 하므로, 구현 끝 보고에서 push할지 따로 묻는다.
-- 슬라이스 2는 `.github/workflows/npm-publish.yml`을 고친다. 근거는 PRD 7-5d다.
-  - 현재 상태: Node `20.x`, `NPM_TOKEN` 검사 단계와 `NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}` env가 있다. `id-token: write` 권한은 이미 있다.
-  - 7-5d 요건: npm CLI 11.5.1, Node 22.14 이상. `npm test`와 필수 파일 검사(`scripts/check-pack-contents.mjs`)가 게시 단계보다 앞에 와야 한다.
-  - `package.json`에는 아직 `version` 라이프사이클 스크립트가 없다. 이 훅은 버전을 올린 뒤, 커밋하기 전에 돈다. 그래서 재생성한 파일을 훅 안에서 `git add`해야 버전 커밋에 들어간다(npm 문서의 `git add -A dist` 예시, 미확인).
+- 고칠 곳 1, `.github/workflows/npm-publish.yml`. 근거는 7-5d다.
+  - Node 버전: 지금 `setup-node`는 `node-version: '20.x'`다. 7-5d는 Node 22.14 이상, npm CLI 11.5.1 이상을 요구한다. Node 22에 딸린 npm이 11.5.1보다 낮으면 npm을 올리는 단계가 필요하다(미확인).
+  - 토큰 제거: "Verify NPM publish token" 단계와 게시 단계의 `NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}` env를 지운다. 레포 Actions secrets는 비어 있다(7-5d, 2026-09-24 `gh secret list`).
+  - 검사 순서: `npm test`와 `node scripts/check-pack-contents.mjs`를 게시 단계보다 앞에 넣는다.
+  - 문서로 확인할 것(미확인): Trusted Publishing에서 `setup-node`의 `registry-url`과 `--provenance` 플래그를 그대로 둬도 되는지. npm 공식 문서의 trusted publishers 페이지를 본다.
+  - `id-token: write` 권한은 이미 있다.
+- 고칠 곳 2, `package.json`의 `version` 라이프사이클 스크립트. 아직 없다. `npm run manifests`를 돌리고, 생성물 7개(매니페스트 6개와 shim, `scripts/generate-manifests.mjs`가 쓰는 파일)를 `git add`해야 버전 커밋에 들어간다. 이 훅이 "버전을 올린 뒤, 커밋 전"에 돈다는 것은 npm 문서의 `git add -A dist` 예시가 근거다(미확인, 문서로 확인할 것).
+- 인수 확인: `npm version <버전>`은 커밋과 태그를 만든다. main에서 돌리면 안 된다. 임시 브랜치나 워크트리에서 돌리고, 버전 커밋에 생성물이 들어갔는지와 `test:manifests` 통과를 본다. 그 뒤 태그와 브랜치를 지운다. 지우기 전에 사용자에게 확인받는다.
+- 테스트 경계(합의됨): 새 시임은 없다. 게시 관문은 기존 `npm test`와 필수 파일 검사다.
+- 슬라이스 3은 커밋만 했다(`baeea70`). 두 번째 칸("첫 push에서 CI 통과, `test:bind`가 GitHub 러너에서 포트를 여는지")은 push해야 확인된다. push는 사용자 지시가 있을 때만 한다. 사용자는 이번 세션에서 push 여부를 정하지 않았다.
 - 사람 몫은 슬라이스 2 뒤에 있다: npmjs.com에 Trusted Publisher 등록 → 첫 릴리즈. 그 뒤 슬라이스 2의 사람 칸과 슬라이스 4의 마지막 칸(이 레포에서 claude를 켜면 archdraw MCP가 붙는지)을 확인한다.
 
 ### 진행 상태 (git 기준)
 
-- 브랜치 `main`. `origin/main`보다 앞선 커밋은 `09f0934`, `8421776`, `0334921`, `cfb09e4`, 그리고 이 핸드오프를 담은 커밋이다. push하지 않았다.
+- 브랜치 `main`. `origin/main`보다 앞선 커밋은 `09f0934`, `8421776`, `0334921`, `cfb09e4`, `a86ec30`, `baeea70`, 그리고 이 핸드오프를 담은 커밋이다. push하지 않았다.
 - ✅ 슬라이스 1: `8421776`.
-- ✅ 슬라이스 4: `cfb09e4`. 위 구현 기록 참조. 마지막 칸은 첫 릴리즈 뒤에 확인한다.
-- ✅ 스크린샷 임시 파일 미결은 C(그대로)로 정했다. 기록은 위 슬라이스 1 절에 있다.
-- ⏳ 슬라이스 3·2: 둘 다 `Status: ready-for-agent`다.
+- ✅ 슬라이스 4: `cfb09e4`. 마지막 칸은 첫 릴리즈 뒤에 확인한다.
+- ✅ 슬라이스 3: `baeea70`. `ci.yml`에 `npm test` 한 단계. 로컬 `npm test` 5개 통과. 두 번째 칸은 push 뒤에 확인한다. 구현 기록은 위 슬라이스 3 절에 있다.
+- ⏳ 슬라이스 2: `Status: ready-for-agent`.
 
 ### 결정
 
@@ -355,15 +361,18 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 - `pluginDataDir()` → `dataDir()` 개명은 06으로 미룬다. PRD와 티켓에 테스트 경계 이름으로 박혀 있어서다.
 - 사람이 확인할 칸만 남은 슬라이스는 `Status: resolved (날짜 — 남은 칸 설명)`으로 닫는다. 슬라이스 4가 선례다.
 - 코드 주석이나 ADR 본문에 셸 명령을 그대로 옮겨 적지 않는다. 명령이 바뀌면 낡는다. 주석은 ADR을 가리키게 쓴다.
+- 슬라이스 3의 부수 효과 두 개는 그대로 둔다: 매니페스트 드리프트 검사가 빌드 뒤로 밀린 것(핸드오프가 추천한 위치), `npm test` 안에서 `build:server`가 세 번 다시 도는 것(`package.json` 변경이라 범위 밖).
 
 ### 통한 것
 
-- `/implement` 흐름: 시작 보고 → 코드 → `test:manifests` red 확인 → 재생성 → `npm test` → `/code-review` 서브에이전트 2개 병렬 → 지적 반영 → 끝 보고 → 사용자 확인 뒤 커밋.
+- `/implement` 흐름: 시작 보고 → 코드 → `npm test` → `/code-review` 서브에이전트 2개(Standards·Spec) 병렬 → 지적 반영 → 끝 보고 → 사용자 확인 뒤 커밋.
 - shim 로컬 확인: `env -u ARCHDRAW_BIN <shim> --version`, 그리고 MCP `initialize` JSON을 `sh <절대 경로 shim>`에 파이프.
 - 코드 리뷰가 옛 문구 잔재(ADR-0002, 주석)를 찾았다. 결정을 바꾼 뒤에는 `src`·`scripts`·`plugin`·`docs`·`.scratch`에서 옛 문자열을 grep한다.
 
 ### 안 통한 것
 
+- ⚠️ **명령은 허용 목록과 똑같이 친다.** `npm test 2>&1 | tail -40`은 `.claude/settings.json`의 `Bash(npm test)`와 맞지 않아 auto mode 분류기로 넘어갔고 "CI Bypass"로 막혔다. 맨 `npm test`는 통과한다. 파이프·리다이렉트를 붙이지 않는다(AGENTS.md "Bash 한 호출에는 셸 구성 하나만").
+- ⚠️ 권한 거절 원인을 추측으로 말하지 않는다. 먼저 `.claude/settings.json` 허용 목록을 본다. 이번엔 추측("CI 파일을 고쳐서 오판")을 먼저 말했다가 틀렸다.
 - ⚠️ **보고는 짧게.** 이번 세션에서 "장황하게말하지마"를 세 번 들었다. 형식은 로드맵 한 줄, 결과, 문제, 질문 하나다. 다만 짧게 줄이다가 문제를 하나 빠뜨려 지적받았다 — 문장은 줄이고 항목은 빼지 않는다.
 - ⚠️ 문제를 보고할 때 코드 문제인지 문서 문제인지 먼저 밝힌다. 안 밝혔더니 "코드가 문제야 adr이 문제야"라는 되물음이 왔다.
 - ⚠️ 주석은 꼭 필요할 때만 쓴다. ADR에 이유가 있으면 쓰지 않는다(사용자 요청).
@@ -372,8 +381,8 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 
 ### 남은 단계
 
-1. 슬라이스 3(첫 행동). 끝 보고에서 push할지 묻는다.
-2. 슬라이스 2: 게시 워크플로를 Trusted Publishing으로 바꾸고, `version` 훅을 추가한다(위 맥락).
+1. 슬라이스 2(첫 행동). 끝 보고에서 push할지 묻는다.
+2. push하면(사용자 지시) CI 결과로 슬라이스 3의 두 번째 칸을 판정한다. `test:bind`가 러너에서 실패하면 그 출력부터 본다.
 3. 사람 몫: Trusted Publisher 등록 → `npm version <버전>` → `git push --follow-tags` → `gh release create v<버전>` → Actions 로그에서 검사 → 게시 순서 확인 → `npm view`. 그 뒤 슬라이스 2 사람 칸과 슬라이스 4 마지막 칸.
 4. 01 슬라이스가 모두 끝나면 PRD "지금 할 일" 1번과 이슈 표의 01 행을 고친다. 다음은 09 사후 검수 그릴이다.
 
