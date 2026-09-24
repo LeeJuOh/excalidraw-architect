@@ -265,6 +265,8 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 
 **2026-09-24 — 재작업(에이전트, Q1·Q2).** 1차 구현은 `ARCHDRAW_DATA_DIR` 덮어쓰기와 `pluginTmpDir()`(스크린샷을 `~/.excalidraw-architect/tmp/`에)를 두었다. 둘 다 뺐다. `src/cli/commands/scene.ts`의 `screenshot()` 기본 경로를 업스트림 값 `os.tmpdir()`로 되돌렸고, `check-data-dir.mjs`에서 두 기능의 단언 4개를 지웠다. `canvas-ops.md`는 "Screenshots land in the OS temp folder unless `--out` is given."으로 바꿨다. 재작업 뒤 `pluginDataDir()`를 부르는 프로덕션 코드는 없다 — 06 스냅샷이 쓸 함수이고 합의된 경계라 남겼다. `npm run type-check`·`npm test` 통과.
 
+**2026-09-24 — 보안 리뷰 지적, 조치 안 함(사용자 결정 C).** 자동 보안 리뷰가 지적했다: `scene.ts` → `screenshot()`은 이름을 짐작할 수 있는 임시 파일(`excalidraw-screenshot-<ms>.png`)에 `writeFileSync` 기본 플래그로 써서, 같은 이름의 심볼릭 링크가 있으면 그 대상을 덮어쓴다. 해당하는 곳은 공용 `/tmp`를 쓰는 Linux뿐이다. macOS `$TMPDIR`는 사용자 전용이다(`drwx------`, 실측). 개발자 개인 PC용 도구이고 업스트림과 같은 코드라 그대로 둔다. 기각한 안: 기본 경로일 때 `{ flag: 'wx' }` / `fs.mkdtempSync` 폴더 안에 쓰기. Linux `protected_symlinks` 기본값은 확인하지 않았다.
+
 ---
 
 ### 슬라이스 2 — 릴리즈 한 경로 (사후 검수 3)
@@ -316,74 +318,60 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 
 ---
 
-## 핸드오프 — 사후 검수 슬라이스 4 → 3 → 2 (2026-09-24, 4차)
+## 핸드오프 — 사후 검수 슬라이스 3 → 2 (2026-09-24, 5차)
 
-**목표.** 사후 검수 슬라이스를 `/implement`로 하나씩 구현한다. 로드맵은 `1 ✅ → 4 ▶ → 3 → 2`다.
+**목표.** 01 사후 검수 슬라이스 중 남은 두 개를 `/implement`로 하나씩 구현한다. 로드맵은 `1 ✅ → 4 ✅ → 3 ▶ → 2`다.
 
-**첫 행동.** 아래 "미결" 항목(스크린샷 임시 파일)이 아직 이 절에 남아 있으면 먼저 사용자에게 묻고 답대로 처리한다. 그다음 슬라이스 4에 착수한다.
-1. 위 슬라이스 4의 `Status:`를 `claimed`로 바꾼다.
-2. 두 문서를 읽는다: `spec.md`의 "CLI 폴백 호출 줄" 문단과 [ADR-0011](../../../docs/adr/0011-plugin-lives-under-plugin-dir.md)의 2026-09-24 문단. 둘 다 `--prefix` 결정을 이미 반영했다.
-3. `scripts/generate-manifests.mjs` → `const shim` 템플릿의 마지막 줄을 고친다.
-   - 지금: `` exec npx -y ${pkg.name}@${pkg.version} "$@" ``
-   - 바꿀 것: `--prefix "$(dirname "$0")"`를 `npx` 바로 뒤에 넣는다.
-   - JS 템플릿 리터럴이라 `${`만 보간된다. `$(`와 `$0`은 이스케이프 없이 그대로 쓴다.
-4. `npm run manifests`로 `plugin/skills/archdraw/scripts/archdraw`를 재생성한다.
-5. `npm test`를 돌린다.
+**첫 행동.** `/implement`로 슬라이스 3에 착수한다.
+1. 위 슬라이스 3의 `Status:`를 `claimed`로 바꾼다.
+2. 근거를 읽는다: PRD(`spec.md`) Testing Decisions의 "push CI는 테스트를 하나씩 나열하지 않고" 항목.
+3. `.github/workflows/ci.yml`의 "Build and Type Check" 잡을 고친다.
+   - 빼는 단계: "Check generated manifests are current"(`npm run test:manifests`), "Run MCP stdio wire tests"(`node scripts/check-mcp-stdio.mjs`).
+   - 넣는 단계: `npm test` 하나. 추천 위치는 빌드 뒤, 원래 MCP 단계 자리.
+   - 그대로 두는 단계: 타입 검사 2개, 빌드, 브라우저 회귀, 빌드 산출물 검사, 타르볼 검사.
+4. 로컬에서 `npm test`를 돌린다.
 
 **맥락.**
-- 슬라이스 4는 생성기 한 줄, 재생성, AGENTS.md 두 줄로 끝나는 작은 일이다.
-- 게시본 0.1.0이 npm에 있으므로 릴리즈 없이도 로컬 확인이 된다(추측, 미실측). 레포 루트 cwd에서 재생성한 shim을 `--version`으로 실행해 `0.1.0`이 나오면 된다.
-- 로컬 확인 때 shim 폴더(`plugin/skills/archdraw/scripts/`)에 `node_modules`나 lock 파일이 생기지 않는지 `git status`로 본다. 사후 검수 5의 실측은 빈 폴더였다. shim 파일이 든 폴더에서는 아직 안 봤다.
-- 인수 마지막 칸("다음 릴리즈 뒤…")은 슬라이스 2의 첫 릴리즈 뒤에 사람이 확인한다.
+- 슬라이스 3은 CI 파일 하나만 고친다. 두 번째 칸("첫 push에서 CI 통과, `test:bind`가 GitHub 러너에서 포트를 여는지")은 push해야 확인된다. push는 사용자 지시가 있을 때만 하므로, 구현 끝 보고에서 push할지 따로 묻는다.
+- 슬라이스 2는 `.github/workflows/npm-publish.yml`을 고친다. 근거는 PRD 7-5d다.
+  - 현재 상태: Node `20.x`, `NPM_TOKEN` 검사 단계와 `NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}` env가 있다. `id-token: write` 권한은 이미 있다.
+  - 7-5d 요건: npm CLI 11.5.1, Node 22.14 이상. `npm test`와 필수 파일 검사(`scripts/check-pack-contents.mjs`)가 게시 단계보다 앞에 와야 한다.
+  - `package.json`에는 아직 `version` 라이프사이클 스크립트가 없다. 이 훅은 버전을 올린 뒤, 커밋하기 전에 돈다. 그래서 재생성한 파일을 훅 안에서 `git add`해야 버전 커밋에 들어간다(npm 문서의 `git add -A dist` 예시, 미확인).
+- 사람 몫은 슬라이스 2 뒤에 있다: npmjs.com에 Trusted Publisher 등록 → 첫 릴리즈. 그 뒤 슬라이스 2의 사람 칸과 슬라이스 4의 마지막 칸(이 레포에서 claude를 켜면 archdraw MCP가 붙는지)을 확인한다.
 
 ### 진행 상태 (git 기준)
 
-- 브랜치 `main`. `origin/main`보다 앞선 커밋은 `09f0934`, `8421776`, 그리고 이 핸드오프를 담은 커밋이다. push하지 않았고, push는 지시가 있을 때만 한다.
-- ✅ 슬라이스 1: `8421776`. 1차 구현과 Q1·Q2 재작업을 한 커밋에 담았다. 내용은 위 슬라이스 1 구현·재작업 기록에 있다.
-  - PRD 183행("데이터 폴더:")·7-5 (c)·Testing Decisions를 고쳤다.
-  - ADR-0009·0013, `canvas-ops.md`, 코드 3개(`data-dir.ts`, `scene.ts`, `check-data-dir.mjs`)도 고쳤다. `generate-manifests.mjs`에서는 옛 규칙을 전제한 주석 2줄을 지웠다(생성물은 그대로).
-  - 두 축 코드 리뷰 지적을 반영했다.
-- ✅ 슬라이스 4: 위 구현 기록. 마지막 칸은 첫 릴리즈 뒤.
-- ⏳ 슬라이스 3·2: 미착수. 둘 다 `Status: ready-for-agent`다.
+- 브랜치 `main`. `origin/main`보다 앞선 커밋은 `09f0934`, `8421776`, `0334921`, `cfb09e4`, 그리고 이 핸드오프를 담은 커밋이다. push하지 않았다.
+- ✅ 슬라이스 1: `8421776`.
+- ✅ 슬라이스 4: `cfb09e4`. 위 구현 기록 참조. 마지막 칸은 첫 릴리즈 뒤에 확인한다.
+- ✅ 스크린샷 임시 파일 미결은 C(그대로)로 정했다. 기록은 위 슬라이스 1 절에 있다.
+- ⏳ 슬라이스 3·2: 둘 다 `Status: ready-for-agent`다.
 
 ### 결정
 
-- `/to-spec`은 기존 PRD 수정에 쓰지 않는다. 새 spec 파일을 만드는 스킬이라 중복 spec이 생긴다. PRD는 직접 고친다.
-- `pluginDataDir()` → `dataDir()` 개명(리뷰 제안)은 06으로 미룬다. PRD와 티켓에 테스트 경계 이름으로 박혀 있어서다.
+- `/to-spec`은 기존 PRD를 고칠 때 쓰지 않는다. 새 spec 파일을 만드는 스킬이라 PRD가 중복된다. PRD는 직접 고친다.
+- `pluginDataDir()` → `dataDir()` 개명은 06으로 미룬다. PRD와 티켓에 테스트 경계 이름으로 박혀 있어서다.
+- 사람이 확인할 칸만 남은 슬라이스는 `Status: resolved (날짜 — 남은 칸 설명)`으로 닫는다. 슬라이스 4가 선례다.
+- 코드 주석이나 ADR 본문에 셸 명령을 그대로 옮겨 적지 않는다. 명령이 바뀌면 낡는다. 주석은 ADR을 가리키게 쓴다.
 
 ### 통한 것
 
-- `/implement` 흐름이 끝까지 통했다: 코드 → type-check → `npm test` → `/code-review`(표준·스펙 서브에이전트 병렬) → 지적 반영 → 테스트 재실행 → 커밋. 이번엔 리뷰 반영 뒤 바로 커밋했고 사용자 이의는 없었다.
-- 업스트림 파일로 되돌릴 때는 blob 해시를 비교했다: `git rev-parse upstream/main:<경로>`와 `git hash-object <경로>`. 빈 `git diff` 출력보다 확실하다.
-- 결정을 바꾸기 전과 후에 잔재를 grep했다. 대상은 `src`·`scripts`·`plugin`·`docs`·`.scratch`이고, 옛 규칙 문자열을 찾는다.
+- `/implement` 흐름: 시작 보고 → 코드 → `test:manifests` red 확인 → 재생성 → `npm test` → `/code-review` 서브에이전트 2개 병렬 → 지적 반영 → 끝 보고 → 사용자 확인 뒤 커밋.
+- shim 로컬 확인: `env -u ARCHDRAW_BIN <shim> --version`, 그리고 MCP `initialize` JSON을 `sh <절대 경로 shim>`에 파이프.
+- 코드 리뷰가 옛 문구 잔재(ADR-0002, 주석)를 찾았다. 결정을 바꾼 뒤에는 `src`·`scripts`·`plugin`·`docs`·`.scratch`에서 옛 문자열을 grep한다.
 
 ### 안 통한 것
 
-- ⚠️ **주석은 필수일 때만 쓴다(사용자 요청).** 남기는 건 "일부러 안 하는 이유"처럼 코드만 봐서는 되돌리고 싶어지는 곳 한 줄뿐이다. 무엇을 하는지 설명하는 주석은 쓰지 않는다. shim에 `--prefix` 이유 주석이 필요하면 ADR-0011을 가리키는 한 줄로 쓴다.
-- ⚠️ 보고가 길면 "장황하게말하지마"가 또 온다. 보고는 로드맵 한 줄, 결과, 문제, 질문 하나로 쓴다.
-- ⚠️ `.scratch/archdraw-skill/spec.md`는 **PRD**라고 부른다. "spec 183행"이라고 썼다가 "prd는 안고쳐?"라는 되물음을 받았다.
-- 보고 끝에 붙인 질문은 답을 못 받고 넘어가기도 했다. "스크린샷 테스트 없이 가도 되나"가 그랬고, 다음 지시("고치자")를 승인으로 읽었다. 꼭 답이 필요한 질문은 따로 묻는다.
-
-### 미결 — 사용자에게 물을 것
-
-- **스크린샷 임시 파일이 심볼릭 링크를 따라간다.** `8421776` 커밋 뒤 자동 보안 리뷰가 잡았다.
-  - `scene.ts` → `screenshot()`은 `os.tmpdir()` 아래 `excalidraw-screenshot-<ms>.png`라는 예측 가능한 이름에 `fs.writeFileSync`로 쓴다. 기본 플래그 `w`는 같은 이름의 심볼릭 링크를 따라가 그 대상을 덮어쓴다.
-  - 문제가 되는 곳: 공용 `/tmp`를 쓰는 Linux 다중 사용자 머신. macOS의 `os.tmpdir()`는 사용자별 폴더라 해당하지 않는다(추측, 미실측). 많은 Linux 배포판의 `fs.protected_symlinks` 기본값이 이 공격을 막는지도 미확인이다.
-  - 업스트림 원래 코드와 같다. Q1 재작업으로 되돌아왔다. 직전 규칙(`~/.excalidraw-architect/tmp/`)은 공용 폴더가 아니었다.
-  - 선택지: (A) 기본 경로일 때만 `{ flag: 'wx' }`(이미 있으면 실패) / (B) `fs.mkdtempSync`로 만든 폴더 안에 쓴다 / (C) 그대로 둔다(업스트림과 동일, 위험 낮음).
-  - A·B는 업스트림과 한두 줄 달라진다. 슬라이스 4 전에 묻는다.
-  - ✅ **결정 2026-09-24: C(그대로).** macOS `$TMPDIR`는 사용자 전용(`drwx------`, 실측)이라 해당 없고, 남는 위험은 공용 `/tmp` Linux뿐이다. 이 도구는 개발자 개인 PC용이고 업스트림과 같은 코드다. Linux `protected_symlinks` 기본값은 미확인.
+- ⚠️ **보고는 짧게.** 이번 세션에서 "장황하게말하지마"를 세 번 들었다. 형식은 로드맵 한 줄, 결과, 문제, 질문 하나다. 다만 짧게 줄이다가 문제를 하나 빠뜨려 지적받았다 — 문장은 줄이고 항목은 빼지 않는다.
+- ⚠️ 문제를 보고할 때 코드 문제인지 문서 문제인지 먼저 밝힌다. 안 밝혔더니 "코드가 문제야 adr이 문제야"라는 되물음이 왔다.
+- ⚠️ 주석은 꼭 필요할 때만 쓴다. ADR에 이유가 있으면 쓰지 않는다(사용자 요청).
+- ⚠️ `.scratch/archdraw-skill/spec.md`는 **PRD**라고 부른다.
+- 병렬 Bash 호출에서 상대경로 shim 실행이 `No such file`로 실패했고, 절대경로로 바꾸자 통했다(원인 미확인). 경로는 절대경로로 쓴다.
 
 ### 남은 단계
 
-1. 슬라이스 4 마무리.
-   - AGENTS.md Gotchas에서 "플러그인은 `plugin/` 아래에 산다" 줄과 "npm 게시본은 레포 밖 디렉터리에서 검증한다" 줄을 새 동작에 맞춘다(`writing-for-agents` 기준). shim은 이제 레포 안에서도 돌지만, 맨 `npx excalidraw-architect`는 여전히 로컬 패키지를 잡는다.
-   - 체크박스를 갱신하고, 리뷰·커밋 흐름은 슬라이스 1과 같게 간다.
-2. 슬라이스 3: `.github/workflows/ci.yml`의 개별 테스트 단계를 `npm test` 한 단계로 바꾼다. PRD Testing Decisions에 근거가 있다. `test:bind`가 GitHub 러너에서 통과하는지는 첫 push에서 본다.
-3. 슬라이스 2: `.github/workflows/npm-publish.yml`을 Trusted Publishing으로 바꾼다.
-   - `npm test`와 필수 파일 검사가 게시 단계보다 앞에 오게 하고, `NPM_TOKEN` 검사와 토큰 env를 뺀다.
-   - `npm version` 훅으로 `npm run manifests`를 돌린다.
-   - 근거는 PRD 7-5d다.
-4. 사람 몫: npmjs.com에 Trusted Publisher를 등록하고 첫 릴리즈를 낸다(PRD 7-5d). 그 뒤 슬라이스 2의 사람 칸과 슬라이스 4의 마지막 칸을 확인한다.
-5. 01 슬라이스가 모두 끝나면 PRD "지금 할 일" 목록과 이슈 표의 01 행을 고친다. 다음은 09 사후 검수 그릴이다.
+1. 슬라이스 3(첫 행동). 끝 보고에서 push할지 묻는다.
+2. 슬라이스 2: 게시 워크플로를 Trusted Publishing으로 바꾸고, `version` 훅을 추가한다(위 맥락).
+3. 사람 몫: Trusted Publisher 등록 → `npm version <버전>` → `git push --follow-tags` → `gh release create v<버전>` → Actions 로그에서 검사 → 게시 순서 확인 → `npm view`. 그 뒤 슬라이스 2 사람 칸과 슬라이스 4 마지막 칸.
+4. 01 슬라이스가 모두 끝나면 PRD "지금 할 일" 1번과 이슈 표의 01 행을 고친다. 다음은 09 사후 검수 그릴이다.
 

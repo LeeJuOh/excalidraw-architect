@@ -275,7 +275,7 @@ yctimlin 캔버스 위에서 동작하는 **판단 전용 스킬.** 다섯 가�
 
 | 이슈 | 역할 | 상태 |
 |---|---|---|
-| [01 설치 골격](issues/01-plugin-skeleton.md) | 플러그인 설치와 실행 준비 | 완료. 사후 검수 결함은 결정 끝, 슬라이스 1 완료, 2~4 구현 대기 |
+| [01 설치 골격](issues/01-plugin-skeleton.md) | 플러그인 설치와 실행 준비 | 완료. 사후 검수 결함은 결정 끝, 슬라이스 1·4 완료, 3·2 구현 대기 |
 | [09 규격 단일 원본](issues/09-canvas-guide-single-source.md) | 서버 md 한 벌을 `instructions`·`resources`로 | 완료. 사후 검수 결함 3개 그릴 전 |
 | [03 판단 스킬 본문](issues/03-archdraw-skill-body.md) | 라우팅·줌 레벨·캔버스 우선 규칙 | 슬라이스 A 완료, B는 04·05 뒤 |
 | [04 캔버스 세션](issues/04-session-per-canvas.md) | 캔버스 세션 분리와 재개 | 착수 전 질문 Q1~Q6 그릴 전 |
