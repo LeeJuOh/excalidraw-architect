@@ -303,14 +303,16 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** resolved (2026-09-24 — 에이전트 인수 3개 통과, 마지막 칸은 슬라이스 2의 첫 릴리즈 뒤 사람이 확인)
 
 **테스트 경계(합의됨):** 새 테스트 없음. shim 내용은 기존 `test:manifests`가 생성기 출력과 비교한다(스펙 Testing Decisions).
 
-- [ ] 생성기에서 shim의 npx 줄에 `--prefix`(shim 자기 폴더)가 들어가고, 재생성한 shim이 커밋된다
-- [ ] AGENTS.md Gotchas의 플러그인 위치·게시본 검증 두 줄이 새 동작에 맞는다(`writing-for-agents` 스킬 기준)
-- [ ] `npm test` 통과
+- [x] 생성기에서 shim의 npx 줄에 `--prefix`(shim 자기 폴더)가 들어가고, 재생성한 shim이 커밋된다
+- [x] AGENTS.md Gotchas의 플러그인 위치·게시본 검증 두 줄이 새 동작에 맞는다(`writing-for-agents` 스킬 기준)
+- [x] `npm test` 통과
 - [ ] 다음 릴리즈 뒤: 이 레포에서 claude를 켜면 archdraw MCP가 붙는다
+
+**2026-09-24 — 구현(에이전트).** 생성기 shim 템플릿의 npx 줄에 `--prefix "$(dirname "$0")"`를 넣고 재생성했다. 주석은 넣지 않았다(이유는 ADR-0011). 재생성 전 `test:manifests`는 shim 드리프트로 red였다. 로컬 확인은 `ARCHDRAW_BIN`을 비우고 레포 루트 cwd에서 했다. shim `--version` → `0.1.0`, 맨 `npx -y excalidraw-architect@0.1.0 --version` → `command not found`, 스킬 루트에서 `scripts/archdraw --version`(상대 `$0`) → `0.1.0`, `sh <절대 경로 shim>`에 MCP `initialize` → `serverInfo` `excalidraw-architect 0.1.0`. shim 폴더에 `node_modules`나 lock 파일은 생기지 않았다(`ls`, `git status --ignored`). AGENTS.md는 플러그인 줄에서 더는 사실이 아닌 실패 서술을 지웠고, 게시본 줄은 "shim으로 검증, 맨 npx는 실패"로 바꿨다. 리뷰가 찾은 옛 npx 줄(`--prefix` 없음) 2곳도 고쳤다: ADR-0002 5행은 `--prefix`를 넣고 ADR-0011을 가리키게, `check-pack-contents.mjs` 3행 주석은 명령을 적지 않게.
 
 ---
 
@@ -341,7 +343,8 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
   - PRD 183행("데이터 폴더:")·7-5 (c)·Testing Decisions를 고쳤다.
   - ADR-0009·0013, `canvas-ops.md`, 코드 3개(`data-dir.ts`, `scene.ts`, `check-data-dir.mjs`)도 고쳤다. `generate-manifests.mjs`에서는 옛 규칙을 전제한 주석 2줄을 지웠다(생성물은 그대로).
   - 두 축 코드 리뷰 지적을 반영했다.
-- ⏳ 슬라이스 4·3·2: 미착수. 셋 다 `Status: ready-for-agent`다.
+- ✅ 슬라이스 4: 위 구현 기록. 마지막 칸은 첫 릴리즈 뒤.
+- ⏳ 슬라이스 3·2: 미착수. 둘 다 `Status: ready-for-agent`다.
 
 ### 결정
 
@@ -369,6 +372,7 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
   - 업스트림 원래 코드와 같다. Q1 재작업으로 되돌아왔다. 직전 규칙(`~/.excalidraw-architect/tmp/`)은 공용 폴더가 아니었다.
   - 선택지: (A) 기본 경로일 때만 `{ flag: 'wx' }`(이미 있으면 실패) / (B) `fs.mkdtempSync`로 만든 폴더 안에 쓴다 / (C) 그대로 둔다(업스트림과 동일, 위험 낮음).
   - A·B는 업스트림과 한두 줄 달라진다. 슬라이스 4 전에 묻는다.
+  - ✅ **결정 2026-09-24: C(그대로).** macOS `$TMPDIR`는 사용자 전용(`drwx------`, 실측)이라 해당 없고, 남는 위험은 공용 `/tmp` Linux뿐이다. 이 도구는 개발자 개인 PC용이고 업스트림과 같은 코드다. Linux `protected_symlinks` 기본값은 미확인.
 
 ### 남은 단계
 

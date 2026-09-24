@@ -142,7 +142,7 @@ if [ -n "\${ARCHDRAW_BIN:-}" ]; then
   exec node "$ARCHDRAW_BIN" "$@"
 fi
 
-exec npx -y ${pkg.name}@${pkg.version} "$@"
+exec npx --prefix "$(dirname "$0")" -y ${pkg.name}@${pkg.version} "$@"
 `;
 
 /** @type {{ path: string, content: string, mode?: number }[]} */

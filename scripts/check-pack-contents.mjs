@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // The published tarball is the only way a user's machine gets a server: the
-// shim runs `npx -y excalidraw-architect@<version>` (ADR-0002). If the server
+// shim fetches it with npx (ADR-0002). If the server
 // bin or the built frontend falls out of `files`, every install channel breaks
 // at the same time, so assert the tarball contents here.
 //
