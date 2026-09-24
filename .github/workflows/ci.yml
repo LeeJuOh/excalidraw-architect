@@ -28,9 +28,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Check generated manifests are current
-        run: npm run test:manifests
-
       - name: Run TypeScript type check
         run: npm run type-check
 
@@ -40,8 +37,8 @@ jobs:
       - name: Build project
         run: npm run build
 
-      - name: Run MCP stdio wire tests
-        run: node scripts/check-mcp-stdio.mjs
+      - name: Run tests
+        run: npm test
 
       - name: Install Chromium for canvas regression tests
         run: npx playwright install --with-deps chromium

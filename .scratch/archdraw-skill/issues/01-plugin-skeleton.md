@@ -292,10 +292,12 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** resolved (2026-09-24 — 로컬 `npm test` 통과, 첫 push CI 확인 남음)
 
-- [ ] CI에 개별 테스트 단계(매니페스트, MCP stdio) 대신 `npm test` 한 단계가 있다
+- [x] CI에 개별 테스트 단계(매니페스트, MCP stdio) 대신 `npm test` 한 단계가 있다
 - [ ] 첫 push에서 CI가 통과한다. 특히 `test:bind`가 GitHub 러너에서 포트를 여는지 확인한다(미확인)
+
+**2026-09-24 — 구현(에이전트).** `ci.yml`의 "Build and Type Check" 잡에서 "Check generated manifests are current"와 "Run MCP stdio wire tests"를 지우고, 빌드 뒤 원래 MCP 자리에 "Run tests"(`npm test`)를 넣었다. 나머지 단계는 그대로다. 로컬 `npm test`는 5개(manifests·skill-docs·mcp·bind·data-dir) 모두 통과했다. 처음엔 `| tail`을 붙여 돌려 허용 규칙 `Bash(npm test)`와 맞지 않았고 권한 분류기에 막혔다(AGENTS.md "Bash 한 호출에는 셸 구성 하나만" 위반). 코드 리뷰 두 축 모두 위반은 없었다. 비용만 드는 부수 효과가 둘 있어 그대로 뒀다: 매니페스트 드리프트 검사가 타입 검사·빌드 뒤로 밀렸고, `test:mcp`·`test:bind`·`test:data-dir`가 각자 `build:server`를 다시 돌린다(`package.json`, 범위 밖).
 
 ---
 
