@@ -333,71 +333,58 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 
 ---
 
-## 핸드오프 — 사후 검수 슬라이스 2 (2026-09-24, 6차)
+## 핸드오프 — 사후 검수 슬라이스 2 구현 (2026-09-25, 7차)
 
-**목표.** 01 사후 검수의 마지막 에이전트 슬라이스인 2(릴리즈 한 경로)를 `/implement`로 구현한다. 로드맵은 `1 ✅ → 4 ✅ → 3 ✅ → 2 ▶`다.
+**목표.** 01 사후 검수의 마지막 에이전트 슬라이스인 2(릴리즈 한 경로)를 구현한다. 결정은 끝났다. 로드맵은 `1 ✅ → 4 ✅ → 3 ✅ → 2 ▶`다.
 
-**2026-09-25 갱신.** 착수 전 결정과 아래 "맥락"의 미확인 항목은 슬라이스 2의 2026-09-25 기록으로 해소됐다. 첫 행동 3은 끝났으니 1·2 뒤 바로 구현한다. `/implement`가 스킬 목록에 없으면 "통한 것"의 흐름을 직접 따른다.
+**첫 행동.** 아래 "착수 전 질문" 하나를 사용자에게 묻고, 답을 슬라이스 2의 2026-09-25 기록 밑에 적는다. 그다음 슬라이스 2의 `Status:`를 `claimed`로 바꾸고 구현한다. 구현 범위는 슬라이스 2의 인수 5칸과 "2026-09-25 — 착수 전 결정" 기록(결정 3개 + 구현 기본값 5개)이 전부다. 거기 적힌 것은 다시 묻지 않는다.
 
-**첫 행동.** `/implement`로 슬라이스 2에 착수한다.
-1. 위 슬라이스 2의 `Status:`를 `claimed`로 바꾼다.
-2. 근거를 읽는다: PRD(`spec.md`)의 "7-5d 릴리즈" 항목, Testing Decisions의 "릴리즈(7-5d)는 새 시임을 만들지 않는다" 항목.
-3. 시작 보고에 아래 "착수 전 결정"을 질문으로 올린다. 답을 받기 전에는 워크플로를 고치지 않는다.
-
-**착수 전 결정 — ✅ 2026-09-25 A로 결정(슬라이스 2 기록).** `.github/workflows/npm-publish.yml`에는 릴리즈 트리거 말고 `workflow_dispatch` 수동 게시 경로도 있다(입력 `tag`, "Publish to NPM (Manual)" 단계). 7-5d는 "게시 경로는 하나다"라고 적었지만, 티켓과 PRD 모두 이 수동 경로를 지울지 말하지 않는다.
-- (A) 지운다: 7-5d의 "한 경로"와 맞는다. 실패한 릴리즈 게시는 Actions의 re-run으로 다시 돌릴 수 있다(추측, GitHub 문서로 확인할 것). `run:`에 입력값 `${{ github.event.inputs.tag }}`를 직접 넣는 줄도 함께 사라진다.
-- (B) 둔다: 태그(`beta` 등)를 달리 게시할 여지를 남긴다. 대신 두 번째 게시 경로가 남는다.
-- 추천: A.
+**착수 전 질문 — Docker 이미지 게시 (2026-09-25 발견, 미결).** 업스트림 `.github/workflows/docker.yml`은 main push와 `v*.*.*` 태그 push마다 MCP 서버·캔버스 이미지 둘을 `ghcr.io`에 올린다(`push: true`, 조건 없음). 사용자가 방금 레포 Actions를 켰으므로 다음 push부터 실제로 돈다. 두 README에는 Docker 언급이 0건이다. 루트의 `Dockerfile`·`Dockerfile.canvas`·`docker-compose.yml`만 남아 있다. 7-5d의 "게시 경로는 하나다"(npm)와 겹치는 두 번째 배포물이다.
+- (A) `docker.yml`을 지운다. 배포물은 npm 하나다. 서버는 shim이 npm에서만 받는다(ADR-0002). 루트 Docker 파일 3개를 같이 지울지도 함께 묻는다.
+- (B) 둔다. 이미지는 계속 올라가지만 아무 문서도 안내하지 않는다.
+- 추천: A. A가 되면 PRD 7-5d 대안 기각 목록과 슬라이스 2 인수에 한 줄씩 더한다.
 
 **맥락.**
-- 고칠 곳 1, `.github/workflows/npm-publish.yml`. 근거는 7-5d다.
-  - Node 버전: 지금 `setup-node`는 `node-version: '20.x'`다. 7-5d는 Node 22.14 이상, npm CLI 11.5.1 이상을 요구한다. Node 22에 딸린 npm이 11.5.1보다 낮으면 npm을 올리는 단계가 필요하다(미확인).
-  - 토큰 제거: "Verify NPM publish token" 단계와 게시 단계의 `NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}` env를 지운다. 레포 Actions secrets는 비어 있다(7-5d, 2026-09-24 `gh secret list`).
-  - 검사 순서: `npm test`와 `node scripts/check-pack-contents.mjs`를 게시 단계보다 앞에 넣는다.
-  - 문서로 확인할 것(미확인): Trusted Publishing에서 `setup-node`의 `registry-url`과 `--provenance` 플래그를 그대로 둬도 되는지. npm 공식 문서의 trusted publishers 페이지를 본다.
-  - `id-token: write` 권한은 이미 있다.
-- 고칠 곳 2, `package.json`의 `version` 라이프사이클 스크립트. 아직 없다. `npm run manifests`를 돌리고, 생성물 7개(매니페스트 6개와 shim, `scripts/generate-manifests.mjs`가 쓰는 파일)를 `git add`해야 버전 커밋에 들어간다. 이 훅이 "버전을 올린 뒤, 커밋 전"에 돈다는 것은 npm 문서의 `git add -A dist` 예시가 근거다(미확인, 문서로 확인할 것).
-- 인수 확인: `npm version <버전>`은 커밋과 태그를 만든다. main에서 돌리면 안 된다. 임시 브랜치나 워크트리에서 돌리고, 버전 커밋에 생성물이 들어갔는지와 `test:manifests` 통과를 본다. 그 뒤 태그와 브랜치를 지운다. 지우기 전에 사용자에게 확인받는다.
-- 테스트 경계(합의됨): 새 시임은 없다. 게시 관문은 기존 `npm test`와 필수 파일 검사다.
-- 슬라이스 3은 커밋만 했다(`baeea70`). 두 번째 칸("첫 push에서 CI 통과, `test:bind`가 GitHub 러너에서 포트를 여는지")은 push해야 확인된다. push는 사용자 지시가 있을 때만 한다. 사용자는 이번 세션에서 push 여부를 정하지 않았다.
-- 사람 몫은 슬라이스 2 뒤에 있다: npmjs.com에 Trusted Publisher 등록 → 첫 릴리즈. 그 뒤 슬라이스 2의 사람 칸과 슬라이스 4의 마지막 칸(이 레포에서 claude를 켜면 archdraw MCP가 붙는지)을 확인한다.
+- 결정 기록에 없는 게시 워크플로 단계(버전 존재 확인, 릴리즈 태그 = 패키지 버전 확인, `notify` 잡)는 그대로 둔다.
+- 인수 확인: `npm version <버전>`은 깨끗한 작업 트리를 요구하고, 커밋과 태그를 만든다. main이 아닌 임시 브랜치나 워크트리에서 돌려, 버전 커밋에 생성물이 들어갔는지와 `test:manifests` 통과를 본다. 태그와 브랜치는 사용자 확인 뒤에 지운다.
+- Actions: 사용자가 `8ff7930`을 push한 뒤에 레포 Actions를 켰다. 그래서 워크플로 실행 기록이 0건이다(2026-09-25 `gh api repos/LeeJuOh/excalidraw-architect/actions/runs` → `total_count` 0). `ci.yml`의 트리거는 push와 PR뿐이다. 슬라이스 3의 둘째 칸(첫 push CI, `test:bind`)은 다음 push에서 판정한다.
+- 사람 몫(슬라이스 2 뒤): npmjs.com에 Trusted Publisher 등록(레포 `LeeJuOh/excalidraw-architect`, 워크플로 파일 `npm-publish.yml`) → 첫 릴리즈.
 
 ### 진행 상태 (git 기준)
 
-- 브랜치 `main`. `origin/main`보다 앞선 커밋은 `09f0934`, `8421776`, `0334921`, `cfb09e4`, `a86ec30`, `baeea70`, 그리고 이 핸드오프를 담은 커밋이다. push하지 않았다.
-- ✅ 슬라이스 1: `8421776`.
-- ✅ 슬라이스 4: `cfb09e4`. 마지막 칸은 첫 릴리즈 뒤에 확인한다.
-- ✅ 슬라이스 3: `baeea70`. `ci.yml`에 `npm test` 한 단계. 로컬 `npm test` 5개 통과. 두 번째 칸은 push 뒤에 확인한다. 구현 기록은 위 슬라이스 3 절에 있다.
-- ⏳ 슬라이스 2: `Status: ready-for-agent`.
+- 브랜치 `main`. `origin/main`은 `8ff7930`이다(push됨). 앞선 커밋은 `5857955`와 이 핸드오프를 담은 커밋이다. push는 사용자 지시가 있을 때만 한다.
+- ✅ 슬라이스 1 `8421776`, 슬라이스 4 `cfb09e4`, 슬라이스 3 `baeea70`. 3·4의 남은 칸은 push와 첫 릴리즈 뒤에 판정한다.
+- ✅ 슬라이스 2 결정 기록 `5857955`: 티켓 슬라이스 2의 인수 5칸, 결정 3개, 구현 기본값, 그리고 PRD 7-5d 보강.
+- ⏳ 슬라이스 2 구현: 코드 변경 없음. `Status: ready-for-agent`.
 
 ### 결정
 
+- 이번 세션의 결정(수동 실행 경로 삭제, Node 22 + npm 11, 릴리즈 첨부 파일 삭제)은 슬라이스 2 기록과 PRD 7-5d에 있다.
 - `/to-spec`은 기존 PRD를 고칠 때 쓰지 않는다. 새 spec 파일을 만드는 스킬이라 PRD가 중복된다. PRD는 직접 고친다.
 - `pluginDataDir()` → `dataDir()` 개명은 06으로 미룬다. PRD와 티켓에 테스트 경계 이름으로 박혀 있어서다.
 - 사람이 확인할 칸만 남은 슬라이스는 `Status: resolved (날짜 — 남은 칸 설명)`으로 닫는다. 슬라이스 4가 선례다.
-- 코드 주석이나 ADR 본문에 셸 명령을 그대로 옮겨 적지 않는다. 명령이 바뀌면 낡는다. 주석은 ADR을 가리키게 쓴다.
-- 슬라이스 3의 부수 효과 두 개는 그대로 둔다: 매니페스트 드리프트 검사가 빌드 뒤로 밀린 것(핸드오프가 추천한 위치), `npm test` 안에서 `build:server`가 세 번 다시 도는 것(`package.json` 변경이라 범위 밖).
+- 코드 주석이나 ADR 본문에 셸 명령을 옮겨 적지 않는다. 주석은 ADR을 가리키게 쓴다.
 
 ### 통한 것
 
-- `/implement` 흐름: 시작 보고 → 코드 → `npm test` → `/code-review` 서브에이전트 2개(Standards·Spec) 병렬 → 지적 반영 → 끝 보고 → 사용자 확인 뒤 커밋.
-- shim 로컬 확인: `env -u ARCHDRAW_BIN <shim> --version`, 그리고 MCP `initialize` JSON을 `sh <절대 경로 shim>`에 파이프.
-- 코드 리뷰가 옛 문구 잔재(ADR-0002, 주석)를 찾았다. 결정을 바꾼 뒤에는 `src`·`scripts`·`plugin`·`docs`·`.scratch`에서 옛 문자열을 grep한다.
+- 구현 흐름: 시작 보고 → 코드 → `npm test` → `/code-review` 서브에이전트 2개(Standards·Spec) 병렬 → 지적 반영 → 끝 보고 → 사용자 확인 뒤 커밋. 2026-09-25 세션의 스킬 목록에는 `/implement`가 없었다. 없으면 이 흐름을 직접 따른다.
+- 그릴: 질문은 한 번에 하나, 개념은 아스키 그림 한 장으로 설명한다("수동 게시 버튼이 뭐냐"는 그림 한 장으로 풀렸다). 전제가 헷갈리는 질문은 전제부터 푼다(Node와 npm은 따로 올릴 수 있는 별개 프로그램).
+- 미확인 사실은 공식 문서로 바로 확인했다: npm trusted-publishers, npm-version, GitHub re-run-workflows-and-jobs, nodejs.org 버전별 릴리즈 페이지(번들 npm 버전).
+- 결정을 바꾼 뒤에는 `src`·`scripts`·`plugin`·`docs`·`.scratch`에서 옛 문자열을 grep한다.
 
 ### 안 통한 것
 
-- ⚠️ **명령은 허용 목록과 똑같이 친다.** `npm test 2>&1 | tail -40`은 `.claude/settings.json`의 `Bash(npm test)`와 맞지 않아 auto mode 분류기로 넘어갔고 "CI Bypass"로 막혔다. 맨 `npm test`는 통과한다. 파이프·리다이렉트를 붙이지 않는다(AGENTS.md "Bash 한 호출에는 셸 구성 하나만").
-- ⚠️ 권한 거절 원인을 추측으로 말하지 않는다. 먼저 `.claude/settings.json` 허용 목록을 본다. 이번엔 추측("CI 파일을 고쳐서 오판")을 먼저 말했다가 틀렸다.
-- ⚠️ **보고는 짧게.** 이번 세션에서 "장황하게말하지마"를 세 번 들었다. 형식은 로드맵 한 줄, 결과, 문제, 질문 하나다. 다만 짧게 줄이다가 문제를 하나 빠뜨려 지적받았다 — 문장은 줄이고 항목은 빼지 않는다.
-- ⚠️ 문제를 보고할 때 코드 문제인지 문서 문제인지 먼저 밝힌다. 안 밝혔더니 "코드가 문제야 adr이 문제야"라는 되물음이 왔다.
-- ⚠️ 주석은 꼭 필요할 때만 쓴다. ADR에 이유가 있으면 쓰지 않는다(사용자 요청).
-- ⚠️ `.scratch/archdraw-skill/spec.md`는 **PRD**라고 부른다.
-- 병렬 Bash 호출에서 상대경로 shim 실행이 `No such file`로 실패했고, 절대경로로 바꾸자 통했다(원인 미확인). 경로는 절대경로로 쓴다.
+- ⚠️ **보고는 짧게.** 이번 세션에서도 "장황하게말하지마"를 두 번 들었다. 결론 한 줄 + 질문 하나로 쓴다. 기본값과 후속 순서는 물을 때가 아니면 싣지 않는다.
+- ⚠️ 문서 반영과 구현은 따로 승인받는다. "반영한 뒤 구현할게요"라고 묶어 제안했다가 "구현은 하지마"를 들었다.
+- ⚠️ **명령은 허용 목록과 똑같이 친다.** `npm test`에 파이프나 리다이렉트를 붙이면 `.claude/settings.json`의 `Bash(npm test)`와 어긋나 분류기에 막힌다.
+- ⚠️ 빈 Bash 출력은 확인 실패다. `gh run list`는 빈 출력이었고, `--json`과 API로 0건을 확인했다. 원인(Actions 꺼짐)은 사용자에게 들었다.
+- ⚠️ 권한 거절 원인을 추측으로 말하지 않는다. 먼저 `.claude/settings.json` 허용 목록을 본다.
+- ⚠️ 문제를 보고할 때 코드 문제인지 문서 문제인지 먼저 밝힌다. 주석은 꼭 필요할 때만 쓴다. `spec.md`는 **PRD**라고 부른다. 경로는 절대경로로 쓴다.
 
 ### 남은 단계
 
-1. 슬라이스 2(첫 행동). 끝 보고에서 push할지 묻는다.
-2. push하면(사용자 지시) CI 결과로 슬라이스 3의 두 번째 칸을 판정한다. `test:bind`가 러너에서 실패하면 그 출력부터 본다.
-3. 사람 몫: Trusted Publisher 등록 → `npm version <버전>` → `git push --follow-tags` → `gh release create v<버전>` → Actions 로그에서 검사 → 게시 순서 확인 → `npm view`. 그 뒤 슬라이스 2 사람 칸과 슬라이스 4 마지막 칸.
+1. 첫 행동(Docker 질문 → 슬라이스 2 구현). 끝 보고에서 push할지 묻는다.
+2. push하면 첫 CI 실행으로 슬라이스 3의 둘째 칸을 판정한다. `test:bind`가 실패하면 그 출력부터 본다. `docker.yml`이 남아 있으면 이미지 게시도 같이 돈다.
+3. 사람 몫: Trusted Publisher 등록 → `npm version <버전>` → `git push --follow-tags` → `gh release create v<버전>` → Actions 로그에서 검사 → 게시 순서 확인 → `npm view`. 그 뒤 슬라이스 2의 사람 칸과 슬라이스 4의 마지막 칸을 판정한다.
 4. 01 슬라이스가 모두 끝나면 PRD "지금 할 일" 1번과 이슈 표의 01 행을 고친다. 다음은 09 사후 검수 그릴이다.
 
