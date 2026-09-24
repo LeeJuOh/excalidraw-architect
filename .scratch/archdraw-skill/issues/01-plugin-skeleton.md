@@ -280,9 +280,22 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 **테스트 경계(합의됨):** 새 시임 없음. 게시 관문은 기존 `npm test`와 필수 파일 검사다(스펙 Testing Decisions).
 
 - [ ] `npm version <버전>`을 실행하면 버전 커밋 하나에 매니페스트·shim의 새 버전이 들어가고, 이어서 `test:manifests`가 통과한다
-- [ ] 게시 워크플로가 Trusted Publishing 요건(Node·npm 버전)을 맞추고, `NPM_TOKEN` 검사와 토큰 env가 없다
+- [ ] 게시 워크플로는 릴리즈 생성으로만 실행된다. 수동 실행 경로와 릴리즈 첨부 파일 단계가 없다
+- [ ] 게시 워크플로가 Node 22에서 npm을 11.5.1 이상으로 올리고, `NPM_TOKEN` 검사와 토큰 env가 없다
 - [ ] 게시 워크플로에서 `npm test`와 필수 파일 검사가 게시 단계보다 앞에 있다
 - [ ] 사람 몫(별도 체크): npmjs.com에 Trusted Publisher 등록 → 슬라이스 1·3·4가 들어간 뒤 첫 릴리즈 → Actions 로그에서 검사 → 게시 순서를 확인하고 `npm view`로 게시를 확인
+
+**2026-09-25 — 착수 전 결정(그릴, 사용자).** 세 가지 모두 A.
+- 수동 실행 경로(`workflow_dispatch`)는 지운다. 실패한 게시는 그 실행을 re-run한다. re-run은 원래 이벤트의 `GITHUB_SHA`·`GITHUB_REF`를 쓰고 30일 안에 된다(GitHub 문서 re-run-workflows-and-jobs). 입력값을 `run:`에 그대로 넣던 줄도 같이 사라진다.
+- Node는 22로 두고 npm만 11로 올린다. 22에 딸린 npm은 10.9.9, 24는 11.19.0이다(nodejs.org 릴리즈 페이지). push CI 매트릭스가 20·22라, 24로 게시하면 CI가 돌려 본 적 없는 Node에서 게시 전 `npm test`가 돈다.
+- 릴리즈 첨부 파일(`dist` 압축 업로드) 단계는 지운다. 서버는 shim이 npm에서만 받고, 그 압축에는 플러그인과 `package.json`이 없다. 워크플로의 `contents` 권한은 `read`로 내린다.
+
+구현 기본값(문서로 확인함):
+- `--provenance`는 뺀다. Trusted Publishing이 provenance를 자동으로 붙인다(npm 문서 trusted-publishers).
+- `setup-node`의 `registry-url`은 둔다. npm CLI는 OIDC를 토큰보다 먼저 쓴다(같은 문서).
+- 업스트림 "Verify build artifacts" 단계는 필수 파일 검사로 바꾼다. 필수 파일 검사가 같은 세 파일을 포함한다.
+- `version` 훅은 `npm run manifests && git add -u`다. 훅은 버전을 올린 뒤, 커밋 전에 돈다(npm 문서 npm-version 4단계). `-u`는 추적 중인 변경 파일만 올리므로 생성물 목록을 생성기와 두 벌로 두지 않는다.
+- 워크플로 파일 이름은 바꾸지 않는다. npmjs.com에 등록하는 이름과 똑같아야 한다(같은 문서).
 
 ---
 
@@ -324,12 +337,14 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 
 **목표.** 01 사후 검수의 마지막 에이전트 슬라이스인 2(릴리즈 한 경로)를 `/implement`로 구현한다. 로드맵은 `1 ✅ → 4 ✅ → 3 ✅ → 2 ▶`다.
 
+**2026-09-25 갱신.** 착수 전 결정과 아래 "맥락"의 미확인 항목은 슬라이스 2의 2026-09-25 기록으로 해소됐다. 첫 행동 3은 끝났으니 1·2 뒤 바로 구현한다. `/implement`가 스킬 목록에 없으면 "통한 것"의 흐름을 직접 따른다.
+
 **첫 행동.** `/implement`로 슬라이스 2에 착수한다.
 1. 위 슬라이스 2의 `Status:`를 `claimed`로 바꾼다.
 2. 근거를 읽는다: PRD(`spec.md`)의 "7-5d 릴리즈" 항목, Testing Decisions의 "릴리즈(7-5d)는 새 시임을 만들지 않는다" 항목.
 3. 시작 보고에 아래 "착수 전 결정"을 질문으로 올린다. 답을 받기 전에는 워크플로를 고치지 않는다.
 
-**착수 전 결정 (티켓에 없음 → 멈춤 조건).** `.github/workflows/npm-publish.yml`에는 릴리즈 트리거 말고 `workflow_dispatch` 수동 게시 경로도 있다(입력 `tag`, "Publish to NPM (Manual)" 단계). 7-5d는 "게시 경로는 하나다"라고 적었지만, 티켓과 PRD 모두 이 수동 경로를 지울지 말하지 않는다.
+**착수 전 결정 — ✅ 2026-09-25 A로 결정(슬라이스 2 기록).** `.github/workflows/npm-publish.yml`에는 릴리즈 트리거 말고 `workflow_dispatch` 수동 게시 경로도 있다(입력 `tag`, "Publish to NPM (Manual)" 단계). 7-5d는 "게시 경로는 하나다"라고 적었지만, 티켓과 PRD 모두 이 수동 경로를 지울지 말하지 않는다.
 - (A) 지운다: 7-5d의 "한 경로"와 맞는다. 실패한 릴리즈 게시는 Actions의 re-run으로 다시 돌릴 수 있다(추측, GitHub 문서로 확인할 것). `run:`에 입력값 `${{ github.event.inputs.tag }}`를 직접 넣는 줄도 함께 사라진다.
 - (B) 둔다: 태그(`beta` 등)를 달리 게시할 여지를 남긴다. 대신 두 번째 게시 경로가 남는다.
 - 추천: A.
