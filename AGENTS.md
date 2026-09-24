@@ -38,7 +38,7 @@ sibling 레포 소유라 읽기만 한다. git에는 심링크째로 들어가 G
 ## Gotchas
 
 - 파일 생성·수정은 Write/Edit 도구로, Bash 한 호출에는 셸 구성 하나만. 히어독·`node -e`·반복문은 셸 파서가 분석하지 못해 호출마다 승인을 묻는다 — 여러 줄 스크립트는 `scripts/`에 커밋해 이름으로 부른다.
-- 업스트림 머지 때 되살아나면 다시 지울 것: `.gitignore`의 `docs/` 무시 줄, `read_diagram_guide` 툴과 `design-guide.ts`(ADR-0006).
+- 업스트림 머지 때 되살아나면 다시 지울 것: `.gitignore`의 `docs/` 무시 줄, `read_diagram_guide` 툴과 `design-guide.ts`(ADR-0006), `docker.yml`·`Dockerfile*`·`docker-compose.yml`·`.dockerignore`(PRD 7-5d).
 - 플러그인에 들어갈 파일은 `plugin/` 아래에 둔다 — 호스트는 카탈로그가 가리키는 그 폴더만 복사한다(ADR-0011).
 - 매니페스트 6개와 스킬 shim은 **생성물이다.** `package.json`을 고치고 `npm run manifests`로 재생성한다. `npm test`·CI가 드리프트와 shim 실행 권한을 검사한다.
 - `gh`는 기본 레포를 `upstream`(yctimlin)으로 잡는다. 새 클론마다 `gh repo set-default LeeJuOh/excalidraw-architect`. 이슈·라벨 작업 전 `gh repo view`로 확인.

@@ -283,12 +283,15 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 - [ ] 게시 워크플로는 릴리즈 생성으로만 실행된다. 수동 실행 경로와 릴리즈 첨부 파일 단계가 없다
 - [ ] 게시 워크플로가 Node 22에서 npm을 11.5.1 이상으로 올리고, `NPM_TOKEN` 검사와 토큰 env가 없다
 - [ ] 게시 워크플로에서 `npm test`와 필수 파일 검사가 게시 단계보다 앞에 있다
+- [ ] `docker.yml`과 루트 Docker 파일 4개(`Dockerfile`·`Dockerfile.canvas`·`docker-compose.yml`·`.dockerignore`)가 없다
 - [ ] 사람 몫(별도 체크): npmjs.com에 Trusted Publisher 등록 → 슬라이스 1·3·4가 들어간 뒤 첫 릴리즈 → Actions 로그에서 검사 → 게시 순서를 확인하고 `npm view`로 게시를 확인
 
 **2026-09-25 — 착수 전 결정(그릴, 사용자).** 세 가지 모두 A.
 - 수동 실행 경로(`workflow_dispatch`)는 지운다. 실패한 게시는 그 실행을 re-run한다. re-run은 원래 이벤트의 `GITHUB_SHA`·`GITHUB_REF`를 쓰고 30일 안에 된다(GitHub 문서 re-run-workflows-and-jobs). 입력값을 `run:`에 그대로 넣던 줄도 같이 사라진다.
 - Node는 22로 두고 npm만 11로 올린다. 22에 딸린 npm은 10.9.9, 24는 11.19.0이다(nodejs.org 릴리즈 페이지). push CI 매트릭스가 20·22라, 24로 게시하면 CI가 돌려 본 적 없는 Node에서 게시 전 `npm test`가 돈다.
 - 릴리즈 첨부 파일(`dist` 압축 업로드) 단계는 지운다. 서버는 shim이 npm에서만 받고, 그 압축에는 플러그인과 `package.json`이 없다. 워크플로의 `contents` 권한은 `read`로 내린다.
+
+**2026-09-25 — Docker 이미지 게시(그릴, 사용자 A1).** 업스트림 `.github/workflows/docker.yml`과 그것만 쓰는 루트 파일 `Dockerfile`·`Dockerfile.canvas`·`docker-compose.yml`·`.dockerignore`를 지운다. 이 워크플로는 main push·`v*` 태그·PR마다 MCP 서버·캔버스 이미지 2개를 `ghcr.io`에 올린다. 업스트림은 Node 없는 사용자에게 `docker run`으로 서버를 띄우게 했지만(업스트림 README "Docker" 절), 우리 서버는 shim이 npm에서만 받고(ADR-0002) 두 README에 Docker 안내가 없다. 레포 Actions를 켰으므로 두지 않으면 다음 push부터 아무도 받지 않는 이미지가 올라간다. `EXCALIDRAW_NO_AUTOSTART`는 Docker 전용이 아니고 `check-mcp-stdio.mjs`가 쓰며 04 Q3 대상이라 그대로 둔다.
 
 구현 기본값(문서로 확인함):
 - `--provenance`는 뺀다. Trusted Publishing이 provenance를 자동으로 붙인다(npm 문서 trusted-publishers).
@@ -333,58 +336,62 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 
 ---
 
-## 핸드오프 — 사후 검수 슬라이스 2 구현 (2026-09-25, 7차)
+## 핸드오프 — 사후 검수 슬라이스 2 구현 (2026-09-25, 8차)
 
-**목표.** 01 사후 검수의 마지막 에이전트 슬라이스인 2(릴리즈 한 경로)를 구현한다. 결정은 끝났다. 로드맵은 `1 ✅ → 4 ✅ → 3 ✅ → 2 ▶`다.
+**목표.** 01 사후 검수의 마지막 에이전트 슬라이스인 2(릴리즈 한 경로)를 구현한다. 결정은 모두 끝났고, 사용자가 다음 세션에서 구현하라고 승인했다. 로드맵은 `1 ✅ → 4 ✅ → 3 ✅ → 2 ▶`다.
 
-**첫 행동.** 아래 "착수 전 질문" 하나를 사용자에게 묻고, 답을 슬라이스 2의 2026-09-25 기록 밑에 적는다. 그다음 슬라이스 2의 `Status:`를 `claimed`로 바꾸고 구현한다. 구현 범위는 슬라이스 2의 인수 5칸과 "2026-09-25 — 착수 전 결정" 기록(결정 3개 + 구현 기본값 5개)이 전부다. 거기 적힌 것은 다시 묻지 않는다.
+**첫 행동.** `git status`를 본다. 작업 트리가 깨끗하면 슬라이스 2의 `Status:`를 `claimed`로 바꾸고 구현을 시작한다. 범위는 슬라이스 2 인수 6칸 중 사람 칸을 뺀 5칸, 그리고 그 밑 두 기록("착수 전 결정", "Docker 이미지 게시")이 전부다. 거기 적힌 것은 다시 묻지 않는다. 작업 트리에 변경이 있으면 이 세션의 문서 변경(아래 진행 상태)이 커밋되지 않은 것이다. 그때는 구현 전에 커밋할지 먼저 묻는다.
 
-**착수 전 질문 — Docker 이미지 게시 (2026-09-25 발견, 미결).** 업스트림 `.github/workflows/docker.yml`은 main push와 `v*.*.*` 태그 push마다 MCP 서버·캔버스 이미지 둘을 `ghcr.io`에 올린다(`push: true`, 조건 없음). 사용자가 방금 레포 Actions를 켰으므로 다음 push부터 실제로 돈다. 두 README에는 Docker 언급이 0건이다. 루트의 `Dockerfile`·`Dockerfile.canvas`·`docker-compose.yml`만 남아 있다. 7-5d의 "게시 경로는 하나다"(npm)와 겹치는 두 번째 배포물이다.
-- (A) `docker.yml`을 지운다. 배포물은 npm 하나다. 서버는 shim이 npm에서만 받는다(ADR-0002). 루트 Docker 파일 3개를 같이 지울지도 함께 묻는다.
-- (B) 둔다. 이미지는 계속 올라가지만 아무 문서도 안내하지 않는다.
-- 추천: A. A가 되면 PRD 7-5d 대안 기각 목록과 슬라이스 2 인수에 한 줄씩 더한다.
+**구현 지도 (2026-09-25 코드 기준).**
+- `.github/workflows/npm-publish.yml`
+  - 지울 것: `on:`의 `workflow_dispatch` 블록, "Verify NPM publish token" 단계, "Publish to NPM (Manual)" 단계, 게시 단계의 `NODE_AUTH_TOKEN` env와 `--provenance`, "Create GitHub Release Assets"·"Upload Release Assets" 단계.
+  - 바꿀 것: `permissions.contents`는 `write`에서 `read`로. "Setup Node.js"의 `node-version`은 `'20.x'`에서 22로, 그 뒤에 npm을 11.5.1 이상으로 올리는 단계. "Verify build artifacts"는 `node scripts/check-pack-contents.mjs`로(이 스크립트가 `dist/index.js`·`dist/server.js`·`dist/frontend/index.html`를 포함함을 확인했다).
+  - 더할 것: 게시 단계보다 앞에 `npm test` 단계.
+  - 그대로: "Verify release tag", "Check if version exists on NPM", "Skip publishing", `notify` 잡, `registry-url`, 파일 이름. 수동 경로가 없어지면 `if: github.event_name == 'release'` 조건은 항상 참이다. 남길지는 구현하면서 판단한다.
+- `package.json` `scripts`: `version` 훅이 없다. `"version": "npm run manifests && git add -u"`를 넣는다. `prepublishOnly`(`npm run build`)는 결정 기록에 없으니 그대로 둔다.
+- 삭제: `.github/workflows/docker.yml`, `Dockerfile`, `Dockerfile.canvas`, `docker-compose.yml`, `.dockerignore`.
 
 **맥락.**
-- 결정 기록에 없는 게시 워크플로 단계(버전 존재 확인, 릴리즈 태그 = 패키지 버전 확인, `notify` 잡)는 그대로 둔다.
-- 인수 확인: `npm version <버전>`은 깨끗한 작업 트리를 요구하고, 커밋과 태그를 만든다. main이 아닌 임시 브랜치나 워크트리에서 돌려, 버전 커밋에 생성물이 들어갔는지와 `test:manifests` 통과를 본다. 태그와 브랜치는 사용자 확인 뒤에 지운다.
-- Actions: 사용자가 `8ff7930`을 push한 뒤에 레포 Actions를 켰다. 그래서 워크플로 실행 기록이 0건이다(2026-09-25 `gh api repos/LeeJuOh/excalidraw-architect/actions/runs` → `total_count` 0). `ci.yml`의 트리거는 push와 PR뿐이다. 슬라이스 3의 둘째 칸(첫 push CI, `test:bind`)은 다음 push에서 판정한다.
-- 사람 몫(슬라이스 2 뒤): npmjs.com에 Trusted Publisher 등록(레포 `LeeJuOh/excalidraw-architect`, 워크플로 파일 `npm-publish.yml`) → 첫 릴리즈.
+- `npm version <버전>` 인수 확인: 깨끗한 작업 트리가 필요하고, 커밋과 태그를 만든다. main이 아닌 임시 브랜치나 워크트리에서 돌려, 버전 커밋에 생성물이 들어갔는지와 `test:manifests` 통과를 본다. 태그와 브랜치는 사용자 확인 뒤에 지운다. `npm version`은 `.claude/settings.json` 허용 목록에 없어 승인 프롬프트가 뜬다.
+- Actions: 사용자가 `8ff7930`을 push한 뒤에 레포 Actions를 켰다. 그래서 실행 기록이 0건이다(2026-09-25 `gh api repos/LeeJuOh/excalidraw-architect/actions/runs` → `total_count` 0). 슬라이스 3의 둘째 칸(첫 push CI, `test:bind`)은 다음 push에서 판정한다.
+- 사람 몫(구현 뒤): npmjs.com에 Trusted Publisher 등록(레포 `LeeJuOh/excalidraw-architect`, 워크플로 파일 `npm-publish.yml`) → 첫 릴리즈.
 
 ### 진행 상태 (git 기준)
 
-- 브랜치 `main`. `origin/main`은 `8ff7930`이다(push됨). 앞선 커밋은 `5857955`와 이 핸드오프를 담은 커밋이다. push는 사용자 지시가 있을 때만 한다.
+- 브랜치 `main`. `origin/main`보다 앞선 커밋은 `5857955`(슬라이스 2 결정 기록)와 `4bbf4bf`(7차 핸드오프) 두 개다. push는 사용자 지시가 있을 때만 한다.
 - ✅ 슬라이스 1 `8421776`, 슬라이스 4 `cfb09e4`, 슬라이스 3 `baeea70`. 3·4의 남은 칸은 push와 첫 릴리즈 뒤에 판정한다.
-- ✅ 슬라이스 2 결정 기록 `5857955`: 티켓 슬라이스 2의 인수 5칸, 결정 3개, 구현 기본값, 그리고 PRD 7-5d 보강.
+- 이 세션의 문서 변경(핸드오프 작성 시점에 커밋 안 됨):
+  - 이 티켓: 슬라이스 2에 "Docker 이미지 게시" 결정 기록과 인수 칸 1개, 그리고 이 핸드오프(7차를 대체).
+  - PRD 7-5d: 기각 목록 끝에 "업스트림 Docker 이미지 게시 유지" 한 줄.
+  - `AGENTS.md` Gotchas: "업스트림 머지 때 되살아나면 다시 지울 것" 줄에 Docker 파일 이름과 PRD 7-5d 포인터.
 - ⏳ 슬라이스 2 구현: 코드 변경 없음. `Status: ready-for-agent`.
 
 ### 결정
 
-- 이번 세션의 결정(수동 실행 경로 삭제, Node 22 + npm 11, 릴리즈 첨부 파일 삭제)은 슬라이스 2 기록과 PRD 7-5d에 있다.
-- `/to-spec`은 기존 PRD를 고칠 때 쓰지 않는다. 새 spec 파일을 만드는 스킬이라 PRD가 중복된다. PRD는 직접 고친다.
-- `pluginDataDir()` → `dataDir()` 개명은 06으로 미룬다. PRD와 티켓에 테스트 경계 이름으로 박혀 있어서다.
-- 사람이 확인할 칸만 남은 슬라이스는 `Status: resolved (날짜 — 남은 칸 설명)`으로 닫는다. 슬라이스 4가 선례다.
-- 코드 주석이나 ADR 본문에 셸 명령을 옮겨 적지 않는다. 주석은 ADR을 가리키게 쓴다.
+- Docker(사용자 A1): 워크플로와 루트 Docker 파일을 지운다. `.dockerignore`도 Docker 빌드에서만 쓰여서 같이 지운다. 근거는 슬라이스 2 기록에 있다.
+- ADR은 쓰지 않는다. 되돌리기 쉽고(이미지 게시 0건), ADR-0002("서버는 npm에서만 받는다")의 결과이고, 실제 트레이드오프가 없었다.
+- `AGENTS.md`의 업스트림 머지 목록에는 파일 이름과 근거 포인터만 둔다. 목록이 더 길어지면 별도 문서로 빼고 `AGENTS.md`에는 포인터만 둔다. 업스트림 머지는 가끔만 하는 작업이라서다(`writing-for-agents` 기준).
+- 앞 세션 결정은 유지한다. 기존 PRD는 `/to-spec` 없이 직접 고친다. `pluginDataDir()` 개명은 06에서 한다. 사람 칸만 남은 슬라이스는 `Status: resolved (날짜 — 남은 칸 설명)`으로 닫는다. 코드 주석과 ADR은 셸 명령 대신 ADR 포인터를 쓴다.
 
 ### 통한 것
 
-- 구현 흐름: 시작 보고 → 코드 → `npm test` → `/code-review` 서브에이전트 2개(Standards·Spec) 병렬 → 지적 반영 → 끝 보고 → 사용자 확인 뒤 커밋. 2026-09-25 세션의 스킬 목록에는 `/implement`가 없었다. 없으면 이 흐름을 직접 따른다.
-- 그릴: 질문은 한 번에 하나, 개념은 아스키 그림 한 장으로 설명한다("수동 게시 버튼이 뭐냐"는 그림 한 장으로 풀렸다). 전제가 헷갈리는 질문은 전제부터 푼다(Node와 npm은 따로 올릴 수 있는 별개 프로그램).
-- 미확인 사실은 공식 문서로 바로 확인했다: npm trusted-publishers, npm-version, GitHub re-run-workflows-and-jobs, nodejs.org 버전별 릴리즈 페이지(번들 npm 버전).
+- 구현 흐름: 시작 보고 → 코드 → `npm test` → `/code-review` 서브에이전트 2개(Standards·Spec) 병렬 → 지적 반영 → 끝 보고 → 사용자 확인 뒤 커밋. 스킬 목록에 `/implement`는 없다.
+- 낯선 대상 설명은 "업스트림에서는 왜 있었나 / 여기서는 왜 필요 없나" 두 묶음으로 쓰면 한 번에 통했다.
 - 결정을 바꾼 뒤에는 `src`·`scripts`·`plugin`·`docs`·`.scratch`에서 옛 문자열을 grep한다.
 
 ### 안 통한 것
 
-- ⚠️ **보고는 짧게.** 이번 세션에서도 "장황하게말하지마"를 두 번 들었다. 결론 한 줄 + 질문 하나로 쓴다. 기본값과 후속 순서는 물을 때가 아니면 싣지 않는다.
-- ⚠️ 문서 반영과 구현은 따로 승인받는다. "반영한 뒤 구현할게요"라고 묶어 제안했다가 "구현은 하지마"를 들었다.
-- ⚠️ **명령은 허용 목록과 똑같이 친다.** `npm test`에 파이프나 리다이렉트를 붙이면 `.claude/settings.json`의 `Bash(npm test)`와 어긋나 분류기에 막힌다.
-- ⚠️ 빈 Bash 출력은 확인 실패다. `gh run list`는 빈 출력이었고, `--json`과 API로 0건을 확인했다. 원인(Actions 꺼짐)은 사용자에게 들었다.
-- ⚠️ 권한 거절 원인을 추측으로 말하지 않는다. 먼저 `.claude/settings.json` 허용 목록을 본다.
-- ⚠️ 문제를 보고할 때 코드 문제인지 문서 문제인지 먼저 밝힌다. 주석은 꼭 필요할 때만 쓴다. `spec.md`는 **PRD**라고 부른다. 경로는 절대경로로 쓴다.
+- ⚠️ **질문 전에 맥락부터 쓴다.** Docker 질문을 선택지 도구로 바로 띄웠다가 거절당했고 "먼소리야 맥락담아"를 들었다. 대상이 무엇이고, 어디서 왔고, 왜 지금 문제인지를 두세 줄로 먼저 쓰고 질문은 하나만 한다.
+- ⚠️ **추천 하나를 먼저 낸다.** "넣을지 말지 정해 주세요"로 끝냈다가 "그래서 어떻게하자고"를 들었다.
+- ⚠️ **`AGENTS.md`나 스킬 문구를 제안하기 전에 `writing-for-agents` 스킬을 먼저 불러 기준으로 삼는다.** 부르지 않고 제안했다가 "이 스킬지시대로야?"를 들었다.
+- ⚠️ 보고는 결론 한 줄과 질문 하나로 짧게 쓴다. 문서 반영과 구현은 따로 승인받는다(이번 구현은 승인됨).
+- ⚠️ `npm test`는 파이프나 리다이렉트 없이 그대로 친다. `.claude/settings.json`의 `Bash(npm test)`와 같아야 분류기를 통과한다. 권한이 거절되면 원인을 추측하지 말고 허용 목록부터 본다.
+- ⚠️ 빈 Bash 출력은 확인 실패로 본다. 보고할 때는 코드 문제인지 문서 문제인지 먼저 밝히고, `spec.md`는 **PRD**라고 부르고, 경로는 절대경로로 쓴다.
 
 ### 남은 단계
 
-1. 첫 행동(Docker 질문 → 슬라이스 2 구현). 끝 보고에서 push할지 묻는다.
-2. push하면 첫 CI 실행으로 슬라이스 3의 둘째 칸을 판정한다. `test:bind`가 실패하면 그 출력부터 본다. `docker.yml`이 남아 있으면 이미지 게시도 같이 돈다.
+1. 첫 행동(슬라이스 2 구현). 끝 보고에서 push할지 묻는다.
+2. push하면 첫 CI 실행으로 슬라이스 3의 둘째 칸을 판정한다. `test:bind`가 실패하면 그 출력부터 본다.
 3. 사람 몫: Trusted Publisher 등록 → `npm version <버전>` → `git push --follow-tags` → `gh release create v<버전>` → Actions 로그에서 검사 → 게시 순서 확인 → `npm view`. 그 뒤 슬라이스 2의 사람 칸과 슬라이스 4의 마지막 칸을 판정한다.
 4. 01 슬라이스가 모두 끝나면 PRD "지금 할 일" 1번과 이슈 표의 01 행을 고친다. 다음은 09 사후 검수 그릴이다.
 
