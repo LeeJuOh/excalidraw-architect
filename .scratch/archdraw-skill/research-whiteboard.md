@@ -42,6 +42,7 @@
 | 4 | 역방향 그림은 **진입점에서 시작**하고 바뀌지 않은 노드도 포함 | `authoring.md:23` (`call_stack_diff`) | SKILL.md §9 역방향에 시작점 규칙이 없다 | SKILL.md에 한 줄 추가 |
 | 5 | 근거 태그에 **커밋 SHA** | 모든 소스 범위에 pins **(에이전트)** | 근거 태그에 커밋이 없다(ADR-0005, `canvas-ops.md` 확인) | 서버 변경이다. 이슈로 뺄지 결정 필요 |
 | 6 | **조금씩 그린다** | `authoring.md:33` "Write incrementally" | 한 번에 `batch_create_elements` | 도그푸딩에서 체감 확인 |
+| 7 | **CLI에서도 그리기 규격을 읽게** 한다. 지시문 한 벌을 MCP와 CLI가 같이 준다 | `packages/agent-plugins/pi/skills/whiteboard/SKILL.md`는 `whiteboard api session_get_instructions '{}'`를 실행하라는 포인터뿐이다 | CLI 폴백 채널에는 규격을 읽을 통로가 없다(09 사후 검수 결함 1) | 09 결함 1과 같이 다룬다 |
 
 ## 4. 가져오지 않을 것
 
