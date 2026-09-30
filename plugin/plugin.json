@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "excalidraw-architect",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Discuss backend architecture in pictures with your coding agent — picks the diagram type and zoom level for the question, then draws it on a live Excalidraw canvas. Agent skill, MCP server, and CLI.",
   "author": {
     "name": "LeeJuOh",
