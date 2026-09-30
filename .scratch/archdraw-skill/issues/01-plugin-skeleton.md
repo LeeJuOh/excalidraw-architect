@@ -284,7 +284,7 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 - [x] 게시 워크플로가 Node 22에서 npm을 11.5.1 이상으로 올리고, `NPM_TOKEN` 검사와 토큰 env가 없다
 - [x] 게시 워크플로에서 `npm test`와 필수 파일 검사가 게시 단계보다 앞에 있다
 - [x] `docker.yml`과 루트 Docker 파일 4개(`Dockerfile`·`Dockerfile.canvas`·`docker-compose.yml`·`.dockerignore`)가 없다
-- [ ] 사람 몫(별도 체크): npmjs.com에 Trusted Publisher 등록 → 슬라이스 1·3·4가 들어간 뒤 첫 릴리즈 → Actions 로그에서 검사 → 게시 순서를 확인하고 `npm view`로 게시를 확인
+- [x] 사람 몫(별도 체크): npmjs.com에 Trusted Publisher 등록 → 슬라이스 1·3·4가 들어간 뒤 첫 릴리즈 → Actions 로그에서 검사 → 게시 순서를 확인하고 `npm view`로 게시를 확인 (2026-09-30 — v0.1.1, 실행 36727577850. Run tests → Check npm tarball contents → Publish to NPM 통과, `npm view` latest = 0.1.1)
 
 **2026-09-25 — 착수 전 결정(그릴, 사용자).** 세 가지 모두 A.
 - 수동 실행 경로(`workflow_dispatch`)는 지운다. 실패한 게시는 그 실행을 re-run한다. re-run은 원래 이벤트의 `GITHUB_SHA`·`GITHUB_REF`를 쓰고 30일 안에 된다(GitHub 문서 re-run-workflows-and-jobs). 입력값을 `run:`에 그대로 넣던 줄도 같이 사라진다.
@@ -332,7 +332,7 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 - [x] 생성기에서 shim의 npx 줄에 `--prefix`(shim 자기 폴더)가 들어가고, 재생성한 shim이 커밋된다
 - [x] AGENTS.md Gotchas의 플러그인 위치·게시본 검증 두 줄이 새 동작에 맞는다(`writing-for-agents` 스킬 기준)
 - [x] `npm test` 통과
-- [ ] 다음 릴리즈 뒤: 플러그인을 설치하고 이 레포에서 claude를 켜면 `/mcp`에 archdraw가 connected로 뜬다 (2026-09-25 기준 이 머신의 Claude Code에는 플러그인이 설치돼 있지 않다 — `installed_plugins.json`에 항목 없음, 캐시 폴더만 남음)
+- [x] 다음 릴리즈 뒤: 플러그인을 설치하고 이 레포에서 claude를 켜면 `/mcp`에 archdraw가 connected로 뜬다 (2026-09-30 — 플러그인 0.1.0 → 0.1.1 업데이트 뒤 이 레포 cwd에서 `/mcp` Reconnect로 connected, 도구 25개 노출. 0.1.0일 때는 같은 cwd에서 CONNECTION_CLOSED)
 
 **2026-09-24 — 구현(에이전트).** 생성기 shim 템플릿의 npx 줄에 `--prefix "$(dirname "$0")"`를 넣고 재생성했다. 주석은 넣지 않았다(이유는 ADR-0011). 재생성 전 `test:manifests`는 shim 드리프트로 red였다. 로컬 확인은 `ARCHDRAW_BIN`을 비우고 레포 루트 cwd에서 했다. shim `--version` → `0.1.0`, 맨 `npx -y excalidraw-architect@0.1.0 --version` → `command not found`, 스킬 루트에서 `scripts/archdraw --version`(상대 `$0`) → `0.1.0`, `sh <절대 경로 shim>`에 MCP `initialize` → `serverInfo` `excalidraw-architect 0.1.0`. shim 폴더에 `node_modules`나 lock 파일은 생기지 않았다(`ls`, `git status --ignored`). AGENTS.md는 플러그인 줄에서 더는 사실이 아닌 실패 서술을 지웠고, 게시본 줄은 "shim으로 검증, 맨 npx는 실패"로 바꿨다. 리뷰가 찾은 옛 npx 줄(`--prefix` 없음) 2곳도 고쳤다: ADR-0002 5행은 `--prefix`를 넣고 ADR-0011을 가리키게, `check-pack-contents.mjs` 3행 주석은 명령을 적지 않게.
 
@@ -377,4 +377,6 @@ f=$(ls -t ~/.codex/sessions/*/*/*/*.jsonl | head -1); grep -o '"name":"[^"]*"' "
 2. 에이전트: 게시 워크플로 실행 로그에서 `Run tests` → `Check npm tarball contents` → `Publish to NPM` 순서로 통과했는지 보고, `npm view excalidraw-architect version`을 확인한다. 둘 다 맞으면 슬라이스 2 사람 칸을 체크한다. 게시가 인증에서 실패하면 Trusted Publisher 등록의 워크플로 파일 이름부터 본다.
 3. 사람: 플러그인 설치(`/plugin marketplace add LeeJuOh/excalidraw-architect` → `/plugin install excalidraw-architect`) → 이 레포에서 claude 재시작 → `/mcp`. 에이전트가 connected면 슬라이스 4 마지막 칸을 체크한다.
 4. 01 닫기: PRD `.scratch/archdraw-skill/spec.md`의 "지금 할 일" 1번과 이슈 표 01 행을 고친다. 다음은 "지금 할 일" 2번, 09 사후 검수 결함 1~3 그릴이다.
+
+**2026-09-30 — 01 완전히 닫음.** 위 1~4를 모두 마쳤다. Trusted Publisher 등록은 웹에서 했다. 첫 저장은 로그인 세션이 끊겨 404가 났고, 다시 로그인한 뒤 성공했다. "Allow `npm publish`"를 체크했다. 체크하지 않으면 staged publish만 허용돼 우리 워크플로의 `npm publish`가 실패한다. staged(사람 승인)로 바꿀지는 문제가 생기면 다시 본다. `gh release create`는 auto mode가 공개 게시로 막아 사람이 쳤다. 게시 직후 npm이 0.1.1을 "Validating"(자동 검사)으로 몇 분 잡아 두어 `npm view`에 보이지 않았다. 그사이 한 `/reload-plugins`는 MCP 실패를 캐시해서, 이후 reload로는 재시도하지 않았다. `/mcp` Reconnect로 붙었다. 다음은 09 사후 검수 결함 1~3 그릴이다.
 
