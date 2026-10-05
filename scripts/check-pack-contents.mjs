@@ -8,6 +8,13 @@
 // runs on publish).
 
 import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+
+const SITUATIONS_DIR = 'plugin/skills/archdraw/references/situations';
+const situations = fs
+  .readdirSync(SITUATIONS_DIR)
+  .filter((file) => file.endsWith('.md'))
+  .map((file) => `${SITUATIONS_DIR}/${file}`);
 
 const REQUIRED = [
   'dist/bin.js',
@@ -20,7 +27,9 @@ const REQUIRED = [
   'plugin/skills/archdraw/agents/openai.yaml',
   'plugin/skills/archdraw/references/canvas-ops.md',
   'plugin/skills/archdraw/references/routing-table.md',
-  'plugin/skills/archdraw/references/zoom-levels.md'
+  'plugin/skills/archdraw/references/zoom-levels.md',
+  'plugin/skills/archdraw/references/saving.md',
+  ...situations
 ];
 
 const raw = execFileSync('npm', ['pack', '--dry-run', '--json'], {

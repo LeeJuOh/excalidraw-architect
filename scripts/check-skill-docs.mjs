@@ -3,7 +3,8 @@
 // conditions. This script holds the ones that can drift silently:
 //
 //   - SKILL.md stays under its line budget (spec 7-4)
-//   - the routing table keeps all 21 situations, each with its four fields
+//   - the routing index lists all 23 situations, and each one has its own
+//     document with the four fields (spec §1, index and per-situation documents)
 //   - the skill never copies the canvas spec: no hex colors, no px, no
 //     dimensions — it points at the resource guide://canvas (ADR-0006)
 //   - the skill never copies the fixed canvas label strings (ADR-0012)
@@ -19,24 +20,33 @@ const skillDir = join(repoRoot, 'plugin', 'skills', 'archdraw');
 const read = (...parts) => fs.readFileSync(join(skillDir, ...parts), 'utf-8');
 
 const SKILL_MAX_LINES = 500;
-// Spec §1 fixes twenty-one situations. The count lives here once; the prose in
-// the skill is checked against it rather than repeating it a third time.
-const SITUATION_COUNT = 21;
-const SITUATION_COUNT_IN_WORDS = 'twenty-one';
+// Spec §1 fixes twenty-three situations. The count lives here once; the prose
+// in the skill is checked against it rather than repeating it a third time.
+const SITUATION_COUNT = 23;
+const SITUATION_COUNT_IN_WORDS = 'twenty-three';
 
 const skill = read('SKILL.md');
 const ops = read('references', 'canvas-ops.md');
 const routing = read('references', 'routing-table.md');
 const zoom = read('references', 'zoom-levels.md');
+const saving = read('references', 'saving.md');
+
+const situationFiles = fs
+  .readdirSync(join(skillDir, 'references', 'situations'))
+  .filter((file) => file.endsWith('.md'));
 
 // The files the agent reads while drawing, by the name a failure should print.
 const FILES = {
   'SKILL.md': skill,
   'references/canvas-ops.md': ops,
   'references/routing-table.md': routing,
-  'references/zoom-levels.md': zoom
+  'references/zoom-levels.md': zoom,
+  'references/saving.md': saving,
+  ...Object.fromEntries(
+    situationFiles.map((file) => [`references/situations/${file}`, read('references', 'situations', file)])
+  )
 };
-// The two the drawing spec must not be copied into.
+// The two the agent draws from, so they must point at the drawing spec.
 const DRAWING_FILES = ['SKILL.md', 'references/canvas-ops.md'];
 
 // --- SKILL.md size and invocation contract -------------------------------
@@ -76,12 +86,15 @@ const COPIED_SPEC_PATTERNS = [
   [/"(?:width|height|fontSize)":\s*\d+/, 'a hard-coded size']
 ];
 
-for (const name of DRAWING_FILES) {
-  const text = FILES[name];
+for (const [name, text] of Object.entries(FILES)) {
   for (const [pattern, what] of COPIED_SPEC_PATTERNS) {
     const hit = text.match(pattern);
     assert.ok(!hit, `${name} carries ${what} (${hit?.[0]}) — that belongs in guide://canvas`);
   }
+}
+
+for (const name of DRAWING_FILES) {
+  const text = FILES[name];
   assert.match(
     text,
     /guide:\/\/canvas/,
@@ -96,10 +109,10 @@ for (const name of DRAWING_FILES) {
   );
 }
 
-// Three of ADR-0012's five fixed labels are distinctive enough to grep for.
-// The other two ("response:", "inferred") are ordinary English, so they are
-// read for, not checked here.
-const FIXED_LABELS = ['[sync]', '[async]', 'no evidence:'];
+// The fixed labels distinctive enough to grep for: three of ADR-0012's five,
+// and the change-status labels (ADR-0015). The other two ("response:",
+// "inferred") are ordinary English, so they are read for, not checked here.
+const FIXED_LABELS = ['[sync]', '[async]', 'no evidence:', '[added]', '[removed]', '[modified]'];
 for (const [name, text] of Object.entries(FILES)) {
   for (const label of FIXED_LABELS) {
     assert.ok(
@@ -109,15 +122,23 @@ for (const [name, text] of Object.entries(FILES)) {
   }
 }
 
-// --- The routing table ----------------------------------------------------
+// --- The routing index and the situation documents ------------------------
 
-const situations = [...routing.matchAll(/^### (.+)$/gm)].map((m) => m[1]);
+// An index entry: `- [Name](situations/file.md) — Question?`
+const situations = [...routing.matchAll(/^- \[(.+?)\]\(situations\/(.+?\.md)\) — (.+)$/gm)].map(
+  ([, name, file, question]) => ({ name, file, question })
+);
 assert.equal(
   situations.length,
   SITUATION_COUNT,
-  `routing-table.md has ${situations.length} situations, expected ${SITUATION_COUNT}`
+  `routing-table.md lists ${situations.length} situations, expected ${SITUATION_COUNT}`
 );
-assert.equal(new Set(situations).size, situations.length, 'situation names are unique');
+assert.equal(new Set(situations.map((s) => s.name)).size, situations.length, 'situation names are unique');
+assert.deepEqual(
+  [...situationFiles].sort(),
+  situations.map((s) => s.file).sort(),
+  'references/situations/ holds exactly one document per index entry'
+);
 
 for (const name of ['SKILL.md', 'references/routing-table.md']) {
   assert.match(
@@ -127,15 +148,25 @@ for (const name of ['SKILL.md', 'references/routing-table.md']) {
   );
 }
 
-// Every situation carries the four fields the spec fixes for a row. Drawing
-// rules are per-row and not required everywhere.
-const sections = routing.split(/^### /m).slice(1);
-for (const section of sections) {
-  const name = section.split('\n', 1)[0];
+const oneLine = (text) => text.replace(/\s+/g, ' ').trim();
+
+// Every situation document carries the four fields the spec fixes for a row,
+// and the index repeats its question word for word. Drawing rules are
+// per-situation and not required everywhere.
+for (const { name, file, question } of situations) {
+  const doc = FILES[`references/situations/${file}`];
+  assert.match(doc, new RegExp(`^# ${name}$`, 'm'), `situations/${file} is not titled "${name}"`);
   for (const field of ['**Question:**', '**Diagram:**', '**Required elements:**', '**Routing exceptions:**']) {
-    assert.ok(section.includes(field), `routing row "${name}" has no ${field} line`);
+    assert.ok(doc.includes(field), `situations/${file} has no ${field} line`);
   }
+  const docQuestion = oneLine(doc.split('**Question:**')[1].split('\n\n')[0]);
+  assert.equal(question, docQuestion, `the index question for "${name}" differs from situations/${file}`);
 }
+
+// --- Saving ---------------------------------------------------------------
+
+assert.match(skill, /references\/saving\.md/, 'SKILL.md does not point at references/saving.md');
+assert.match(skill, /\*\*The save-state line\.\*\*/, 'the save-state line paragraph left SKILL.md');
 
 // --- Zoom levels ----------------------------------------------------------
 

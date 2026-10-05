@@ -290,7 +290,7 @@ yctimlin 캔버스 위에서 동작하는 **판단 전용 스킬.** 다섯 가�
 1. ~~Whiteboard에서 가져올 것 7개 그릴~~ — 완료(2026-10-04). 결정은 이 스펙, `CONTEXT.md`, ADR-0015에 반영했다
 2. ~~이슈 03·05·09·10·02를 이 스펙에 맞춘다~~ — 완료(2026-10-04). 03에 슬라이스 C, 05의 글꼴 항목 교체, 09에 `guide` 명령 슬라이스(다시 열었다), 10에 하위 폴더, 02에 관찰 항목
 3. ~~의존 도달 범위 행의 3색과 ADR-0015의 충돌~~ — 완료(2026-10-04). 3색을 없앴다(§1 그 행 참조). 스킬의 낡은 문장은 03 슬라이스 C에서 고친다
-4. 03 슬라이스 C 구현. ~~09 `guide` 명령 슬라이스 구현~~ — 완료(2026-10-05)
+4. ~~03 슬라이스 C 구현. 09 `guide` 명령 슬라이스 구현~~ — 완료(2026-10-05)
 5. ~~09 사후 검수 결함 2·3 그릴~~ — 완료(2026-10-05). 한 뜻은 한 곳에만 적는다: `docs/canvas-guide.md`의 본문에서 요약과 겹치는 값과 규칙을 지웠고, 요약에 `strokeStyle: "dashed"`를 적었다. 09를 닫았다
 6. 04 착수 전 질문 Q1~Q6 그릴
 7. 04 구현 → 05 구현(글꼴 결함과 Pretendard 시험 포함)
@@ -304,13 +304,13 @@ yctimlin 캔버스 위에서 동작하는 **판단 전용 스킬.** 다섯 가�
 |---|---|---|
 | [01 설치 골격](issues/01-plugin-skeleton.md) | 플러그인 설치와 실행 준비 | 완료. 사후 검수 슬라이스 1~4 완료, 첫 릴리즈 v0.1.1로 확인(2026-09-30) |
 | [09 규격 단일 원본](issues/09-canvas-guide-single-source.md) | 서버 md 한 벌을 `instructions`·`resources`로 | 완료(2026-10-05). 기존 인수 8개, `guide` 명령 슬라이스(7-11, 사후 검수 결함 1), 결함 2·3(본문의 중복 제거, 점선 파라미터) |
-| [03 판단 스킬 본문](issues/03-archdraw-skill-body.md) | 라우팅·줌 레벨·캔버스 우선 규칙 | 슬라이스 A 완료, C(Whiteboard 결정 적용)는 착수 가능, B는 04·05 뒤 |
+| [03 판단 스킬 본문](issues/03-archdraw-skill-body.md) | 라우팅·줌 레벨·캔버스 우선 규칙 | 슬라이스 A·C 완료, B는 04·05 뒤 |
 | [04 캔버스 세션](issues/04-session-per-canvas.md) | 캔버스 세션 분리와 재개 | 착수 전 질문 Q1~Q6 그릴 전 |
 | [05 frame](issues/05-frame-element.md) | 그림 구분과 글꼴 기본값 | 착수 가능(글꼴 항목을 7-9에 맞췄다 — 2026-10-04) |
 | [06 저장](issues/06-snapshot-and-export-persistence.md) | 스냅샷·export·재로드 | 05 뒤 |
 | [07 근거 검사](issues/07-evidence-check.md) | 근거 확인과 점선 처리 | 착수 가능 |
 | [08 기록 스킬](issues/08-dogfooding-report-skill.md) | 도그푸딩 이슈를 에이전트가 대신 씀 | 착수 가능 |
-| [10 MCP 직접 등록](issues/10-mcp-only-gets-archdraw-judgement.md) | MCP만 등록해도 판단을 prompt·resource로 받음 | 03 슬라이스 C 뒤 |
+| [10 MCP 직접 등록](issues/10-mcp-only-gets-archdraw-judgement.md) | MCP만 등록해도 판단을 prompt·resource로 받음 | 착수 가능(03 슬라이스 C 완료) |
 | [02 도그푸딩](issues/02-dogfooding-round-zero.md) | 구현 후 실사용하고 수정 사항을 해당 이슈에 전달 | 맨 마지막, 사람 |
 
 각 이슈의 `Blocked by`가 착수 의존성의 기준이다. 통합 확인은 필요한 구현이 준비된 뒤 수행하고, with/without 비교 eval은 02 뒤 03의 후속 검증으로 수행한다.

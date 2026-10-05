@@ -39,10 +39,10 @@ The lane names are **this project's architecture style, as it is**:
 Work the style out from package names, ArchUnit rules and module structure. If
 you cannot read it, ask.
 
-Whatever the style, one required element is shared: **dependency arrows, with
-violations of the allowed direction marked in red** (domain → infra and the
-like). Violations differ per module, which is what makes a layer diagram worth
-drawing per module.
+Whatever the style, one required element is shared: **dependency arrows, drawn
+exactly as the code has them.** Do not judge whether an arrow breaks the
+allowed direction; the user reads that off the diagram. Dependencies differ per
+module, which is what makes a layer diagram worth drawing per module.
 
 If a module is itself a layer, there is no separate L4 diagram — go from the
 module diagram straight to the boundary types.
@@ -61,8 +61,9 @@ share one inner diagram:
   the usage relationship in *each* deployment unit's diagram, and have both
   reference the same one inner diagram. Do not draw a second copy.
 
-L5 holds boundary types only — ports and their implementations. Do not list
-the classes inside; that list goes stale fastest.
+L5 holds boundary types only — ports and their implementations. When the user
+asks what is inside a type — a class, an aggregate — answer with a class
+diagram, as SKILL.md §6 says for a request no situation fits.
 
 ### Diagram references
 
@@ -90,7 +91,7 @@ upstream/downstream) are labels on arrows between contexts — they are not the
 same thing as connections between deployment units.
 
 **Tactical.** In the L4 domain lane, use the «aggregate», «domain service» and
-«event» stereotypes. Do not list the entities inside an aggregate. With DDD on
+«event» stereotypes. With DDD on
 hexagonal, adapter-in and adapter-out take the place of UI and Infrastructure.
 
 ## Evidence extraction
@@ -122,7 +123,8 @@ field:
   yours.
 - **`design`** — something agreed or under discussion that is not in the code
   yet: a migration plan, a contract being negotiated, a change proposal. Not
-  checked, only recorded. These lines stay **solid and take the change color**.
+  checked, only recorded. How these lines are drawn is in the line notation of
+  `guide://canvas`.
   Tagging them `code` is what piles up no-evidence markers, one per line.
 - **`log`** — an actual recorded occurrence, as in an incident timeline. Not
   checked.

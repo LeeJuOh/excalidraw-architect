@@ -61,35 +61,48 @@ placement that is already there.
 
 ## Colors
 
-Stroke colors, for borders and text:
+Color means change status and nothing else. Everything that is not changing is
+a white box (`#ffffff`) with black borders and text (`#1e1e1e`) — whatever kind
+of thing it is, and whether it is a success or a failure path. A failure shows
+in the line and the status-code text, not in a color.
 
-| Name   | Hex       | Use for                       |
-|--------|-----------|-------------------------------|
-| Black  | `#1e1e1e` | Default text and borders      |
-| Red    | `#e03131` | Errors, violations, critical  |
-| Green  | `#2f9e44` | Success, approved, healthy    |
-| Blue   | `#1971c2` | Primary path, links           |
-| Purple | `#9c36b5` | Services, middleware          |
-| Orange | `#e8590c` | Queues, events                |
-| Cyan   | `#0c8599` | Data stores, databases        |
-| Gray   | `#868e96` | Annotations, secondary        |
+### Change status
 
-Background fills, each paired with its stroke:
+| Status   | Fill      | Stroke    | Label        |
+|----------|-----------|-----------|--------------|
+| Added    | `#ebfbee` | `#2f9e44` | `[added]`    |
+| Removed  | `#fff5f5` | `#e03131` | `[removed]`  |
+| Modified | `#fff9db` | `#f08c00` | `[modified]` |
 
-| Fill         | Hex       | Stroke    |
-|--------------|-----------|-----------|
-| Light red    | `#ffc9c9` | `#e03131` |
-| Light green  | `#b2f2bb` | `#2f9e44` |
-| Light blue   | `#a5d8ff` | `#1971c2` |
-| Light purple | `#eebefa` | `#9c36b5` |
-| Light orange | `#ffd8a8` | `#e8590c` |
-| Light cyan   | `#99e9f2` | `#0c8599` |
-| Light gray   | `#e9ecef` | `#868e96` |
-| White        | `#ffffff` | `#1e1e1e` |
+- A changed box takes the fill and the stroke of its status, and its label
+  follows the box's name on a line of its own. The labels are fixed strings,
+  like those in the line-notation table.
+- A changed arrow takes the stroke color, and its label follows the arrow's
+  own label. Arrows are only ever added or removed: even an arrow that is only
+  renamed stays as a removed arrow and gets an added one beside it.
+- Modified is for a box that stays and does something different inside.
+- A removed element stays on the canvas, so the reader sees what goes away.
+- The legend names each status the diagram used.
+- When the user asks for a color, choose one that is none of these three. If
+  the request clashes with their meaning, say why in one line and offer
+  another.
 
-Three or four fills per diagram, no more. A diagram that shows a change picks
-one further stroke color for everything that changes, uses it nowhere else, and
-names it in the legend.
+### Contract note
+
+A contract is written on a note: fill `#f1f3f5`, no border
+(`strokeColor: "transparent"`), and the body in a monospace font. The gray is a
+plain background, not a status, and it never changes — never yellow, even in a
+change proposal.
+
+A changed contract is shown line by line, as a diff:
+
+- A line that goes away starts with `-` and is written in the Removed stroke.
+- A line that is new starts with `+` and is written in the Added stroke.
+- A contract that is new as a whole has every line `+`; one that goes away as a
+  whole has every line `-`.
+- A text element has one color, so each changed line is its own text element.
+- The note carries no change-status label; the `-` and `+` say it without
+  color.
 
 ## Arrows
 
@@ -116,8 +129,8 @@ the event, the result) come from the code.
   response label.
 - If you could not confirm how two things communicate, leave the marker off.
   Do not guess one.
-- A line whose evidence is a plan rather than code stays solid and takes the
-  change color.
+- A line whose evidence is a plan rather than code stays solid and takes its
+  change-status color — added, or removed for a line the plan takes out.
 
 Responses are drawn solid here. That differs from UML, and it is deliberate:
 dashed stays free to mean "unconfirmed".
@@ -125,5 +138,5 @@ dashed stays free to mean "unconfirmed".
 ## Drawing order
 
 Background zones, if the diagram uses them, go before the shapes — large
-light-fill rectangles at low opacity. The standalone annotations are titles,
+rectangles with an outline and no fill. The standalone annotations are titles,
 the legend, and the "not drawn" line.

@@ -99,13 +99,17 @@ Before you act in a turn, look at the canvas with `get_canvas_screenshot`
 
 ## 6. Pick the diagram from the question
 
-Read the user's words as one of the twenty-one questions in
-[references/routing-table.md](references/routing-table.md) and draw that
-situation's diagram.
+Read the user's words as one of the twenty-three questions in the index
+[references/routing-table.md](references/routing-table.md), then read only that
+situation's document and draw its diagram.
 
 - **The question wins over the name.** Assume the user may not know the diagram
   types, or may name the wrong one — "draw me the architecture" means "draw me
   a picture", not "draw a specific type".
+- **No situation fits.** Pick the standard diagram that does fit and say why in
+  one line — "the inside of the Order aggregate is a question about types, so a
+  class diagram". Do not refuse, and do not force the request into a situation
+  or a zoom level that does not answer it.
 - **Say why, in one line, in chat.** "Cancellation ordering is the issue, so a
   sequence."
 - **The frame name is the question the diagram answers.**
@@ -144,9 +148,9 @@ a diagram true:
   the calling or subscribing line of code; a dependency declaration alone is an
   inference, and an inference is dashed.
 - Lines that are not in the code yet — a change proposal, a migration plan, a
-  contract under negotiation — take the `design` evidence tag and stay solid in
-  the change color. Tagging them `code` just fills the diagram with
-  no-evidence markers.
+  contract under negotiation — take the `design` evidence tag and are drawn as
+  the line notation in `guide://canvas` says. Tagging them `code` just fills
+  the diagram with no-evidence markers.
 
 ## 8. Notation
 
@@ -199,19 +203,20 @@ only in the subject:
   decision and is checking, *before* delegating the implementation, that you
   understood the same thing. Put both in one diagram: the **current structure
   read from the code** (`code` tags) and **what changes** as you understood the
-  user (`design` tags, change color). Only the change, or only the current
-  state, fails the purpose. When the user then fixes an arrow you drew in the
-  change color, the next turn continues from their version.
+  user (`design` tags, change-status colors). Only the change, or only the
+  current state, fails the purpose. When the user then fixes an arrow you drew
+  in a change-status color, the next turn continues from their version.
 - **Draft start.** The user roughs out the big picture first — a hand drawing,
   a photo, boxes dropped on the canvas — and says "let's talk about this
   draft". Read the draft from the screenshot and draw the formal diagram
   **beside it**, keeping their arrangement and order; the draft itself stays
   until they say to remove it. Pick the single zoom level the draft sits at and
   name it. Check each draft box against the code: what exists gets the `code`
-  tag, what does not gets the `design` tag and the change color. If you cannot
-  tell what a box corresponds to, ask. Later turns go box by box: "inside this
-  new module it will look like this" draws that box's inner diagram beside it,
-  as a reference — never lower-level elements inside the parent box.
+  tag, what does not gets the `design` tag and its change-status color. If you
+  cannot tell what a box corresponds to, ask. Later turns go box by box:
+  "inside this new module it will look like this" draws that box's inner
+  diagram beside it, as a reference — never lower-level elements inside the
+  parent box.
 
 **Carrying on.** Once called, in the same conversation, an answer that involves
 connections or ordering goes to the canvas first, without the user invoking the
@@ -228,37 +233,9 @@ implementation; no second reverse check is needed.
 
 ## 10. Saving
 
-**Scope.** "Save this" saves the whole canvas — every diagram, with its
-arrangement — as one `.excalidraw` file. "Save just the order diagram" saves
-that one. Do not re-ask about scope each time; ask only when the named target
-is ambiguous.
-
-**Path and file name.** There is no fixed output folder.
-
-- The user gave both: use both, exactly. Do not translate a file name they
-  chose.
-- Only a path: choose an English file name from what the diagram shows.
-- Only a file name: choose the folder by looking at where this project already
-  keeps its documents.
-- Neither: choose both the same way, save without asking to confirm, and then
-  tell the user the full path including the file name.
-
-Report the path the save actually returned. If a file of that name is already
-there, the server refuses it — pass that refusal on rather than overwriting or
-appending a suffix, and do not report a failed save as a success.
-
-**Unconfirmed values do not block a save.** If required elements are still
-*not confirmed* when the user says "save this", save immediately, keep the
-dashes and the markers, and tell them which items are unconfirmed. Never make
-filling a value a precondition for saving.
-
-**Snapshots** are kept on disk with no TTL: say that a snapshot survives the
-server stopping and restarting and does not expire. If the user does not name
-one, build the name from the creation time in UTC to the second plus an English
-name for what the canvas shows — `YYYY-MM-DD_HHmmssZ_<english-name>`, for
-example `2026-09-16_053012Z_order-flow`. A name the user gave is used as is.
-Report the actual name and the full path the save returned; a collision on the
-same second and name is a refusal, not a success.
+When the user asks to save — the canvas, one diagram, or a snapshot — read
+[references/saving.md](references/saving.md) first: what a save covers, how the
+path, file name and snapshot name are chosen, and what to report.
 
 **The save-state line.** At the end of any turn you answered with a diagram,
 copy the per-diagram save state that came back with `get_canvas_screenshot`
