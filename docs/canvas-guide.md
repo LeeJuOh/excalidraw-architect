@@ -3,7 +3,9 @@
 How to place and style elements on the archdraw canvas. This file is the only
 source for these values: the server reads it at startup, sends the section
 below as its MCP `instructions`, and serves the whole file as the resource
-`guide://canvas`.
+`guide://canvas`. Essentials holds the rules every drawing needs; the sections
+after it add detail and state each rule and value once, so nothing in
+Essentials is repeated below.
 
 <!-- instructions:start -->
 ## Essentials
@@ -22,57 +24,38 @@ tidy it up. When you add to a diagram that already exists, drop the formula and
 put the new element beside its neighbour at the same gaps; the user may have
 moved things, and their placement wins.
 
-Dashed means one thing: the relationship is not confirmed. Do not use dashed or
-dotted strokes for async, optional, or weak links — the arrowhead and the label
-carry that. Every diagram gets a small legend for the notation it used.
+Dashed (`strokeStyle: "dashed"`) means one thing: the relationship is not
+confirmed. Do not use dashed or dotted strokes for async, optional, or weak
+links — the arrowhead and the label carry that. Every diagram gets a small
+legend for the notation it used.
 
 Draw in this order: shapes with their labels, then arrows bound to them, then
 standalone annotations.
 
-The full guide — palette, sizing, line notation, anti-patterns — is the
-resource `guide://canvas`.
+The full guide — palette, sizing, line notation — is the resource
+`guide://canvas`.
 <!-- instructions:end -->
 
 ## Placing a new diagram
 
-A canvas holds several diagrams side by side, so every coordinate below is
-relative to the top-left origin of the diagram you are drawing, not to the
-canvas origin. Pick that origin clear of what is already on the canvas.
+A canvas holds several diagrams side by side. Pick the origin of a new diagram
+clear of what is already on the canvas.
 
-1. Decide the flow direction for this diagram — top-to-bottom or
-   left-to-right. Keep it for the whole diagram.
-2. Give every node a `(column, row)` cell. Two nodes never share a cell.
-3. Compute `x = column * 320 + 40` and `y = row * 180 + 40`.
-
-The pitches come from the box plus the minimum arrow run: a 200px-wide box plus
-120px of labelled arrow is 320, a 60px-tall box plus 120 is 180, and the margin
-is 40.
-
-Boxes stay 200x60 whatever the label says. Do not size a box to its name —
+A box keeps its size whatever the label says. Do not size a box to its name —
 variable widths force a per-column width pass and that is exactly the
-arithmetic this formula exists to avoid. A name that does not fit wraps on the
-first pass; widen that one box only after a screenshot shows it is unreadable.
-If the user asks for a wider box, resize that element and move only the
-neighbours it now overlaps, by the gap.
+arithmetic the cell formula exists to avoid. A name that does not fit wraps on
+the first pass; widen that one box only after a screenshot shows it is
+unreadable. If the user asks for a wider box, resize that element and move only
+the neighbours it now overlaps, by the gap.
 
-The formula is for a blank start. Adding to an existing diagram, formalising a
-user's sketch, or touching anything the user has moved: follow the placement
-that is already there.
-
-### Do not, when placing
-
-- Do not work out x and y in prose. Choose the cell, then apply the formula.
-- Do not review and adjust coordinates after placing them.
-- Do not put two nodes in the same cell.
-- Do not change flow direction partway through a diagram.
-- Do not run `align_elements` or `distribute_elements` to clean up a diagram
-  you just placed.
+Formalising a user's sketch counts as adding to an existing diagram: follow the
+placement that is already there.
 
 ## Sizes and text
 
-- Nodes: 200x60. Other shapes: at least 120x60.
-- `fillStyle: "solid"` — the default hachure fill reads as a sketch.
-- Font size: body 16 or more, titles 20 or more, small labels 14 or more.
+- Shapes other than nodes: at least 120x60.
+- Every shape has a label.
+- Font size: titles 20 or more, small labels 14 or more.
 - Leave 20px of padding inside a shape around its text.
 - Same-role shapes keep identical dimensions.
 
@@ -110,18 +93,12 @@ names it in the legend.
 
 ## Arrows
 
-- Bind: `startElementId` and `endElementId`. Hand-placed arrow points drift the
-  moment anything moves.
 - Label the arrow with `text` when the relationship is not obvious from the two
   boxes.
 - An arrow between two boxes needs at least 80px of run, 120px when it carries
-  a label. The column and row pitches above already allow for this.
+  a label. The cell formula already allows for this.
 
 ### Line notation
-
-Dashed is reserved for one meaning: this line or value is not confirmed. How
-something communicates is read from the arrowhead and the label, independently
-of whether it is confirmed.
 
 | Situation                    | Line and arrowhead                       | Visible label                  |
 |------------------------------|------------------------------------------|--------------------------------|
@@ -141,26 +118,12 @@ the event, the result) come from the code.
   Do not guess one.
 - A line whose evidence is a plan rather than code stays solid and takes the
   change color.
-- Give every diagram a legend for the notation it actually used.
 
 Responses are drawn solid here. That differs from UML, and it is deliberate:
 dashed stays free to mean "unconfirmed".
 
 ## Drawing order
 
-1. Background zones, if the diagram uses them — large light-fill rectangles at
-   low opacity.
-2. Shapes, with their labels.
-3. Arrows, bound to those shapes by id.
-4. Annotations — standalone text for titles, the legend, the "not drawn" line.
-
-## Anti-patterns
-
-1. Overlapping elements. The cell formula prevents this; do not undo it.
-2. Hand-placed arrow coordinates instead of `startElementId` / `endElementId`.
-3. Fonts under 14px.
-4. Hachure fills — set `fillStyle: "solid"`.
-5. More than three or four fill colors in one diagram.
-6. Same-role shapes at different sizes.
-7. Shapes or meaningful arrows with no label.
-8. Dashed strokes used for anything but "not confirmed".
+Background zones, if the diagram uses them, go before the shapes — large
+light-fill rectangles at low opacity. The standalone annotations are titles,
+the legend, and the "not drawn" line.
