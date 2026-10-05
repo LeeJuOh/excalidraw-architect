@@ -7,7 +7,8 @@ server was registered and there are no archdraw tools in your list.
 
 Sizes, colors, placement, drawing order and line notation are **not** here.
 They live in the resource `guide://canvas`, which the server serves. Read that
-before drawing.
+before drawing. On the CLI fallback there is no resource to read:
+`scripts/archdraw guide` prints the same text.
 
 ## Tools and their CLI equivalents
 
@@ -18,6 +19,7 @@ read.
 
 | What you want | MCP tool | CLI |
 |---|---|---|
+| Read the drawing spec | resource `guide://canvas` | `guide` |
 | Create many elements at once | `batch_create_elements` | `add` (file, `-`, or piped stdin) |
 | Create one element | `create_element` | `add --one '{...}'` |
 | Create, update and delete in one call | — | `apply` |
@@ -88,6 +90,10 @@ install step. Run `session start` on the first turn, tell the user the URL it
 returns, and pass `--session <key>` on every later call. If the key is lost,
 `session list`: one canvas session in this project means go back to it, several
 mean ask the user which, reading the key from the browser tab title.
+
+Run `scripts/archdraw guide` before you draw the first elements of a
+conversation. It prints the drawing spec — the text MCP hosts read as
+`guide://canvas` — and it needs no canvas session.
 
 Before the **first** command of a session, tell the user in one line, in their
 language, that the canvas server is starting and that it may take a while if

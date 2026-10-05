@@ -5,6 +5,7 @@ import * as elements from './commands/elements.js';
 import * as scene from './commands/scene.js';
 import { snapshot } from './commands/snapshot.js';
 import { arrange } from './commands/arrange.js';
+import { guide } from './commands/guide.js';
 
 interface Command {
   handler: (argv: string[]) => Promise<void>;
@@ -16,6 +17,7 @@ const COMMANDS: Record<string, Command> = {
   start: { handler: server.start, summary: 'Start the canvas server (detached)', usage: 'start' },
   stop: { handler: server.stop, summary: 'Stop the canvas server', usage: 'stop' },
   status: { handler: server.status, summary: 'Canvas health, element count, browser clients', usage: 'status' },
+  guide: { handler: guide, summary: 'Print the drawing spec (the guide://canvas resource) — read before drawing', usage: 'guide' },
   apply: { handler: elements.apply, summary: 'Apply a {create,update,delete} patch in one call', usage: 'apply [patch.json|-] (update entries accept direct fields or {id,set:{...}})' },
   add: { handler: elements.add, summary: 'Create elements from a JSON array', usage: 'add [elements.json] (or stdin) | add --one \'{"type":"rectangle",...}\'' },
   update: { handler: elements.update, summary: 'Update one element', usage: 'update <id> --set \'{"backgroundColor":"#ffc9c9"}\'' },
@@ -53,7 +55,7 @@ function printHelp(): void {
     ...Object.entries(COMMANDS).map(([name, cmd]) => `  ${name.padEnd(14)} ${cmd.summary}`),
     '',
     'Conventions:',
-    '  Results are JSON on stdout — except `describe` (plain text) and raw-content',
+    '  Results are JSON on stdout — except `describe`, `guide` (plain text) and raw-content',
     '  output when --out is omitted (`export` scene JSON, `screenshot --format svg`).',
     '  Diagnostics go to stderr.',
     '  Exit codes: 0 ok, 1 error, 2 usage, 3 canvas unreachable, 4 browser tab required.',

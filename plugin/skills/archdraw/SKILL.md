@@ -60,9 +60,10 @@ them decide:
 
 Sizes, colors, arrow binding, placement, drawing order and the notation's
 label strings live in one place: the resource `guide://canvas`. Read it before
-you draw the first elements of a conversation, and follow it. Neither this file
-nor `references/canvas-ops.md` carries a copy of those values — when you need
-one, read it there.
+you draw the first elements of a conversation, and follow it. Without the MCP
+tools there is no resource to read: run `scripts/archdraw guide`, which prints
+the same text. Neither this file nor `references/canvas-ops.md` carries a copy
+of those values — when you need one, read it there.
 
 ## 5. Canvas first
 

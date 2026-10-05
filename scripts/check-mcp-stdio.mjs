@@ -4,7 +4,7 @@
 // `dist/index.js` process over stdin/stdout with hand-written JSON-RPC frames,
 // so what is asserted is exactly what a client sees on the wire.
 
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { cpSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, '..');
 const serverPath = join(repoRoot, 'dist', 'index.js');
+const binPath = join(repoRoot, 'dist', 'bin.js');
 const PACKAGE_NAME = JSON.parse(readFileSync(join(repoRoot, 'package.json'), 'utf-8')).name;
 const runtime = process.env.MCP_RUNTIME || process.execPath;
 const runtimeName = basename(runtime).toLowerCase();
@@ -336,6 +337,30 @@ async function checkGuideResource() {
   );
 }
 
+// The skill-only install (`npx skills add`) registers no MCP server, so the CLI
+// is its one way to the spec (issue 09). Same file, same bytes. The canvas URL
+// points at a dead port with auto-start off: reading the guide must not need a
+// canvas.
+function checkGuideCommand() {
+  const run = (...args) => spawnSync(runtime, [...argsFor(binPath), ...args], {
+    cwd: repoRoot,
+    env: { ...process.env, EXCALIDRAW_NO_AUTOSTART: '1', EXPRESS_SERVER_URL: 'http://127.0.0.1:9' }
+  });
+
+  const guide = run('guide');
+  assertEqual(guide.status, 0, `cli guide: exit code (stderr: ${guide.stderr})`);
+  assert(
+    guide.stdout.equals(Buffer.from(GUIDE_TEXT, 'utf-8')),
+    'cli guide: stdout must be byte-identical to docs/canvas-guide.md'
+  );
+
+  const help = run('help');
+  assert(
+    /^\s+guide\s/m.test(help.stdout.toString()),
+    'cli help: the command list must name guide'
+  );
+}
+
 // A build with no guide file must say so and stop, rather than serve an empty
 // drawing spec. Copied into a throwaway tree so the repo keeps its own copy.
 async function checkMissingGuideFails() {
@@ -382,6 +407,7 @@ const checks = [
   [`legacy ${LEGACY_VERSION} initialize still works`, checkLegacyInitialize],
   ['initialize carries the canvas guide summary', checkGuideInstructions],
   [`${GUIDE_URI} serves the guide verbatim`, checkGuideResource],
+  ['the CLI guide command prints the guide verbatim', checkGuideCommand],
   ['a missing canvas guide fails startup with a reason', checkMissingGuideFails]
 ];
 

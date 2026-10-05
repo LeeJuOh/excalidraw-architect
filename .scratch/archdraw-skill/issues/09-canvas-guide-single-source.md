@@ -15,7 +15,7 @@
 
 **Blocked by:** 01 (플러그인 골격 — npm 패키지 이름·`files`·게시 경로가 정해져야 md 동봉 경로를 확정)
 
-**Status:** ready-for-agent (2026-10-04 다시 열었다 — 맨 아래 "슬라이스 — CLI `guide` 명령"이 남았다. 2026-09-21의 인수 8개는 통과한 그대로다. 문서 동기화 4건은 아래 핸드오프 참조)
+**Status:** needs-triage (2026-10-05 — 맨 아래 "슬라이스 — CLI `guide` 명령"을 끝냈다. 남은 것은 사후 검수 결함 2·3이고 둘 다 그릴 전이다. 2026-09-21의 인수 8개는 통과한 그대로다. 문서 동기화 4건은 아래 핸드오프 참조)
 
 - [x] `npm pack` 산출물(tarball) 안에 규격 md가 들어 있고, 그 tarball을 설치해 띄운 서버가 md를 읽어 뜬다
 - [x] `initialize` 응답의 `instructions`가 2KB 이내이고, 앞 512자만 잘라 읽어도 바인딩 필수·최소 크기·간격이 들어 있으며, 끝에 `guide://canvas` 안내가 있다
@@ -114,8 +114,11 @@ Status는 그대로 뒀다. 아래 항목은 남은 이슈(03~08)를 다 구현�
 
 **테스트 경계(스펙 "Testing Decisions"):** 기존 MCP stdio 와이어 테스트 옆에서 출력이 규격 원본과 같은지만 본다. 새 시임은 없다.
 
-- [ ] CLI `guide`의 출력이 `docs/canvas-guide.md`의 내용과 같다
-- [ ] 명령은 규격을 읽는 기존 함수를 재사용한다. 코드와 스킬 문서에 규격의 사본이 없다
-- [ ] CLI 도움말의 명령 목록에 `guide`가 있다
-- [ ] `references/canvas-ops.md`의 툴 ↔ CLI 대응표에 `guide://canvas` ↔ `guide` 행이 있고, CLI 길에서는 그리기 전에 이 명령을 실행하라는 지시가 있다(지금은 CLI 길에도 `guide://canvas`를 읽으라고 한다)
-- [ ] `npm test` 통과
+- [x] CLI `guide`의 출력이 `docs/canvas-guide.md`의 내용과 같다
+- [x] 명령은 규격을 읽는 기존 함수를 재사용한다. 코드와 스킬 문서에 규격의 사본이 없다
+- [x] CLI 도움말의 명령 목록에 `guide`가 있다
+- [x] `references/canvas-ops.md`의 툴 ↔ CLI 대응표에 `guide://canvas` ↔ `guide` 행이 있고, CLI 길에서는 그리기 전에 이 명령을 실행하라는 지시가 있다(지금은 CLI 길에도 `guide://canvas`를 읽으라고 한다)
+- [x] `SKILL.md` "Read the spec before you draw" 절에도 같은 지시가 있다(2026-10-05 그릴에서 추가. 본문은 항상 먼저 읽히는데 resource만 말하고 있었다)
+- [x] `npm test` 통과
+
+**결과 (2026-10-05):** `src/cli/commands/guide.ts`가 `canvasGuide().text`를 그대로 출력한다. 캔버스 서버를 띄우지 않는다. 검사: `scripts/check-mcp-stdio.mjs` → `checkGuideCommand`(죽은 포트와 자동 시작 꺼짐에서 바이트 단위 비교, 도움말 목록), `scripts/check-skill-docs.mjs`(두 스킬 문서에 `scripts/archdraw guide`가 있는지). `npx skills add` 사용자는 다음 npm 게시 뒤에 이 명령을 받는다.

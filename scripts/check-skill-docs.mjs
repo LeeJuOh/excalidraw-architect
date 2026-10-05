@@ -87,6 +87,13 @@ for (const name of DRAWING_FILES) {
     /guide:\/\/canvas/,
     `${name} does not point at the guide://canvas resource`
   );
+  // A skill-only install has no MCP server to read that resource from; the
+  // CLI command is its way to the same text (issue 09).
+  assert.match(
+    text,
+    /scripts\/archdraw guide\b/,
+    `${name} does not name the CLI \`guide\` command for installs without the MCP server`
+  );
 }
 
 // Three of ADR-0012's five fixed labels are distinctive enough to grep for.
