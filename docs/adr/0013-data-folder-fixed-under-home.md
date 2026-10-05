@@ -10,4 +10,5 @@
 
 ## Consequences
 
+- 살아 있는 캔버스 세션의 기록(`sessions/<키>.json`)도 이 폴더에 둔다([ADR-0003](0003-one-canvas-server-per-session.md), 2026-10-05). 그래서 한 호스트에서 띄운 캔버스 세션을 다른 호스트와 CLI 폴백이 찾는다.
 - 플러그인을 제거해도 폴더가 남는다. Claude의 uninstall 자동 정리를 포기한 대가다.

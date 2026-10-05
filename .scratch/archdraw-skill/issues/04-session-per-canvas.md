@@ -7,29 +7,39 @@
 - 키는 서버가 발급한다. 호스트 세션 ID·PPID에 의존하지 않아 Claude·Codex 동일.
 - 업스트림의 "머신당 서버 하나, 포트 3000, pid 파일" 전제를 세션 단위로 바꾼다. 빈 포트 탐색.
 - 브라우저 탭 제목에 세션 키가 보인다.
-- **프로젝트 루트 고정 (검수 R03, 2026-09-14 그릴 확정):** `session start`는 cwd에서 위로 올라가 git 루트를 찾아 세션의 프로젝트 루트로 저장한다. 없으면 cwd. `--project <경로>`로 덮어쓸 수 있다. 출력과 `session list`에 프로젝트 루트가 나온다. 이후 모든 호출은 세션 키만으로 그 루트를 쓴다 — 근거 검사(07)·스냅샷 폴더(06)의 기준이 `process.cwd()`에서 세션의 프로젝트 루트로 바뀐다. ([ADR-0003](../../../docs/adr/0003-one-canvas-server-per-session.md)·[ADR-0005](../../../docs/adr/0005-server-checks-evidence-and-demotes.md))
-- 기존 커맨드는 `--session` 없이 부르면 세션이 하나일 때 그 세션으로, 여럿이면 에러. (2026-09-19 2차 검수 A6에서 확정 — 컴팩션 복귀의 하나면 자동·여럿이면 묻기와 같은 규칙)
+- **프로젝트 루트 고정 (검수 R03, 2026-09-14 그릴 확정):** `session start`는 `--project <경로>`를 반드시 받고(2026-10-05 Q5 개정, 구 "cwd에서 찾고 `--project`로 덮어쓰기"), 그 경로에서 위로 올라가 git 루트를 찾아 캔버스 세션의 프로젝트 루트로 저장한다. git 루트가 없으면 받은 경로. `--project`가 없으면 그 인자를 안내하는 에러를 낸다. cwd는 쓰지 않는다. 출력과 `session list`에 프로젝트 루트가 나온다. 이후 모든 호출은 세션 키만으로 그 루트를 쓴다 — 근거 검사(07)·스냅샷 폴더(06)의 기준이 `process.cwd()`에서 세션의 프로젝트 루트로 바뀐다. ([ADR-0003](../../../docs/adr/0003-one-canvas-server-per-session.md)·[ADR-0005](../../../docs/adr/0005-server-checks-evidence-and-demotes.md))
+- 캔버스를 쓰는 CLI 커맨드는 `--session <키>`를 반드시 받는다. 없으면 살아 있는 캔버스 세션의 목록(키, 프로젝트 루트)을 담은 에러를 낸다. 살아 있는 캔버스 세션이 0개여도 같은 에러이고 목록이 비어 있으며 `session start`를 안내한다. (2026-10-05 Q2 개정. 구 "하나일 때 그 세션으로"(2026-09-19 2차 검수 A6)는 폐기)
 
 **Blocked by:** 01 (플러그인 골격)
 
 **Status:** ready-for-agent
 
-- [ ] `session start` 두 번 → 서로 다른 포트·URL·키 두 개, 탭 두 개, 한쪽에 그린 게 다른 쪽에 안 보인다
+- [ ] `session start` 두 번 → 서로 다른 포트·URL·키 두 개, 두 URL을 브라우저로 열면 한쪽에 그린 게 다른 쪽에 안 보인다
 - [ ] `session list`가 프로젝트별 살아 있는 세션을 키·URL과 함께 보여준다
 - [ ] `session end <키>`로 그 서버만 내려간다
-- [ ] `--session` 없는 호출은 세션 하나일 때 동작하고 여럿일 때 명확한 에러를 낸다
-- [ ] 레포 하위 폴더에서 `session start`하면 출력의 프로젝트 루트가 git 루트이고, 스킬 폴더로 `cd`한 뒤 `--session <키>`로 `add`해도 근거 경로가 그 루트 기준으로 검사된다
-- [ ] git이 아닌 폴더에서는 cwd가 루트가 되고, `--project`가 그 값을 덮어쓴다
+- [ ] 캔버스를 쓰는 CLI 커맨드를 `--session` 없이 부르면 살아 있는 캔버스 세션이 0개, 1개, 여럿 어느 때에도 그리지 않고, 살아 있는 캔버스 세션의 키와 프로젝트 루트를 담은 에러를 낸다
+- [ ] `session start --project <레포 하위 폴더>`의 출력에서 프로젝트 루트가 git 루트이고, 같은 루트가 `session list`에 나온다(근거 경로를 그 루트 기준으로 검사하는 것은 07의 인수다)
+- [ ] `--project`에 git이 아닌 폴더를 넘기면 그 폴더가 루트가 된다. `--project` 없는 `session start`는 캔버스 서버를 띄우지 않고 그 인자를 안내하는 에러를 낸다. 결과는 cwd와 무관하다
 - [ ] MCP 프로세스 둘(에이전트 세션 둘)이 같은 프로젝트에서 각각 `session_start`를 부르면 서로 다른 캔버스·탭에 붙고, 두 번째 프로세스의 결과에 첫 캔버스가 살아 있다는 한 줄이 있다
 - [ ] `session_start`에 레포 하위 폴더 경로를 넘기면 결과의 프로젝트 루트가 git 루트다. Claude Code와 Codex에서 같다
 - [ ] `session_start`·`session_attach` 전에 그리는 툴을 부르면 캔버스 서버를 띄우지 않고, `session_start`와 그 인자를 안내하는 에러를 낸다
+- [ ] `session_end` 뒤, 또는 붙어 있던 캔버스 서버를 `kill`한 뒤에 그리는 툴을 부르면 새 캔버스 서버를 띄우지 않고 `session_start`를 안내하는 에러를 낸다. 서버가 죽은 경우에는 에러에 끝난 캔버스 세션의 키가 있다
 - [ ] 살아 있는 캔버스가 있는 상태에서 `session_attach <키>`를 부르면 새로 띄우지 않고 그 캔버스에 붙으며, 이후 툴 호출이 거기에 그린다
-- [ ] MCP 툴 스키마에 세션 키 인자가 없다
+- [ ] `session_end`는 키 없이 부르면 자기가 붙은 캔버스 세션을, 키와 함께 부르면 그 캔버스 세션을 끝낸다. 붙지 않은 MCP 프로세스가 키 없이 부르면 에러다
+- [ ] `session_*`를 뺀 MCP 툴의 스키마에 세션 키 인자가 없다
+- [ ] 툴 호출 없이 끝난 MCP 프로세스는 캔버스 서버를 만들지 않는다. `session_list`·`session_end`와 가이드 리소스는 캔버스 서버를 띄우지 않는다
+- [ ] 브라우저 탭 제목에 세션 키가 보인다
+- [ ] 에이전트 세션(MCP 프로세스)이 끝나도 캔버스 세션은 남는다(탭이 열려 있으면 30분 뒤에도 남는다)
 - [ ] SKILL.md에 MCP 경로(첫 턴 `session_start`에 프로젝트 경로, 살아 있는 캔버스 알림) + CLI 폴백(첫 턴 `session start` + 컴팩션 복귀) 절차가 있다
 - [ ] 붙은 MCP 프로세스와 열린 브라우저 탭이 모두 없으면 캔버스 서버가 30분 뒤 스스로 끝난다. 탭이 열려 있거나 MCP 프로세스가 붙어 있으면 활동이 없어도 끝나지 않는다
 - [ ] MCP 프로세스를 `kill -9`로 죽여도 위 조건이 동작한다(타이머는 캔버스 서버가 가진다)
 - [ ] `session list`·`session_list`는 죽은 캔버스 세션(프로세스 없음, 포트 응답 없음)을 보여 주지 않고 그 기록을 지운다
-- [ ] 기존 `npm test` 통과
+- [ ] 캔버스 서버는 시작할 때 `~/.excalidraw-architect/sessions/<키>.json`(키, 포트, 프로젝트 루트, pid)을 만들고 끝날 때 지운다. 같은 프로젝트에서 띄운 두 캔버스 서버는 파일 두 개를 가진다
+- [ ] 키 파일이 이미 있으면 덮어쓰지 않고 키를 새로 뽑는다
+- [ ] CLI에 `start`·`stop`·`status` 커맨드와 `--url` 옵션이 없다. 코드가 `EXPRESS_SERVER_URL`·`EXCALIDRAW_NO_AUTOSTART`를 읽지 않고, 업스트림 pid 파일을 쓰지 않는다
+- [ ] 캔버스 서버에 닿지 못한 때의 에러가 `session start --project <경로>`(MCP는 `session_start`)를 안내한다
+- [ ] `AGENTS.md` Gotchas의 "업스트림 머지 때 되살아나면 다시 지울 것"에 위에서 지운 것을 더한다
+- [ ] 기존 `npm test` 통과(지운 커맨드의 테스트는 함께 지운다)
 
 ## Comments
 
@@ -48,11 +58,11 @@
 ### 정할 것 (순서대로)
 
 - **Q1 — 확정(2026-10-05): 두 호스트 모두 에이전트가 `session_start` 툴의 인자로 프로젝트 경로를 넘긴다.** 실측: `roots/list`에 Claude Code 2.1.289는 세션 폴더 하나를, Codex 0.160.0은 빈 목록을 답했다. Codex는 MCP 프로세스에 env도 넘기지 않았다. 사용자 판단: 호스트마다 다른 규칙보다 한 가지 규칙. 본문·인수·ADR-0003·스펙 7-8에 반영했다. 이하는 당시 질문 원문. **MCP 경로의 프로젝트 루트를 어디서 얻나.** MCP 서버의 cwd는 Codex가 플러그인 캐시(01 Comments의 Codex 실측), Claude Code가 세션 폴더다(2026-09-23 MCP 로그 `cwd` 실측, ADR-0011 2026-09-24 정정). 이 값을 06 스냅샷 폴더, 07 근거 검사, "같은 프로젝트에 살아 있는 캔버스" 판정이 쓴다. 후보: (a) MCP `roots/list` — SDK에 `listRoots`가 있다. 두 호스트가 응답하는지는 미확인 (b) 매니페스트 env로 호스트 변수 전달 (c) 에이전트가 첫 호출에 경로를 넘김. 이 세션 판단: 두 호스트의 `roots/list` 응답부터 실측한다.
-- **Q2. `--session` 없는 호출에서 "하나일 때"가 무엇 기준인가.** 머신 전체인지 같은 프로젝트인지. 티켓은 "컴팩션 복귀와 같은 규칙"이라고 하는데, 그 규칙은 같은 프로젝트 기준이다.
-- **Q3. 캔버스 세션이 0개일 때 키 없는 호출은 어떻게 하나.** 그리고 업스트림 `start`/`stop`/`status`, `--url`·`EXPRESS_SERVER_URL`(`src/core/config.ts`), `EXCALIDRAW_NO_AUTOSTART`, pid 파일은 어떻게 하나. 스펙 7-8에는 "session end(=stop)" 괄호뿐이다. `src/core/spawn.ts` → `unreachableError()` 문구도 함께 고친다. 지금은 어느 채널에서도 PATH에 없는 `excalidraw-architect start`를 안내한다(01 사후 검수 6).
-- **Q4. 세션 목록 파일을 어디 두나.** `pluginDataDir()`(`src/core/data-dir.ts`)는 호스트마다 다르다. 여기 두면 Claude와 Codex가 서로의 캔버스를 못 본다. (2026-09-24: [ADR-0013](../../../docs/adr/0013-data-folder-fixed-under-home.md)으로 데이터 폴더가 호스트 공통 `~/.excalidraw-architect/`가 되어 이 전제는 사라졌다.) 업스트림 pid 파일은 또 다른 곳(`src/core/pidfile.ts` → `stateDir()`)에 있다.
-- **Q5. CLI 폴백의 `session start`를 어느 폴더에서 부르나.** `references/canvas-ops.md`는 "All commands run from this skill's folder"라고 한다. 스킬 폴더로 `cd`하고 부르면 루트가 스킬 쪽으로 잡힌다. 후보: `--project`를 항상 붙이기 / shim을 절대경로로 부르고 cwd를 유지하기.
-- **Q6. MCP에서 `session_end`를 부른 뒤, 또는 붙어 있던 캔버스 서버가 죽은 뒤 다음 툴 호출은 어떻게 되나.** `session_end`가 키를 받아 다른 캔버스 세션도 끝낼 수 있는지도 정한다.
+- **Q2 — 확정(2026-10-05): 편의 규칙을 없앤다. 캔버스를 쓰는 CLI 커맨드는 `--session <키>`를 반드시 받고, 없으면 살아 있는 캔버스 세션 목록을 담은 에러를 낸다.** Q5로 cwd를 쓰지 않게 되어 "같은 프로젝트" 기준을 쓸 수 없고, 머신 전체 기준이면 다른 프로젝트의 캔버스에 에러 없이 그린다. 사용자 판단: Q1·Q5와 같은 정책(에이전트가 항상 명시한다)으로 일관되게. 본문·인수·ADR-0003·스펙 7-8에 반영했다. 이하는 당시 질문 원문. **`--session` 없는 호출에서 "하나일 때"가 무엇 기준인가.** 머신 전체인지 같은 프로젝트인지. 티켓은 "컴팩션 복귀와 같은 규칙"이라고 하는데, 그 규칙은 같은 프로젝트 기준이다.
+- **Q3 — 확정(2026-10-05): 업스트림의 "머신당 서버 하나" 코드를 모두 지운다.** 대상: CLI `start`/`stop`/`status`, `--url`·`EXPRESS_SERVER_URL`, `EXCALIDRAW_NO_AUTOSTART`, pid 파일(`src/core/pidfile.ts`), 첫 사용 때의 자동 시작(`ensureCanvasRunning`). 시작은 `session start`·`session_start`, 종료는 `session end`·`session_end`, 확인은 `session list`·`session_list`뿐이다. 남기면 키·프로젝트 루트·기록·자동 종료가 없는 캔버스 서버를 띄우는 두 번째 방법이 생긴다. 캔버스 세션이 0개일 때의 키 없는 호출은 Q2로 정해졌다(에러, `session start` 안내). `unreachableError()` 문구는 `session start --project <경로>` 안내로 바꾼다. 사용자 판단: 지우고, 업스트림 머지에서 충돌하면 그때 고친다. 다른 머신의 캔버스 서버에 붙는 기능은 없어진다(스펙에 그 스토리가 없다). 인수·ADR-0003·스펙 7-8에 반영했다. 이하는 당시 질문 원문. **캔버스 세션이 0개일 때 키 없는 호출은 어떻게 하나.** 그리고 업스트림 `start`/`stop`/`status`, `--url`·`EXPRESS_SERVER_URL`(`src/core/config.ts`), `EXCALIDRAW_NO_AUTOSTART`, pid 파일은 어떻게 하나. 스펙 7-8에는 "session end(=stop)" 괄호뿐이다. `src/core/spawn.ts` → `unreachableError()` 문구도 함께 고친다. 지금은 어느 채널에서도 PATH에 없는 `excalidraw-architect start`를 안내한다(01 사후 검수 6).
+- **Q4 — 확정(2026-10-05): `~/.excalidraw-architect/sessions/<키>.json`, 캔버스 서버마다 파일 하나(키, 포트, 프로젝트 루트, pid).** 각 캔버스 서버는 자기 파일만 쓰고 끝날 때 지운다. 사용자 판단: 파일 하나에 전부 두면 동시에 시작한 두 서버가 서로의 줄을 지울 수 있고 잠금 코드가 필요하다. 프로세스 검색(`ps`)은 포트·키·프로젝트 루트를 주지 않고 OS마다 달라서 원본으로 쓰지 않으며, 기록이 살아 있는지 검사하는 데만 쓴다. 같은 프로젝트의 캔버스는 폴더의 파일을 모두 읽어 프로젝트 루트가 같은 것으로 찾는다. 인수에 반영했다. 이하는 당시 질문 원문. **세션 목록 파일을 어디 두나.** `pluginDataDir()`(`src/core/data-dir.ts`)는 호스트마다 다르다. 여기 두면 Claude와 Codex가 서로의 캔버스를 못 본다. (2026-09-24: [ADR-0013](../../../docs/adr/0013-data-folder-fixed-under-home.md)으로 데이터 폴더가 호스트 공통 `~/.excalidraw-architect/`가 되어 이 전제는 사라졌다.) 업스트림 pid 파일은 또 다른 곳(`src/core/pidfile.ts` → `stateDir()`)에 있다.
+- **Q5 — 확정(2026-10-05): CLI 폴백의 `session start`는 `--project <경로>`를 반드시 받는다. MCP의 `session_start`(Q1)와 같은 규칙이다.** cwd에서 추측하지 않는다 — 추측이 틀려도 에러가 없기 때문이다. `canvas-ops.md`의 "All commands run from this skill's folder" 문장은 지운다(shim은 `$(dirname "$0")`로 자기 위치를 찾으므로 어느 cwd에서든 동작한다). 사용자 판단: 2번(CLI)을 1번(MCP)에 맞춘다. 본문·인수·ADR-0003·ADR-0005·스펙에 반영했다. 이하는 당시 질문 원문. **CLI 폴백의 `session start`를 어느 폴더에서 부르나.** `references/canvas-ops.md`는 "All commands run from this skill's folder"라고 한다. 스킬 폴더로 `cd`하고 부르면 루트가 스킬 쪽으로 잡힌다. 후보: `--project`를 항상 붙이기 / shim을 절대경로로 부르고 cwd를 유지하기.
+- **Q6 앞 절반 — 확정(2026-10-05): 붙은 캔버스가 없어진 뒤(`session_end` 뒤, 또는 캔버스 서버가 죽은 뒤)의 그리는 툴 호출은 에러다.** `session_start` 전의 에러와 같고, 서버가 죽은 경우에는 끝난 캔버스 세션의 키를 한 줄 더한다. 자동으로 새 캔버스 서버를 띄우지 않는다 — 포트가 달라져서 사용자의 탭은 죽은 주소에 남고, 에이전트는 새 URL을 알리지 않는다. 업스트림은 툴 호출마다 `ensureCanvasRunning()`으로 다시 띄우는데(`src/core/canvas-state.ts`), 주소가 포트 3000으로 고정이라 가능한 방식이다. 인수에 반영했다. **Q6 뒤 절반 — 확정(2026-10-05): `session_end`는 키를 받는다.** 키가 없으면 자기가 붙은 캔버스 세션을 끝내고, 키가 있으면 그 캔버스 세션을 끝낸다(자기가 붙지 않은 것도). CLI의 `session end <키>`와 같은 모양이다. 다른 에이전트 세션이 쓰던 캔버스가 끝나면 그 에이전트는 다음 그리는 툴에서 위의 에러를 받는다. 스킬 문서에 적는다: 키로 끝내는 것은 사용자가 말했을 때만 한다. 끝내기 전의 "저장합니까" 질문에 필요한 미저장 그림의 수는 `session_list`가 보여 준다 — 저장 상태는 06이 만들므로 그 인수는 06에 있다(ADR-0010). 이하는 당시 질문 원문. **MCP에서 `session_end`를 부른 뒤, 또는 붙어 있던 캔버스 서버가 죽은 뒤 다음 툴 호출은 어떻게 되나.** `session_end`가 키를 받아 다른 캔버스 세션도 끝낼 수 있는지도 정한다.
 
 ### 결정 없이 고칠 것 (Q 반영 때 함께)
 

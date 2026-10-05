@@ -22,7 +22,7 @@
   3. 캔버스를 지우는 명령은 `snapshot restore` 하나뿐(지우고 전체 복원). "되돌리기는 지운다, 불러오기는 얹는다".
   4. 불러온 그림은 현재 요소 전체 범위의 오른쪽에 간격을 두고 놓는다(그림 안 상대 위치 유지). frame 이름은 `"<원본 이름> (복사)"`. 파일에 frame이 없으면 파일명으로 frame 하나를 씌운다.
 
-**Blocked by:** 01 (플러그인 골격), 05 (frame — `export --frame`·import의 frame 씌우기가 frame 요소를 전제)
+**Blocked by:** 01 (플러그인 골격), 04 (캔버스 세션의 프로젝트 루트 — 스냅샷 폴더를 나누는 기준), 05 (frame — `export --frame`·import의 frame 씌우기가 frame 요소를 전제)
 
 **Status:** ready-for-agent
 
@@ -43,6 +43,7 @@
 - [ ] `snapshot save` 뒤 `screenshot` 결과에 마지막 스냅샷 이름이 있고, 요소를 고치면 그 후 변경 여부가 참이 된다
 - [ ] `import <파일>`로 들어온 복사본 frame의 저장 경로가 그 파일로 기록된다
 - [ ] 저장 상태 기록은 export·snapshot 파일 내용에 들어가지 않는다
+- [ ] `session list`·`session_list`의 결과에 캔버스 세션마다 미저장 그림과 저장 후 수정된 그림의 수가 있다. 붙지 않은 캔버스 세션을 키로 끝내기 전에 에이전트가 이 수를 보고 1회 묻는다(2026-10-05, 04 Q6 · ADR-0010)
 - [ ] 기존 `npm test` 통과
 
 - [ ] frame A·B·C가 있는 캔버스를 기본 export하면 파일 하나에 세 그림과 배치가 모두 남는다. 새 빈 캔버스로 import하면 그림 사이 상대 배치가 유지된다
