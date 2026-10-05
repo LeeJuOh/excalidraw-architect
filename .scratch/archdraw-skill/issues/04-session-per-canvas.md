@@ -22,6 +22,7 @@
 - [ ] `--project`에 git이 아닌 폴더를 넘기면 그 폴더가 루트가 된다. `--project` 없는 `session start`는 캔버스 서버를 띄우지 않고 그 인자를 안내하는 에러를 낸다. 결과는 cwd와 무관하다
 - [ ] MCP 프로세스 둘(에이전트 세션 둘)이 같은 프로젝트에서 각각 `session_start`를 부르면 서로 다른 캔버스·탭에 붙고, 두 번째 프로세스의 결과에 첫 캔버스가 살아 있다는 한 줄이 있다
 - [ ] `session_start`에 레포 하위 폴더 경로를 넘기면 결과의 프로젝트 루트가 git 루트다. Claude Code와 Codex에서 같다
+- [ ] git worktree 안의 경로를 넘기면 그 worktree의 최상위 폴더가 프로젝트 루트다(worktree의 `.git`은 폴더가 아니라 파일이다. Codex의 `/new` → "New worktree"가 이 경우를 만든다)
 - [ ] `session_start`·`session_attach` 전에 그리는 툴을 부르면 캔버스 서버를 띄우지 않고, `session_start`와 그 인자를 안내하는 에러를 낸다
 - [ ] `session_end` 뒤, 또는 붙어 있던 캔버스 서버를 `kill`한 뒤에 그리는 툴을 부르면 새 캔버스 서버를 띄우지 않고 `session_start`를 안내하는 에러를 낸다. 서버가 죽은 경우에는 에러에 끝난 캔버스 세션의 키가 있다
 - [ ] 살아 있는 캔버스가 있는 상태에서 `session_attach <키>`를 부르면 새로 띄우지 않고 그 캔버스에 붙으며, 이후 툴 호출이 거기에 그린다
