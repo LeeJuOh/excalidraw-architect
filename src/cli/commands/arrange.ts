@@ -1,6 +1,5 @@
 import { parseArgs, CliUsageError } from '../args.js';
 import { printJson } from '../util.js';
-import { ensureCanvasRunning } from '../../core/spawn.js';
 import {
   alignElements,
   distributeElements,
@@ -31,7 +30,6 @@ export async function arrange(argv: string[]): Promise<void> {
   });
 
   const op = positionals[0];
-  await ensureCanvasRunning();
 
   switch (op) {
     case 'align': {

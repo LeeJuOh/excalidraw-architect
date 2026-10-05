@@ -1,5 +1,3 @@
-import { ensureCanvasRunning } from './spawn.js';
-
 // Canvas/scene bookkeeping that belongs to the *application*, not to a
 // connection or a protocol session. MCP 2026-07-28 connections are pinned to a
 // freshly built server instance per connection (and a discarded `server/discover`
@@ -21,17 +19,6 @@ export const sceneState: SceneState = {
   groups: new Map()
 };
 
-let canvasEnsurePromise: Promise<unknown> | null = null;
-
-export async function ensureCanvasReadyForMcpTool(): Promise<void> {
-  if (!canvasEnsurePromise) {
-    canvasEnsurePromise = ensureCanvasRunning().finally(() => {
-      canvasEnsurePromise = null;
-    });
-  }
-  await canvasEnsurePromise;
-}
-
 export function toolNeedsCanvasBeforeDispatch(name: string): boolean {
-  return name !== 'get_resource';
+  return name !== 'get_resource' && !name.startsWith('session_');
 }

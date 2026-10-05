@@ -12,37 +12,86 @@
 
 **Blocked by:** 01 (플러그인 골격)
 
-**Status:** ready-for-agent
+**Status:** resolved (2026-10-05 — 인수 26개 통과. `scripts/check-sessions.mjs` 11개, `npm test`, `npm run test:canvas` 15개, 실제 브라우저로 두 URL의 격리와 탭 제목 확인. "Claude Code와 Codex에서 같다"는 서버 단위로만 확인했고 호스트 실측은 02 도그푸딩에서 본다)
 
-- [ ] `session start` 두 번 → 서로 다른 포트·URL·키 두 개, 두 URL을 브라우저로 열면 한쪽에 그린 게 다른 쪽에 안 보인다
-- [ ] `session list`가 프로젝트별 살아 있는 세션을 키·URL과 함께 보여준다
-- [ ] `session end <키>`로 그 서버만 내려간다
-- [ ] 캔버스를 쓰는 CLI 커맨드를 `--session` 없이 부르면 살아 있는 캔버스 세션이 0개, 1개, 여럿 어느 때에도 그리지 않고, 살아 있는 캔버스 세션의 키와 프로젝트 루트를 담은 에러를 낸다
-- [ ] `session start --project <레포 하위 폴더>`의 출력에서 프로젝트 루트가 git 루트이고, 같은 루트가 `session list`에 나온다(근거 경로를 그 루트 기준으로 검사하는 것은 07의 인수다)
-- [ ] `--project`에 git이 아닌 폴더를 넘기면 그 폴더가 루트가 된다. `--project` 없는 `session start`는 캔버스 서버를 띄우지 않고 그 인자를 안내하는 에러를 낸다. 결과는 cwd와 무관하다
-- [ ] MCP 프로세스 둘(에이전트 세션 둘)이 같은 프로젝트에서 각각 `session_start`를 부르면 서로 다른 캔버스·탭에 붙고, 두 번째 프로세스의 결과에 첫 캔버스가 살아 있다는 한 줄이 있다
+- [x] `session start` 두 번 → 서로 다른 포트·URL·키 두 개, 두 URL을 브라우저로 열면 한쪽에 그린 게 다른 쪽에 안 보인다
+- [x] `session list`가 프로젝트별 살아 있는 세션을 키·URL과 함께 보여준다
+- [x] `session end <키>`로 그 서버만 내려간다
+- [x] 캔버스를 쓰는 CLI 커맨드를 `--session` 없이 부르면 살아 있는 캔버스 세션이 0개, 1개, 여럿 어느 때에도 그리지 않고, 살아 있는 캔버스 세션의 키와 프로젝트 루트를 담은 에러를 낸다
+- [x] `session start --project <레포 하위 폴더>`의 출력에서 프로젝트 루트가 git 루트이고, 같은 루트가 `session list`에 나온다(근거 경로를 그 루트 기준으로 검사하는 것은 07의 인수다)
+- [x] `--project`에 git이 아닌 폴더를 넘기면 그 폴더가 루트가 된다. `--project` 없는 `session start`는 캔버스 서버를 띄우지 않고 그 인자를 안내하는 에러를 낸다. 결과는 cwd와 무관하다
+- [x] MCP 프로세스 둘(에이전트 세션 둘)이 같은 프로젝트에서 각각 `session_start`를 부르면 서로 다른 캔버스·탭에 붙고, 두 번째 프로세스의 결과에 첫 캔버스가 살아 있다는 한 줄이 있다
 - [ ] `session_start`에 레포 하위 폴더 경로를 넘기면 결과의 프로젝트 루트가 git 루트다. Claude Code와 Codex에서 같다
-- [ ] git worktree 안의 경로를 넘기면 그 worktree의 최상위 폴더가 프로젝트 루트다(worktree의 `.git`은 폴더가 아니라 파일이다. Codex의 `/new` → "New worktree"가 이 경우를 만든다)
-- [ ] `session_start`·`session_attach` 전에 그리는 툴을 부르면 캔버스 서버를 띄우지 않고, `session_start`와 그 인자를 안내하는 에러를 낸다
-- [ ] `session_end` 뒤, 또는 붙어 있던 캔버스 서버를 `kill`한 뒤에 그리는 툴을 부르면 새 캔버스 서버를 띄우지 않고 `session_start`를 안내하는 에러를 낸다. 서버가 죽은 경우에는 에러에 끝난 캔버스 세션의 키가 있다
-- [ ] 살아 있는 캔버스가 있는 상태에서 `session_attach <키>`를 부르면 새로 띄우지 않고 그 캔버스에 붙으며, 이후 툴 호출이 거기에 그린다
-- [ ] `session_end`는 키 없이 부르면 자기가 붙은 캔버스 세션을, 키와 함께 부르면 그 캔버스 세션을 끝낸다. 붙지 않은 MCP 프로세스가 키 없이 부르면 에러다
-- [ ] `session_*`를 뺀 MCP 툴의 스키마에 세션 키 인자가 없다
-- [ ] 툴 호출 없이 끝난 MCP 프로세스는 캔버스 서버를 만들지 않는다. `session_list`·`session_end`와 가이드 리소스는 캔버스 서버를 띄우지 않는다
-- [ ] 브라우저 탭 제목에 세션 키가 보인다
-- [ ] 에이전트 세션(MCP 프로세스)이 끝나도 캔버스 세션은 남는다(탭이 열려 있으면 30분 뒤에도 남는다)
-- [ ] SKILL.md에 MCP 경로(첫 턴 `session_start`에 프로젝트 경로, 살아 있는 캔버스 알림) + CLI 폴백(첫 턴 `session start` + 컴팩션 복귀) 절차가 있다
-- [ ] 붙은 MCP 프로세스와 열린 브라우저 탭이 모두 없으면 캔버스 서버가 30분 뒤 스스로 끝난다. 탭이 열려 있거나 MCP 프로세스가 붙어 있으면 활동이 없어도 끝나지 않는다
-- [ ] MCP 프로세스를 `kill -9`로 죽여도 위 조건이 동작한다(타이머는 캔버스 서버가 가진다)
-- [ ] `session list`·`session_list`는 죽은 캔버스 세션(프로세스 없음, 포트 응답 없음)을 보여 주지 않고 그 기록을 지운다
-- [ ] 캔버스 서버는 시작할 때 `~/.excalidraw-architect/sessions/<키>.json`(키, 포트, 프로젝트 루트, pid)을 만들고 끝날 때 지운다. 같은 프로젝트에서 띄운 두 캔버스 서버는 파일 두 개를 가진다
-- [ ] 키 파일이 이미 있으면 덮어쓰지 않고 키를 새로 뽑는다
-- [ ] CLI에 `start`·`stop`·`status` 커맨드와 `--url` 옵션이 없다. 코드가 `EXPRESS_SERVER_URL`·`EXCALIDRAW_NO_AUTOSTART`를 읽지 않고, 업스트림 pid 파일을 쓰지 않는다
-- [ ] 캔버스 서버에 닿지 못한 때의 에러가 `session start --project <경로>`(MCP는 `session_start`)를 안내한다
-- [ ] `AGENTS.md` Gotchas의 "업스트림 머지 때 되살아나면 다시 지울 것"에 위에서 지운 것을 더한다
-- [ ] 기존 `npm test` 통과(지운 커맨드의 테스트는 함께 지운다)
+- [x] git worktree 안의 경로를 넘기면 그 worktree의 최상위 폴더가 프로젝트 루트다(worktree의 `.git`은 폴더가 아니라 파일이다. Codex의 `/new` → "New worktree"가 이 경우를 만든다)
+- [x] `session_start`·`session_attach` 전에 그리는 툴을 부르면 캔버스 서버를 띄우지 않고, `session_start`와 그 인자를 안내하는 에러를 낸다
+- [x] `session_end` 뒤, 또는 붙어 있던 캔버스 서버를 `kill`한 뒤에 그리는 툴을 부르면 새 캔버스 서버를 띄우지 않고 `session_start`를 안내하는 에러를 낸다. 서버가 죽은 경우에는 에러에 끝난 캔버스 세션의 키가 있다
+- [x] 살아 있는 캔버스가 있는 상태에서 `session_attach <키>`를 부르면 새로 띄우지 않고 그 캔버스에 붙으며, 이후 툴 호출이 거기에 그린다
+- [x] `session_end`는 키 없이 부르면 자기가 붙은 캔버스 세션을, 키와 함께 부르면 그 캔버스 세션을 끝낸다. 붙지 않은 MCP 프로세스가 키 없이 부르면 에러다
+- [x] `session_*`를 뺀 MCP 툴의 스키마에 세션 키 인자가 없다
+- [x] 툴 호출 없이 끝난 MCP 프로세스는 캔버스 서버를 만들지 않는다. `session_list`·`session_end`와 가이드 리소스는 캔버스 서버를 띄우지 않는다
+- [x] 브라우저 탭 제목에 세션 키가 보인다
+- [x] 에이전트 세션(MCP 프로세스)이 끝나도 캔버스 세션은 남는다(탭이 열려 있으면 30분 뒤에도 남는다)
+- [x] SKILL.md에 MCP 경로(첫 턴 `session_start`에 프로젝트 경로, 살아 있는 캔버스 알림) + CLI 폴백(첫 턴 `session start` + 컴팩션 복귀) 절차가 있다
+- [x] 붙은 MCP 프로세스와 열린 브라우저 탭이 모두 없으면 캔버스 서버가 30분 뒤 스스로 끝난다. 탭이 열려 있거나 MCP 프로세스가 붙어 있으면 활동이 없어도 끝나지 않는다
+- [x] MCP 프로세스를 `kill -9`로 죽여도 위 조건이 동작한다(타이머는 캔버스 서버가 가진다)
+- [x] `session list`·`session_list`는 죽은 캔버스 세션(프로세스 없음, 포트 응답 없음)을 보여 주지 않고 그 기록을 지운다
+- [x] 캔버스 서버는 시작할 때 `~/.excalidraw-architect/sessions/<키>.json`(키, 포트, 프로젝트 루트, pid)을 만들고 끝날 때 지운다. 같은 프로젝트에서 띄운 두 캔버스 서버는 파일 두 개를 가진다
+- [x] 키 파일이 이미 있으면 덮어쓰지 않고 키를 새로 뽑는다
+- [x] CLI에 `start`·`stop`·`status` 커맨드와 `--url` 옵션이 없다. 코드가 `EXPRESS_SERVER_URL`·`EXCALIDRAW_NO_AUTOSTART`를 읽지 않고, 업스트림 pid 파일을 쓰지 않는다
+- [x] 캔버스 서버에 닿지 못한 때의 에러가 `session start --project <경로>`(MCP는 `session_start`)를 안내한다
+- [x] `AGENTS.md` Gotchas의 "업스트림 머지 때 되살아나면 다시 지울 것"에 위에서 지운 것을 더한다
+- [x] 기존 `npm test` 통과(지운 커맨드의 테스트는 함께 지운다)
 
 ## Comments
+
+## 핸드오프 — 구현 후반부 (2026-10-05, 끝남. 기록으로만 둔다)
+
+결과: 남은 단계 1~8을 끝냈다. eval은 돌리지 않았다 — 스펙상 스킬 동작 확인은 02 도그푸딩과 03 슬라이스 B, with/without 비교 eval은 02 뒤의 몫이다.
+
+**목표.** 04 구현을 끝내고 커밋 한 번(push 없음). 사용자 지시: 인수마다 통과/미통과와 확인 방법, 어긋난 점·임의로 정한 것 목록, 순서 표의 다음 위치를 보고한다. 스펙·ADR·AGENTS.md와 어긋나면 그 자리에서 멈추고 선택지만 보고한다.
+
+**첫 행동.** `npm test`를 실행한다(전체, 빌드 포함). 이번 세션에서 고친 `scripts/check-local-bind.mjs`·`scripts/check-mcp-stdio.mjs`는 고친 뒤 한 번도 돌리지 않았다. 실패하면 고친다.
+
+### 맥락
+
+- 코드(전반부)는 끝났고 `scripts/check-sessions.mjs` 11개가 통과했다(이 세션에서 `node scripts/check-sessions.mjs`로 확인). 후반부(스킬 문서)를 하다가 사용자 요청으로 끊었다.
+- 사용자 지시: 스킬 문서를 고칠 때는 `skill-creator-pro` 스킬의 지시를 참고한다. 이 세션은 그 스킬의 글쓰기 지침(명령형, 이유 설명, 군더더기 없음)만 적용했고 eval 루프는 돌리지 않았다. **eval이 필요한지는 다음 세션이 판단한다.** 판단 재료: 이번 문서 변경은 절차 지시(첫 턴 `session_start`, CLI `--session`)라서 에이전트가 실제로 첫 턴에 부르는지가 관건이다. 스펙상 스킬 동작 확인은 02 도그푸딩과 03 슬라이스 B가 맡는다(스펙 "구현 이슈와 진행 순서"). 결정은 사용자에게 한 줄로 묻거나 근거와 함께 보고한다.
+
+### 진행 상태 (git 기준, 커밋 없음)
+
+- `main`, 최신 커밋 `bbf61d6`(문서만 바꾼 커밋). 04 작업은 모두 작업 트리에 있다(커밋 안 함).
+- 새 파일: `src/core/sessions.ts`(기록 파일·생존 검사·spawn·end), `src/core/project-root.ts`(`findProjectRoot()`), `src/core/mcp-session.ts`(MCP 붙기 상태, `session_*` 툴, `requireAttachedCanvas()`), `src/cli/commands/session.ts`(`session start|list|end`, `selectSession()`), `scripts/check-sessions.mjs`.
+- 지운 파일(staged): `src/core/spawn.ts`, `src/core/pidfile.ts`, `src/cli/commands/server.ts`.
+- 고친 파일: `src/server.ts`(포트 0, 기록 파일, IPC로 키 전달, agent WebSocket `?role=agent`, 연결 0개 타이머, 탭 제목, `/api/session/end`, `/health`에 `session`·`agent_clients`), `src/core/canvas-client.ts`(`setCanvasTarget()`·`setRestartHint()`·`unreachableError()`), `src/cli/run.ts`(`--session` 필수, `start/stop/status` 삭제), `src/core/mcp-tools.ts`(`session_*` 4개), `src/core/mcp-dispatch.ts`, `src/index.ts`(자동 시작 삭제), `src/bin.ts`(`--url` 삭제), `src/core/config.ts`, 그 밖의 CLI 커맨드, `package.json`(`test:sessions` 추가, `canvas`·`production` 스크립트 삭제), `playwright.config.mjs`, 위 테스트 스크립트 둘.
+- 스킬 문서(부분): `plugin/skills/archdraw/SKILL.md` §1(첫 턴 `session_start`, 다른 캔버스 알림, 에러 뒤 재시작)과 §10(`session_end` 키는 사용자가 말할 때만, 30분 자동 종료) 고침. `references/canvas-ops.md` 대응표·CLI 폴백·"When a call fails" 고침. 둘 다 다시 읽고 다듬지는 않았다.
+
+### 남은 단계
+
+1. `npm test` 통과(첫 행동). `npm run type-check`는 스킬 문서 수정 전에 통과했다.
+2. 스킬 문서 마무리(skill-creator-pro 지침): `SKILL.md` §2·§3이 새 절차와 맞는지 확인. 위 "구현 시작점"의 스킬 문서 목록 4개가 모두 반영됐는지 확인.
+3. `scripts/check-skill-docs.mjs`에 회귀 검사 추가(제안): `SKILL.md`에 `session_start`·`projectPath`, `canvas-ops.md`에 `session start --project`·`--session`, 두 문서에 `3000`·`EXPRESS_SERVER_URL`·"from this skill's folder"·CLI `session attach`가 없음.
+4. 스펙 245줄 근처 "MCP는 첫 툴 호출이 자동"을 "첫 턴에 `session_start`에 프로젝트 경로"로 고친다(이 티켓 "결정 없이 고칠 것"의 항목).
+5. `AGENTS.md` Gotchas "업스트림 머지 때 되살아나면 다시 지울 것"에 더한다: CLI `start`/`stop`/`status`, `--url`·`EXPRESS_SERVER_URL`, `EXCALIDRAW_NO_AUTOSTART`, `src/core/pidfile.ts`·`src/core/spawn.ts`, MCP 연결 직후 자동 시작(ADR-0003).
+6. 정리: `src/core/sessions.ts`의 `findLiveSession()`은 아무도 부르지 않는다 — 지운다.
+7. eval 여부 판단(위 맥락).
+8. `/code-review` → 인수 체크박스·Status 갱신, 스펙 순서 표(04 행과 "지금 할 일" 7번) 갱신 → 커밋 한 번(영어 1~2문장, 트레일러 없음).
+
+### 정한 것 (근거와 함께 끝 보고의 "임의로 정한 것"에 넣는다)
+
+- 키는 캔버스 서버가 6자리 hex로 뽑고, 포트를 얻은 뒤 기록 파일을 `wx`(배타 생성)로 만든다. spawner는 IPC 메시지 `canvas-ready`로 키·포트를 받는다.
+- "붙은 MCP 프로세스"는 MCP 프로세스가 연 WebSocket(`?role=agent`)으로 센다. 프로세스가 `kill -9`로 죽어도 소켓이 닫혀 타이머가 동작한다. 브라우저 탭 수(`websocket_clients`, 스크린샷 검사)와 따로 센다.
+- 유휴 시간은 환경 변수 `ARCHDRAW_IDLE_TIMEOUT_MS`(기본 30분)로 바꿀 수 있다 — 테스트용.
+- 캔버스 서버는 `ARCHDRAW_PROJECT_ROOT` 없이 직접 띄우면 에러로 끝난다(키·기록·자동 종료 없는 서버를 띄우는 두 번째 방법을 막는다, ADR-0003). 그래서 `npm run canvas`·`production` 스크립트를 지웠고, playwright·check-local-bind는 이 변수와 임시 `HOME`을 넘긴다.
+- MCP `session_start`는 절대경로만 받는다(MCP 프로세스의 cwd는 프로젝트가 아니다). CLI `--project`는 상대경로를 cwd 기준으로 풀어 준다.
+- 이미 붙은 상태에서 `session_start`를 다시 부르면 새로 띄우지 않고 지금 캔버스를 알려 준다(실수로 두 번 불러 캔버스가 쌓이지 않게).
+- 탭 제목은 `<키> · archdraw`. 서버가 `/`의 HTML `<title>`을 바꿔서 보낸다(정적 서빙은 `index: false`).
+- `session list`가 응답이 느린(타임아웃) 기록은 목록에서 빼되 지우지 않는다. 프로세스가 없거나 연결이 거부되거나 다른 키가 답하면 지운다.
+- 키를 잃은 `--session` 없는 호출은 exit 2(usage), 죽은 키는 exit 3(canvas unreachable).
+- `ENABLE_CANVAS_SYNC`는 지울 목록에 없어서 남겼다.
+
+### 안 통한 것
+
+- ⚠️ `add --one`에 `text`를 줘도 서버 요소는 1개다(라벨이 요소 안에 들어간다). 테스트 기대값을 2에서 1로 고쳤다.
 
 ## 구현 시작점 (2026-10-05)
 

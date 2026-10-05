@@ -242,7 +242,7 @@ yctimlin 캔버스 위에서 동작하는 **판단 전용 스킬.** 다섯 가�
 
 **yctimlin과의 경계**
 - 치수·색·화살표 바인딩 규격은 yctimlin 디자인 가이드를 따르되 원본은 **서버 패키지 `docs/canvas-guide.md` 한 벌**이다(2026-09-19, [ADR-0006](../../docs/adr/0006-canvas-guide-single-source-via-mcp.md)). 서버가 시작 시 읽어 MCP `instructions`(앞 512자 핵심, 2KB 이내 요약)와 `resources`(`guide://canvas`, 전문)로 전달하고, `read_diagram_guide` 툴과 `src/core/design-guide.ts` 문자열은 삭제한다(이슈 09). 스킬 본문·`canvas-ops.md`는 규격을 복사하지 않고 리소스를 가리킨다. 선 표기는 위 "선 표기"대로 그 md에서 교체한다. 2026-10-02~04: 업스트림의 요소 종류 색과 주 경로·성공·실패 색을 그 md에서 없애고, 변경 상태 색값과 고정 영어 라벨, 계약 메모지의 모양, 기본 글꼴(7-9 시험 결과 뒤)을 넣는다(ADR-0015). CLI 길은 7-11의 명령으로 같은 원본을 읽는다. 근거: `docs/research/2026-09-19-mcp-guidance-delivery.md`.
-- 스킬은 어떤 툴을 언제 부르는지만 지시(MCP 툴 우선, 괄호는 CLI 폴백): 첫 턴 캔버스 세션 붙기(MCP는 첫 툴 호출이 자동, CLI는 `session start`), 턴 시작 `get_canvas_screenshot`(`screenshot`), 저장 시 `export_scene`(`export`), 승격 시 `align_elements`(`arrange align`), before/after 시 `snapshot_scene`(`snapshot save`). 그림으로 답한 턴 끝에 스크린샷 결과의 저장 상태를 한 줄로 옮겨 적고, 사용자가 세션을 끝내자고 하면 미저장 그림이 있을 때 1회 묻고 `session end`.
+- 스킬은 어떤 툴을 언제 부르는지만 지시(MCP 툴 우선, 괄호는 CLI 폴백): 첫 턴 캔버스 세션 붙기(MCP는 `session_start`에 프로젝트 경로, CLI는 `session start --project <경로>` 뒤 모든 호출에 `--session <키>`), 턴 시작 `get_canvas_screenshot`(`screenshot`), 저장 시 `export_scene`(`export`), 승격 시 `align_elements`(`arrange align`), before/after 시 `snapshot_scene`(`snapshot save`). 그림으로 답한 턴 끝에 스크린샷 결과의 저장 상태를 한 줄로 옮겨 적고, 사용자가 세션을 끝내자고 하면 미저장 그림이 있을 때 1회 묻고 `session end`.
 
 ## Testing Decisions
 
@@ -285,7 +285,7 @@ yctimlin 캔버스 위에서 동작하는 **판단 전용 스킬.** 다섯 가�
 
 포크·문서 이관·용어 사전·ADR·이슈 작성은 완료됐다. 남은 검수 지적은 [검수 인계](review.md)를 따라 정리하고, 구현은 아래 기존 이슈에서 진행한다.
 
-**지금 할 일 (2026-10-04 기준 — 작업을 끝낼 때마다 이 목록과 아래 표의 상태를 고친다):**
+**지금 할 일 (2026-10-05 기준 — 작업을 끝낼 때마다 이 목록과 아래 표의 상태를 고친다):**
 
 1. ~~Whiteboard에서 가져올 것 7개 그릴~~ — 완료(2026-10-04). 결정은 이 스펙, `CONTEXT.md`, ADR-0015에 반영했다
 2. ~~이슈 03·05·09·10·02를 이 스펙에 맞춘다~~ — 완료(2026-10-04). 03에 슬라이스 C, 05의 글꼴 항목 교체, 09에 `guide` 명령 슬라이스(다시 열었다), 10에 하위 폴더, 02에 관찰 항목
@@ -293,7 +293,7 @@ yctimlin 캔버스 위에서 동작하는 **판단 전용 스킬.** 다섯 가�
 4. ~~03 슬라이스 C 구현. 09 `guide` 명령 슬라이스 구현~~ — 완료(2026-10-05)
 5. ~~09 사후 검수 결함 2·3 그릴~~ — 완료(2026-10-05). 한 뜻은 한 곳에만 적는다: `docs/canvas-guide.md`의 본문에서 요약과 겹치는 값과 규칙을 지웠고, 요약에 `strokeStyle: "dashed"`를 적었다. 09를 닫았다
 6. ~~04 착수 전 질문 Q1~Q6 그릴~~ — 완료(2026-10-05). 에이전트가 항상 명시한다: MCP는 `session_start`에, CLI는 `--project`와 `--session`에. 업스트림의 "머신당 서버 하나" 코드는 지운다. 답은 이슈 04와 ADR-0003에 있다
-7. 04 구현 → 05 구현(글꼴 결함과 Pretendard 시험 포함)
+7. ~~04 구현~~ — 완료(2026-10-05). 다음: 05 구현(글꼴 결함과 Pretendard 시험 포함)
 8. 03 슬라이스 B(캔버스로 확인하는 인수)
 9. 06(05 뒤)·07·08·10 구현
 10. 02 도그푸딩
@@ -305,10 +305,10 @@ yctimlin 캔버스 위에서 동작하는 **판단 전용 스킬.** 다섯 가�
 | [01 설치 골격](issues/01-plugin-skeleton.md) | 플러그인 설치와 실행 준비 | 완료. 사후 검수 슬라이스 1~4 완료, 첫 릴리즈 v0.1.1로 확인(2026-09-30) |
 | [09 규격 단일 원본](issues/09-canvas-guide-single-source.md) | 서버 md 한 벌을 `instructions`·`resources`로 | 완료(2026-10-05). 기존 인수 8개, `guide` 명령 슬라이스(7-11, 사후 검수 결함 1), 결함 2·3(본문의 중복 제거, 점선 파라미터) |
 | [03 판단 스킬 본문](issues/03-archdraw-skill-body.md) | 라우팅·줌 레벨·캔버스 우선 규칙 | 슬라이스 A·C 완료, B는 04·05 뒤 |
-| [04 캔버스 세션](issues/04-session-per-canvas.md) | 캔버스 세션 분리와 재개 | 착수 가능 (Q1~Q6 확정 2026-10-05) |
+| [04 캔버스 세션](issues/04-session-per-canvas.md) | 캔버스 세션 분리와 재개 | 완료(2026-10-05). 호스트 두 곳의 실측은 02에서 |
 | [05 frame](issues/05-frame-element.md) | 그림 구분과 글꼴 기본값 | 착수 가능(글꼴 항목을 7-9에 맞췄다 — 2026-10-04) |
-| [06 저장](issues/06-snapshot-and-export-persistence.md) | 스냅샷·export·재로드 | 04·05 뒤 |
-| [07 근거 검사](issues/07-evidence-check.md) | 근거 확인과 점선 처리 | 04 뒤 |
+| [06 저장](issues/06-snapshot-and-export-persistence.md) | 스냅샷·export·재로드 | 05 뒤 |
+| [07 근거 검사](issues/07-evidence-check.md) | 근거 확인과 점선 처리 | 착수 가능(04 완료) |
 | [08 기록 스킬](issues/08-dogfooding-report-skill.md) | 도그푸딩 이슈를 에이전트가 대신 씀 | 착수 가능 |
 | [10 MCP 직접 등록](issues/10-mcp-only-gets-archdraw-judgement.md) | MCP만 등록해도 판단을 prompt·resource로 받음 | 착수 가능(03 슬라이스 C 완료) |
 | [02 도그푸딩](issues/02-dogfooding-round-zero.md) | 구현 후 실사용하고 수정 사항을 해당 이슈에 전달 | 맨 마지막, 사람 |

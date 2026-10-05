@@ -9,6 +9,8 @@
 //     dimensions — it points at the resource guide://canvas (ADR-0006)
 //   - the skill never copies the fixed canvas label strings (ADR-0012)
 //   - the replaced upstream skill and its install command stay gone (spec 7-4)
+//   - the canvas session steps are there and the upstream single-server
+//     hints stay gone (issue 04)
 
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -167,6 +169,28 @@ for (const { name, file, question } of situations) {
 
 assert.match(skill, /references\/saving\.md/, 'SKILL.md does not point at references/saving.md');
 assert.match(skill, /\*\*The save-state line\.\*\*/, 'the save-state line paragraph left SKILL.md');
+
+// --- Canvas sessions (issue 04) -------------------------------------------
+
+// The agent always names the project and the session; nothing is guessed from
+// a working directory or a fixed port (ADR-0003).
+assert.match(skill, /session_start/, 'SKILL.md does not open a canvas session with session_start');
+assert.match(skill, /projectPath/, 'SKILL.md does not pass projectPath to session_start');
+assert.match(ops, /session start --project/, 'canvas-ops.md does not run `session start --project`');
+assert.match(ops, /--session <key>/, 'canvas-ops.md does not carry `--session <key>`');
+
+const UPSTREAM_SERVER_HINTS = [
+  [/127\.0\.0\.1:3000|\b3000\b/, 'the fixed upstream port 3000'],
+  [/EXPRESS_SERVER_URL/, 'EXPRESS_SERVER_URL'],
+  [/EXCALIDRAW_NO_AUTOSTART/, 'EXCALIDRAW_NO_AUTOSTART'],
+  [/from this skill's folder/, "\"from this skill's folder\""],
+  [/`session attach`/, 'a CLI `session attach` command']
+];
+for (const name of DRAWING_FILES) {
+  for (const [pattern, what] of UPSTREAM_SERVER_HINTS) {
+    assert.ok(!pattern.test(FILES[name]), `${name} mentions ${what} — canvas sessions replaced it (ADR-0003)`);
+  }
+}
 
 // --- Zoom levels ----------------------------------------------------------
 

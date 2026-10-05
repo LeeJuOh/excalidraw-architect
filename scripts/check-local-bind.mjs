@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
 import { spawn } from 'node:child_process';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -14,12 +16,16 @@ const runtimeArgs = runtimeName.includes('bun') ? ['run', serverPath] : [serverP
 const port = Number(process.env.PORT || 32000 + Math.floor(Math.random() * 2000));
 const startupTimeoutMs = 5000;
 const duplicateExitTimeoutMs = 2500;
+// Canvas servers write a session record under HOME; keep it out of the real one.
+const sandbox = mkdtempSync(join(tmpdir(), 'archdraw-bind-'));
 
 function spawnCanvas(host) {
   const env = {
     ...process.env,
     PORT: String(port),
     LOG_LEVEL: 'error',
+    HOME: sandbox,
+    ARCHDRAW_PROJECT_ROOT: sandbox,
   };
   if (host) {
     env.HOST = host;
@@ -160,5 +166,7 @@ try {
   if (second) await killChild(second);
   if (first) await killChild(first);
   console.error((error instanceof Error) ? error.message : String(error));
+  rmSync(sandbox, { recursive: true, force: true });
   process.exit(1);
 }
+rmSync(sandbox, { recursive: true, force: true });

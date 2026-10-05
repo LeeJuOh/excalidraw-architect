@@ -29,9 +29,9 @@ const UNSUPPORTED_PROTOCOL_VERSION_CODE = -32022;
 const INVALID_PARAMS_CODE = -32602;
 const RESPONSE_TIMEOUT_MS = 20000;
 
-// `get_resource` with a scene read is the one call that never touches the
-// canvas server (see toolNeedsCanvasBeforeDispatch), so these checks stay
-// hermetic.
+// `get_resource` with a scene read never touches a canvas server (see
+// toolNeedsCanvasBeforeDispatch), and nothing here calls session_start, so
+// these checks stay hermetic.
 const CANVAS_FREE_TOOL = 'get_resource';
 const CANVAS_FREE_ARGS = { resource: 'scene' };
 
@@ -70,8 +70,6 @@ function exchange(messages, expected) {
       cwd: repoRoot,
       env: {
         ...process.env,
-        ENABLE_CANVAS_SYNC: 'false',
-        EXCALIDRAW_NO_AUTOSTART: '1',
         LOG_LEVEL: 'error'
       },
       stdio: ['pipe', 'pipe', 'pipe']
@@ -338,14 +336,10 @@ async function checkGuideResource() {
 }
 
 // The skill-only install (`npx skills add`) registers no MCP server, so the CLI
-// is its one way to the spec (issue 09). Same file, same bytes. The canvas URL
-// points at a dead port with auto-start off: reading the guide must not need a
-// canvas.
+// is its one way to the spec (issue 09). Same file, same bytes. No --session:
+// reading the guide must not need a canvas.
 function checkGuideCommand() {
-  const run = (...args) => spawnSync(runtime, [...argsFor(binPath), ...args], {
-    cwd: repoRoot,
-    env: { ...process.env, EXCALIDRAW_NO_AUTOSTART: '1', EXPRESS_SERVER_URL: 'http://127.0.0.1:9' }
-  });
+  const run = (...args) => spawnSync(runtime, [...argsFor(binPath), ...args], { cwd: repoRoot });
 
   const guide = run('guide');
   assertEqual(guide.status, 0, `cli guide: exit code (stderr: ${guide.stderr})`);
@@ -374,7 +368,7 @@ async function checkMissingGuideFails() {
 
     const child = spawn(runtime, argsFor(join(sandbox, 'dist', 'index.js')), {
       cwd: sandbox,
-      env: { ...process.env, ENABLE_CANVAS_SYNC: 'false', EXCALIDRAW_NO_AUTOSTART: '1', LOG_LEVEL: 'error' },
+      env: { ...process.env, LOG_LEVEL: 'error' },
       stdio: ['pipe', 'pipe', 'pipe']
     });
 

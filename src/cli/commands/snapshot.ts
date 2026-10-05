@@ -1,6 +1,5 @@
 import { parseArgs, CliUsageError } from '../args.js';
 import { printJson } from '../util.js';
-import { ensureCanvasRunning } from '../../core/spawn.js';
 import {
   saveSnapshot,
   listSnapshots,
@@ -13,7 +12,6 @@ export async function snapshot(argv: string[]): Promise<void> {
   const { positionals } = parseArgs(argv, {});
   const [action, name] = positionals;
 
-  await ensureCanvasRunning();
 
   switch (action) {
     case 'save': {

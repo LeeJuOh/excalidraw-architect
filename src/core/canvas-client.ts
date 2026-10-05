@@ -1,6 +1,64 @@
 import logger from '../utils/logger.js';
 import { ServerElement } from '../types.js';
-import { EXPRESS_SERVER_URL, ENABLE_CANVAS_SYNC } from './config.js';
+import { ENABLE_CANVAS_SYNC } from './config.js';
+import { CANVAS_SERVICE_NAME, CanvasHealth } from './sessions.js';
+
+// The canvas session every request goes to. The CLI sets it from --session,
+// the MCP process from session_start / session_attach. There is no default.
+export interface CanvasTarget {
+  key: string;
+  url: string;
+}
+
+let target: CanvasTarget | null = null;
+// How to get a canvas back, worded for the caller's path (CLI or MCP).
+let restartHint = '`session start --project <path>`';
+
+export function setCanvasTarget(next: CanvasTarget | null): void {
+  target = next;
+  identityVerifiedAt = 0;
+}
+
+export function setRestartHint(hint: string): void {
+  restartHint = hint;
+}
+
+function currentTarget(): CanvasTarget {
+  if (!target) {
+    const error = new Error(`No canvas session is selected. Start one with ${restartHint}.`);
+    (error as any).code = 'CANVAS_UNREACHABLE';
+    throw error;
+  }
+  return target;
+}
+
+export function canvasUrl(): string {
+  return currentTarget().url;
+}
+
+export function unreachableError(reason: string): Error {
+  const { key, url } = currentTarget();
+  const error = new Error(
+    `The canvas server of session ${key} is not reachable at ${url} (${reason}). ` +
+    `Start a new canvas session with ${restartHint} and give the user its URL.`
+  );
+  (error as any).code = 'CANVAS_UNREACHABLE';
+  return error;
+}
+
+// fetch() against the selected canvas; a refused connection becomes the
+// unreachable error that says how to start a new canvas session.
+async function canvasFetch(pathname: string, init?: RequestInit): Promise<Response> {
+  const url = `${canvasUrl()}${pathname}`;
+  try {
+    return await fetch(url, init);
+  } catch (error) {
+    const name = (error as { name?: string }).name;
+    if (name === 'TimeoutError' || name === 'AbortError') throw error;
+    const cause = (error as { cause?: { code?: string } }).cause;
+    throw unreachableError(cause?.code ?? (error as Error).message);
+  }
+}
 
 // API Response types
 export interface ApiResponse {
@@ -25,12 +83,12 @@ export async function syncToCanvas(operation: string, data: any): Promise<SyncRe
   }
 
   try {
-    let url: string;
+    let pathname: string;
     let options: any;
 
     switch (operation) {
       case 'create':
-        url = `${EXPRESS_SERVER_URL}/api/elements`;
+        pathname = '/api/elements';
         options = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -39,7 +97,7 @@ export async function syncToCanvas(operation: string, data: any): Promise<SyncRe
         break;
 
       case 'update':
-        url = `${EXPRESS_SERVER_URL}/api/elements/${data.id}`;
+        pathname = `/api/elements/${data.id}`;
         options = {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -48,12 +106,12 @@ export async function syncToCanvas(operation: string, data: any): Promise<SyncRe
         break;
 
       case 'delete':
-        url = `${EXPRESS_SERVER_URL}/api/elements/${data.id}`;
+        pathname = `/api/elements/${data.id}`;
         options = { method: 'DELETE' };
         break;
 
       case 'batch_create':
-        url = `${EXPRESS_SERVER_URL}/api/elements/batch`;
+        pathname = '/api/elements/batch';
         options = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -68,8 +126,8 @@ export async function syncToCanvas(operation: string, data: any): Promise<SyncRe
 
     await assertCanvasIdentity();
 
-    logger.debug(`Syncing to canvas: ${operation}`, { url, data });
-    const response = await fetch(url, options);
+    logger.debug(`Syncing to canvas: ${operation}`, { pathname, data });
+    const response = await canvasFetch(pathname, options);
 
     // Parse JSON response regardless of HTTP status
     const result = await response.json() as ApiResponse;
@@ -128,7 +186,7 @@ export async function getElementFromCanvas(elementId: string): Promise<ServerEle
 
   try {
     await assertCanvasIdentity();
-    const response = await fetch(`${EXPRESS_SERVER_URL}/api/elements/${elementId}`);
+    const response = await canvasFetch(`/api/elements/${elementId}`);
     if (!response.ok) {
       logger.warn(`Failed to fetch element ${elementId}: ${response.status}`);
       return null;
@@ -145,7 +203,7 @@ export async function getElementFromCanvas(elementId: string): Promise<ServerEle
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   await assertCanvasIdentity();
-  const response = await fetch(`${EXPRESS_SERVER_URL}${path}`, init);
+  const response = await canvasFetch(path, init);
   const data = await response.json().catch(() => null) as any;
   if (!response.ok) {
     throw new Error(data?.error || `HTTP server error: ${response.status} ${response.statusText}`);
@@ -266,14 +324,12 @@ export async function batchCreateElementsStrict(elements: ServerElement[]): Prom
   return data.elements || [];
 }
 
-// Identity marker the canvas server puts in /health (v1.1+)
-export const CANVAS_SERVICE_NAME = 'mcp-excalidraw-canvas';
-
 export function foreignServiceError(): Error {
+  const { key, url } = currentTarget();
   const error = new Error(
-    `Something is answering at ${EXPRESS_SERVER_URL} but does not identify as this canvas server ` +
-    `(a pre-1.1 canvas build or an unrelated service on the port). ` +
-    `Upgrade/stop that service, or point EXPRESS_SERVER_URL elsewhere.`
+    `Something is answering at ${url} but it is not the canvas server of session ${key} ` +
+    `(that session has ended and another service took the port). ` +
+    `Start a new canvas session with ${restartHint}.`
   );
   (error as any).code = 'CANVAS_UNREACHABLE';
   return error;
@@ -291,10 +347,6 @@ const IDENTITY_TTL_MS = 3000;
 let identityVerifiedAt = 0;
 let identityProbe: Promise<void> | null = null;
 
-export function markCanvasIdentityVerified(): void {
-  identityVerifiedAt = Date.now();
-}
-
 async function assertCanvasIdentity(): Promise<void> {
   if (Date.now() - identityVerifiedAt < IDENTITY_TTL_MS) return;
 
@@ -303,7 +355,7 @@ async function assertCanvasIdentity(): Promise<void> {
       try {
         let response: Response;
         try {
-          response = await fetch(`${EXPRESS_SERVER_URL}/health`, { signal: AbortSignal.timeout(1500) });
+          response = await fetch(`${canvasUrl()}/health`, { signal: AbortSignal.timeout(1500) });
         } catch (error) {
           // Fail CLOSED on timeout: a listener that accepts connections but
           // never answers /health could still be a foreign service that
@@ -311,7 +363,7 @@ async function assertCanvasIdentity(): Promise<void> {
           const name = (error as { name?: string })?.name;
           if (name === 'TimeoutError' || name === 'AbortError') {
             const timeoutError = new Error(
-              `The service at ${EXPRESS_SERVER_URL} did not answer the /health identity probe within 1500ms — ` +
+              `The service at ${canvasUrl()} did not answer the /health identity probe within 1500ms — ` +
               `refusing to send it requests.`
             );
             (timeoutError as any).code = 'CANVAS_UNREACHABLE';
@@ -325,12 +377,12 @@ async function assertCanvasIdentity(): Promise<void> {
 
         // SOMETHING answered. Only a 200 with our identity payload may pass —
         // a 404 or an HTML page here is a foreign service, not a down canvas.
-        let health: { service?: string } | null = null;
+        let health: CanvasHealth | null = null;
         try {
-          health = await response.json() as { service?: string };
+          health = await response.json() as CanvasHealth;
         } catch { /* non-JSON body: foreign */ }
 
-        if (!response.ok || health?.service !== CANVAS_SERVICE_NAME) {
+        if (!response.ok || health?.service !== CANVAS_SERVICE_NAME || health.session !== currentTarget().key) {
           throw foreignServiceError();
         }
         identityVerifiedAt = Date.now();
@@ -343,22 +395,12 @@ async function assertCanvasIdentity(): Promise<void> {
   return identityProbe;
 }
 
-export interface HealthStatus {
-  status: string;
-  timestamp: string;
-  elements_count: number;
-  websocket_clients: number;
-  // Identity fields (v1.1+); `stop` requires both before signaling anything
-  service?: string;
-  pid?: number;
-}
-
-export async function getHealth(timeoutMs = 2000): Promise<HealthStatus> {
-  const response = await fetch(`${EXPRESS_SERVER_URL}/health`, { signal: AbortSignal.timeout(timeoutMs) });
+export async function getHealth(timeoutMs = 2000): Promise<CanvasHealth> {
+  const response = await canvasFetch('/health', { signal: AbortSignal.timeout(timeoutMs) });
   if (!response.ok) {
     throw new Error(`Health check failed: ${response.status}`);
   }
-  return await response.json() as HealthStatus;
+  return await response.json() as CanvasHealth;
 }
 
 export async function getSyncStatus(): Promise<Record<string, unknown>> {

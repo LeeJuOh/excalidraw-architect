@@ -3,8 +3,8 @@ import path from 'path';
 import os from 'os';
 import { parseArgs, CliUsageError, readStdin } from '../args.js';
 import { printJson, note, requireBrowserClient } from '../util.js';
-import { ensureCanvasRunning } from '../../core/spawn.js';
 import {
+  canvasUrl,
   getElements,
   clearCanvas,
   exportImage,
@@ -14,7 +14,6 @@ import { buildSceneFile, importScene } from '../../core/scene-io.js';
 import { wrapSceneAsObsidianMd } from '../../core/obsidian-md.js';
 import { describeScene } from '../../core/describe.js';
 import { exportToExcalidrawUrl } from '../../core/share-url.js';
-import { EXPRESS_SERVER_URL } from '../../core/config.js';
 
 async function readTextFileOrStdin(inputPath: string | undefined): Promise<string> {
   if (!inputPath || inputPath === '-') return await readStdin();
@@ -23,7 +22,6 @@ async function readTextFileOrStdin(inputPath: string | undefined): Promise<strin
 
 export async function describe(argv: string[]): Promise<void> {
   parseArgs(argv, {});
-  await ensureCanvasRunning();
   const elements = await getElements();
   // Plain text by design: this is the human/agent-readable scene summary
   process.stdout.write(describeScene(elements) + '\n');
@@ -41,7 +39,6 @@ export async function screenshot(argv: string[]): Promise<void> {
     throw new CliUsageError('--format must be png or svg');
   }
 
-  await ensureCanvasRunning();
   await requireBrowserClient('screenshot');
 
   const result = await exportImage(format, !flags['no-background']);
@@ -79,7 +76,6 @@ export async function exportCmd(argv: string[]): Promise<void> {
     throw new CliUsageError('--format must be json or obsidian');
   }
 
-  await ensureCanvasRunning();
   const { scene, elementCount } = await buildSceneFile();
   const output = format === 'obsidian'
     ? wrapSceneAsObsidianMd(scene)
@@ -98,7 +94,6 @@ export async function exportCmd(argv: string[]): Promise<void> {
 export async function importCmd(argv: string[]): Promise<void> {
   const { positionals, flags } = parseArgs(argv, { replace: { takesValue: false } });
 
-  await ensureCanvasRunning();
 
   const mode = flags.replace ? 'replace' as const : 'merge' as const;
   // Read the file here rather than via importScene's filePath: that path is
@@ -121,18 +116,16 @@ export async function mermaid(argv: string[]): Promise<void> {
     throw new CliUsageError('No Mermaid diagram provided (pass a file or pipe to stdin)');
   }
 
-  await ensureCanvasRunning();
   // Conversion happens in the browser (mermaid-to-excalidraw needs DOM access)
   await requireBrowserClient('mermaid conversion');
 
   const result = await sendMermaid(diagram);
-  note(`Conversion happens in the open canvas tab at ${EXPRESS_SERVER_URL}.`);
+  note(`Conversion happens in the open canvas tab at ${canvasUrl()}.`);
   printJson({ success: result.success ?? true, message: result.message });
 }
 
 export async function share(argv: string[]): Promise<void> {
   parseArgs(argv, {});
-  await ensureCanvasRunning();
   const elements = await getElements();
   const url = await exportToExcalidrawUrl(elements);
   printJson({ success: true, url });
@@ -144,7 +137,6 @@ export async function clear(argv: string[]): Promise<void> {
     throw new CliUsageError('clear wipes the whole canvas; pass --yes to confirm');
   }
 
-  await ensureCanvasRunning();
   const result = await clearCanvas();
   printJson({ success: true, cleared: result.count ?? 0 });
 }

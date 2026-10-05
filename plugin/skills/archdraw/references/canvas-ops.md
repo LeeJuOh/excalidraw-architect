@@ -15,7 +15,9 @@ before drawing. On the CLI fallback there is no resource to read:
 Same canvas, same semantics; only the transport differs. MCP results land in
 your context and a screenshot comes back as an image. The CLI prints JSON on
 stdout (`describe` prints plain text) and a screenshot as a file path you then
-read.
+read. Every CLI command that touches a canvas also takes `--session <key>`;
+the MCP tools take no key, because the MCP process stays attached to one
+canvas session.
 
 | What you want | MCP tool | CLI |
 |---|---|---|
@@ -45,9 +47,10 @@ read.
 | List snapshots | — | `snapshot list` |
 | Clear the canvas (user's word only) | `clear_canvas` | `clear --yes` |
 | Mermaid onto the canvas | `create_from_mermaid` | `mermaid` |
-| Open a canvas session | automatic on the first tool call | `session start` |
-| List / attach / end a canvas session | `session_list`, `session_attach`, `session_end` | `session list`, `session attach`, `session end` |
-| Start / stop / inspect the server | — (the host runs it) | `start`, `stop`, `status` |
+| Open a canvas session (first turn) | `session_start` with `projectPath` | `session start --project <path>` |
+| List canvas sessions | `session_list` | `session list` |
+| Switch to another live canvas session | `session_attach` | — (pass its key as `--session`) |
+| End a canvas session | `session_end` (no key: yours) | `session end <key>` |
 
 ## Element format
 
@@ -84,28 +87,38 @@ Send them in the order `guide://canvas` sets out.
 
 Only for the `npx skills add` install, where no MCP server was registered.
 
-All commands run from this skill's folder as `scripts/archdraw <command>`. The
-shim starts the canvas server by itself on first use — there is no separate
-install step. Run `session start` on the first turn, tell the user the URL it
-returns, and pass `--session <key>` on every later call. If the key is lost,
-`session list`: one canvas session in this project means go back to it, several
-mean ask the user which, reading the key from the browser tab title.
+Call the shim as `scripts/archdraw <command>`; it finds its own folder, so any
+working directory works. The shim fetches the server by itself on first use —
+there is no separate install step.
+
+On the first turn, run `session start --project <path>` with the absolute path
+of the project you are working in. The path is required: guessing the project
+from a working directory can be wrong without any error. The result gives the
+session key, the URL and the project root (the git root at or above the path).
+Tell the user the URL and ask them to open it in a browser once; the tab title
+shows the key. If `otherSessionsInProject` is not empty, tell the user in one
+line and carry on with the new session.
+
+Pass `--session <key>` on every later canvas command. There is no default
+session: without the flag the command draws nothing and lists the live canvas
+sessions instead. If you lose the key (for example after the conversation is
+compacted), run `session list` and pick the canvas sessions whose project root
+is this project — one means go back to it, several mean ask the user which,
+reading the key from the browser tab title.
 
 Run `scripts/archdraw guide` before you draw the first elements of a
 conversation. It prints the drawing spec — the text MCP hosts read as
 `guide://canvas` — and it needs no canvas session.
 
-Before the **first** command of a session, tell the user in one line, in their
+Before the **first** command of a conversation, tell the user in one line, in their
 language, that the canvas server is starting and that it may take a while if
 this is the first run on this machine, because the server is downloaded then.
 Then run the command.
 
-The canvas lives at `http://127.0.0.1:3000` (or `EXPRESS_SERVER_URL`); ask the
-user to open that URL in a browser once.
-
 ```bash
-echo '[{"type":"rectangle","x":100,"y":100,"text":"Order API"}]' | scripts/archdraw add
-scripts/archdraw screenshot
+scripts/archdraw session start --project /path/to/project
+echo '[{"type":"rectangle","x":100,"y":100,"text":"Order API"}]' | scripts/archdraw add --session <key>
+scripts/archdraw screenshot --session <key>
 ```
 
 PNG screenshots land in the OS temp folder unless `--out` is given.
@@ -115,9 +128,13 @@ required.
 
 ## When a call fails
 
-- **Canvas unreachable (exit 3).** Auto-start is off (`EXCALIDRAW_NO_AUTOSTART`)
-  or `EXPRESS_SERVER_URL` points somewhere non-local. Run `start`, or fix the
-  variable.
+- **No canvas session attached (MCP) or canvas unreachable (CLI exit 3).** The
+  canvas session ended or its server stopped. Nothing restarts it by itself:
+  a new server gets a new URL, and the user's tab would stay on the old one.
+  Start a new canvas session (`session_start`, or
+  `session start --project <path>`) and give the user the new URL.
+- **Missing `--session` (CLI exit 2).** The error lists the live canvas
+  sessions with their project roots; pass the key of yours.
 - **Browser tab required (exit 4).** Screenshots, image export, viewport moves
   and Mermaid conversion all render in the frontend. Ask the user to open the
   canvas URL, then retry.

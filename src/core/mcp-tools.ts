@@ -4,6 +4,46 @@ import { EXCALIDRAW_ELEMENT_TYPES } from '../types.js';
 // Tool definitions
 export const tools: Tool[] = [
   {
+    name: 'session_start',
+    description: 'Start a new canvas session for this conversation and attach to it. Call it once, on the first turn, before any drawing tool. Returns the URL to give the user, the session key and the project root (the git root at or above projectPath). Also names other live canvas sessions in the same project.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        projectPath: { type: 'string', description: 'Absolute path of the project folder you are working in' }
+      },
+      required: ['projectPath']
+    }
+  },
+  {
+    name: 'session_attach',
+    description: 'Attach to a live canvas session by its key instead of the current one. Only when the user asks for that canvas. Later tool calls draw there.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        key: { type: 'string', description: 'Session key, as shown by session_list or the browser tab title' }
+      },
+      required: ['key']
+    }
+  },
+  {
+    name: 'session_list',
+    description: 'List the live canvas sessions on this machine: key, URL, project root, open browser tabs, attached agents.',
+    inputSchema: {
+      type: 'object',
+      properties: {}
+    }
+  },
+  {
+    name: 'session_end',
+    description: 'End a canvas session and stop its canvas server. Without key: the session this conversation is attached to. With key: that session — only when the user asks. Unsaved drawings on it are lost.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        key: { type: 'string', description: 'Session key of another canvas session to end' }
+      }
+    }
+  },
+  {
     name: 'create_element',
     description: 'Create a new Excalidraw element. For arrows, use startElementId/endElementId to bind to shapes (auto-routes to edges).',
     inputSchema: {

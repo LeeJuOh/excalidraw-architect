@@ -1,8 +1,9 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { WebSocketServer } from 'ws';
-import { createServer } from 'http';
+import { createServer, IncomingMessage } from 'http';
 import net from 'net';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
@@ -29,7 +30,13 @@ import {
 import { z } from 'zod';
 import WebSocket from 'ws';
 import { isMainModule } from './core/entry.js';
-import { writePidFile, removePidFile } from './core/pidfile.js';
+import {
+  CANVAS_SERVICE_NAME,
+  claimSessionRecord,
+  removeSessionRecord,
+  SessionRecord,
+  CanvasReadyMessage
+} from './core/sessions.js';
 
 // Load environment variables
 dotenv.config();
@@ -45,18 +52,22 @@ const wss = new WebSocketServer({ server });
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Serve static files from the build directory
+// Serve static files from the build directory. `index: false` leaves `/` to the
+// route below, which puts the session key into the page title.
 const staticDir = path.join(__dirname, '../dist');
-app.use(express.static(staticDir));
+app.use(express.static(staticDir, { index: false }));
 // Also serve frontend assets
-app.use(express.static(path.join(__dirname, '../dist/frontend')));
+app.use(express.static(path.join(__dirname, '../dist/frontend'), { index: false }));
 // Serve Excalidraw fonts so the font subsetting worker can fetch them for export
 app.use('/assets/fonts', express.static(
   path.join(__dirname, '../node_modules/@excalidraw/excalidraw/dist/prod/fonts')
 ));
 
-// WebSocket connections
+// Browser tabs. Broadcasts, screenshots and the "tab open" check use these.
 const clients = new Set<WebSocket>();
+// MCP processes attached to this canvas session. They only keep the canvas
+// alive: the socket closes when the process dies, even on kill -9.
+const agentSockets = new Set<WebSocket>();
 
 // Broadcast to all connected clients
 function broadcast(message: WebSocketMessage): void {
@@ -80,9 +91,25 @@ function normalizeLineBreakMarkup(text: string): string {
 }
 
 // WebSocket connection handling
-wss.on('connection', (ws: WebSocket) => {
+wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
+  const role = new URL(req.url ?? '/', 'http://localhost').searchParams.get('role');
+  if (role === 'agent') {
+    agentSockets.add(ws);
+    logger.info('Agent attached');
+    const detach = (): void => {
+      agentSockets.delete(ws);
+      logger.info('Agent detached');
+      updateIdleTimer();
+    };
+    ws.on('close', detach);
+    ws.on('error', detach);
+    updateIdleTimer();
+    return;
+  }
+
   clients.add(ws);
   logger.info('New WebSocket connection established');
+  updateIdleTimer();
 
   // Send current elements to new client
   const filesObj: Record<string, ExcalidrawFile> = {};
@@ -105,11 +132,13 @@ wss.on('connection', (ws: WebSocket) => {
   ws.on('close', () => {
     clients.delete(ws);
     logger.info('WebSocket connection closed');
+    updateIdleTimer();
   });
 
   ws.on('error', (error) => {
     logger.error('WebSocket error:', error);
     clients.delete(ws);
+    updateIdleTimer();
   });
 });
 
@@ -1263,30 +1292,49 @@ app.get('/api/snapshots/:name', (req: Request, res: Response) => {
   }
 });
 
-// Serve the frontend
+function escapeHtml(text: string): string {
+  return text.replace(/[&<>"']/g, ch => `&#${ch.charCodeAt(0)};`);
+}
+
+// Serve the frontend. The tab title carries the session key so the user can
+// tell canvases apart and read the key back to the agent.
 app.get('/', (req: Request, res: Response) => {
   const htmlFile = path.join(__dirname, '../dist/frontend/index.html');
-  res.sendFile(htmlFile, (err) => {
-    if (err) {
-      logger.error('Error serving frontend:', err);
-      res.status(404).send('Frontend not found. Please run "npm run build" first.');
-    }
-  });
+  let html: string;
+  try {
+    html = fs.readFileSync(htmlFile, 'utf-8');
+  } catch (err) {
+    logger.error('Error serving frontend:', err);
+    res.status(404).send('Frontend not found. Please run "npm run build" first.');
+    return;
+  }
+  const title = escapeHtml(`${sessionRecord?.key ?? "canvas"} · archdraw`);
+  res.type('html').send(html.replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`));
 });
 
-// Health check endpoint
+// Health check endpoint. `service` + `session` are the identity callers check
+// before they send this server anything.
 app.get('/health', (req: Request, res: Response) => {
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     elements_count: elements.size,
     websocket_clients: clients.size,
-    // Identity for `stop`: it must only ever signal a process that both
-    // identifies as this service AND self-reports its pid — never a pid
-    // from a stale pidfile or an unrelated app squatting on the port.
-    service: 'mcp-excalidraw-canvas',
+    agent_clients: agentSockets.size,
+    service: CANVAS_SERVICE_NAME,
+    session: sessionRecord?.key,
+    projectRoot: sessionRecord?.projectRoot,
     pid: process.pid
   });
+});
+
+app.post('/api/session/end', (req: Request, res: Response) => {
+  if (!sessionRecord || req.body?.key !== sessionRecord.key) {
+    res.status(400).json({ success: false, error: 'Session key does not match this canvas server' });
+    return;
+  }
+  res.json({ success: true, key: sessionRecord.key });
+  setImmediate(() => shutdown('session end'));
 });
 
 // Sync status endpoint
@@ -1312,11 +1360,42 @@ app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   });
 });
 
-// Start server
-const PORT = parseInt(process.env.PORT || '3000', 10);
+// Start server. Port 0 asks the OS for a free port; each canvas session gets
+// its own server (ADR-0003).
+const PORT = parseInt(process.env.PORT || '0', 10);
 const HOST = process.env.HOST || '127.0.0.1';
+const PROJECT_ROOT = process.env.ARCHDRAW_PROJECT_ROOT;
+const IDLE_TIMEOUT_MS = parseInt(process.env.ARCHDRAW_IDLE_TIMEOUT_MS || String(30 * 60 * 1000), 10);
 const LOOPBACK_GUARD_HOSTS = new Set(['localhost', '127.0.0.1', '::1', '0.0.0.0', '::']);
 const LOOPBACK_ADDRESSES = ['127.0.0.1', '::1'];
+
+let sessionRecord: SessionRecord | null = null;
+let idleTimer: NodeJS.Timeout | null = null;
+let shuttingDown = false;
+
+// The clock runs while nothing is connected — no browser tab, no attached MCP
+// process — not while nothing happens: an open tab keeps the canvas alive.
+function updateIdleTimer(): void {
+  if (!sessionRecord || shuttingDown) return;
+  const connected = clients.size + agentSockets.size;
+  if (connected > 0) {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = null;
+  } else if (!idleTimer) {
+    idleTimer = setTimeout(() => shutdown('no connections'), IDLE_TIMEOUT_MS);
+  }
+}
+
+function shutdown(reason: string): void {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  logger.info(`Shutting down canvas server (${reason})`);
+  if (sessionRecord) removeSessionRecord(sessionRecord.key);
+  for (const ws of [...clients, ...agentSockets]) ws.terminate();
+  server.close(() => process.exit(0));
+  // Force-exit if open sockets keep the server from closing promptly
+  setTimeout(() => process.exit(0), 2000).unref();
+}
 
 function formatHostForUrl(host: string): string {
   return host.includes(':') ? `[${host}]` : host;
@@ -1363,7 +1442,15 @@ server.on('error', (error: NodeJS.ErrnoException) => {
 });
 
 async function startServer(): Promise<void> {
-  if (LOOPBACK_GUARD_HOSTS.has(HOST)) {
+  if (!PROJECT_ROOT) {
+    logger.error(
+      'ARCHDRAW_PROJECT_ROOT is not set. Canvas servers are started by `session start --project <path>` ' +
+      'or the session_start MCP tool, not directly.'
+    );
+    process.exit(1);
+  }
+
+  if (PORT !== 0 && LOOPBACK_GUARD_HOSTS.has(HOST)) {
     const existingHost = await findExistingLoopbackListener(PORT);
     if (existingHost) {
       logger.error(
@@ -1375,39 +1462,42 @@ async function startServer(): Promise<void> {
     }
   }
 
-  // Only the process that actually wrote the pidfile may remove it —
-  // a concurrent-start loser exiting on EADDRINUSE must not delete the
-  // winner's pidfile.
-  let ownsPidFile = false;
-
   server.listen(PORT, HOST, () => {
-    const hostForUrl = formatHostForUrl(HOST);
-    logger.info(`POC server running on http://${hostForUrl}:${PORT}`);
-    logger.info(`WebSocket server running on ws://${hostForUrl}:${PORT}`);
+    const port = (server.address() as net.AddressInfo).port;
+    // The record is written only after listen succeeds, so a server that never
+    // came up leaves nothing behind.
+    try {
+      sessionRecord = claimSessionRecord({
+        port,
+        projectRoot: PROJECT_ROOT,
+        pid: process.pid,
+        startedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      logger.error('Failed to write the canvas session record:', error);
+      process.exit(1);
+    }
+    logger.info(`Canvas session ${sessionRecord.key} running on http://${formatHostForUrl(HOST)}:${port} for ${PROJECT_ROOT}`);
 
-    // Written only after listen succeeds so stale files can't shadow a
-    // server that never came up; lets `excalidraw-canvas stop` find us.
-    writePidFile(PORT, process.pid);
-    ownsPidFile = true;
+    if (process.send) {
+      const ready: CanvasReadyMessage = { type: 'canvas-ready', record: sessionRecord };
+      process.send(ready, () => {
+        if (process.connected) process.disconnect();
+      });
+    }
+    updateIdleTimer();
   });
 
-  const shutdown = (signal: NodeJS.Signals): void => {
-    logger.info(`Received ${signal}, shutting down canvas server`);
-    if (ownsPidFile) removePidFile(PORT);
-    server.close(() => process.exit(0));
-    // Force-exit if open sockets keep the server from closing promptly
-    setTimeout(() => process.exit(0), 2000).unref();
-  };
   process.on('SIGTERM', () => shutdown('SIGTERM'));
   process.on('SIGINT', () => shutdown('SIGINT'));
   process.on('exit', () => {
-    if (ownsPidFile) removePidFile(PORT);
+    if (sessionRecord) removeSessionRecord(sessionRecord.key);
   });
 }
 
 // Start the canvas server only when this file is the process entry point
-// (`node dist/server.js`, `npm run canvas`, or spawned by the CLI/MCP
-// auto-start). Importing this module must never start the server.
+// (spawned by `session start` / `session_start`). Importing this module must
+// never start the server.
 if (isMainModule(import.meta.url)) {
   void startServer();
 }

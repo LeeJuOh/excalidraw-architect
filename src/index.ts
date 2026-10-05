@@ -8,9 +8,7 @@ import { serveStdio } from '@modelcontextprotocol/server/stdio';
 import type { StdioServerHandle } from '@modelcontextprotocol/server/stdio';
 import logger from './utils/logger.js';
 import { isMainModule } from './core/entry.js';
-import { ENABLE_CANVAS_SYNC, EXCALIDRAW_NO_AUTOSTART } from './core/config.js';
 import { excalidrawMcpServerFactory } from './core/mcp-server.js';
-import { ensureCanvasReadyForMcpTool } from './core/canvas-state.js';
 import { canvasGuide } from './core/canvas-guide.js';
 
 // Start server
@@ -33,15 +31,6 @@ async function runServer(): Promise<StdioServerHandle> {
     });
 
     logger.info('Excalidraw MCP server running on stdio');
-
-    // Kick off auto-start after the stdio transport is connected so the MCP
-    // handshake stays fast. Canvas-backed tools await the same promise before
-    // touching HTTP, which avoids a first-tool race.
-    if (ENABLE_CANVAS_SYNC && !EXCALIDRAW_NO_AUTOSTART) {
-      void ensureCanvasReadyForMcpTool().catch(error => {
-        logger.warn('Canvas auto-start failed:', (error as Error).message);
-      });
-    }
 
     process.stdin.resume();
 

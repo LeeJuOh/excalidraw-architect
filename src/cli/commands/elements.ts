@@ -9,7 +9,6 @@ import {
   getElements,
   searchElements
 } from '../../core/canvas-client.js';
-import { ensureCanvasRunning } from '../../core/spawn.js';
 import { ServerElement } from '../../types.js';
 
 // apply: primary mutation command — {create:[], update:[], delete:[]} in one
@@ -44,7 +43,6 @@ export async function apply(argv: string[]): Promise<void> {
     throw new CliUsageError('Patch has no create/update/delete operations');
   }
 
-  await ensureCanvasRunning();
 
   let created: ServerElement[] = [];
   if (patch.create?.length) {
@@ -97,7 +95,6 @@ export async function add(argv: string[]): Promise<void> {
     elements = Array.isArray(input) ? input : [input];
   }
 
-  await ensureCanvasRunning();
   const created = await batchCreateElementsStrict(elements.map(el => prepareElement(el)));
   printJson({ success: true, count: created.length, elements: created });
 }
@@ -118,7 +115,6 @@ export async function update(argv: string[]): Promise<void> {
     updates = await readJsonInput(positionals[1], 'updates');
   }
 
-  await ensureCanvasRunning();
   // Fetch the real type so text→label conversion skips text elements
   const existing = await getElementStrict(id);
   const element = await updateElementStrict(prepareElementUpdate(id, updates, existing.type));
@@ -129,7 +125,6 @@ export async function del(argv: string[]): Promise<void> {
   const { positionals } = parseArgs(argv, {});
   if (positionals.length === 0) throw new CliUsageError('Usage: delete <id> [<id> ...]');
 
-  await ensureCanvasRunning();
   for (const id of positionals) {
     await deleteElementStrict(id);
   }
@@ -141,7 +136,6 @@ export async function get(argv: string[]): Promise<void> {
   const id = positionals[0];
   if (!id) throw new CliUsageError('Usage: get <id>');
 
-  await ensureCanvasRunning();
   printJson(await getElementStrict(id));
 }
 
@@ -167,7 +161,6 @@ export async function query(argv: string[]): Promise<void> {
     'filter-json': { takesValue: true }
   });
 
-  await ensureCanvasRunning();
 
   // type + bbox filter server-side via the search endpoint
   const queryParams = new URLSearchParams();

@@ -7,8 +7,8 @@ import {
   ServerElement,
   ExcalidrawElementType
 } from '../types.js';
-import { EXPRESS_SERVER_URL } from './config.js';
 import {
+  canvasUrl,
   updateElementOnCanvas,
   deleteElementOnCanvas,
   getElementFromCanvas,
@@ -37,7 +37,8 @@ import { buildSceneFile, importScene } from './scene-io.js';
 import { wrapSceneAsObsidianMd } from './obsidian-md.js';
 import { describeScene } from './describe.js';
 import { exportToExcalidrawUrl } from './share-url.js';
-import { sceneState, ensureCanvasReadyForMcpTool, toolNeedsCanvasBeforeDispatch } from './canvas-state.js';
+import { sceneState, toolNeedsCanvasBeforeDispatch } from './canvas-state.js';
+import { isSessionTool, callSessionTool, requireAttachedCanvas } from './mcp-session.js';
 
 // Points schema: accept both {x, y} objects and [x, y] tuples
 const PointObjectSchema = z.object({ x: z.number(), y: z.number() });
@@ -123,8 +124,11 @@ export async function callExcalidrawTool(
   try {
     logger.info(`Handling tool call: ${name}`);
 
+    if (isSessionTool(name)) {
+      return await callSessionTool(name, args);
+    }
     if (toolNeedsCanvasBeforeDispatch(name)) {
-      await ensureCanvasReadyForMcpTool();
+      requireAttachedCanvas();
     }
     
     switch (name) {
@@ -254,7 +258,7 @@ export async function callExcalidrawTool(
           case 'library':
           case 'elements':
             try {
-              await ensureCanvasReadyForMcpTool();
+              requireAttachedCanvas();
               // Get elements from HTTP server
               result = {
                 elements: await getElements()
@@ -401,7 +405,7 @@ export async function callExcalidrawTool(
           return {
             content: [{
               type: 'text',
-              text: `Mermaid diagram sent for conversion!\n\n${JSON.stringify(result, null, 2)}\n\n⚠️  Note: The actual conversion happens in the frontend canvas with DOM access. Open the canvas at ${EXPRESS_SERVER_URL} to see the diagram rendered.`
+              text: `Mermaid diagram sent for conversion!\n\n${JSON.stringify(result, null, 2)}\n\n⚠️  Note: The actual conversion happens in the frontend canvas with DOM access. Open the canvas at ${canvasUrl()} to see the diagram rendered.`
             }]
           };
         } catch (error) {

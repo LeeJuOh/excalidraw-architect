@@ -20,12 +20,23 @@ plan.
 
 Look at your tool list. If it has archdraw tools — `batch_create_elements`,
 `get_canvas_screenshot`, `export_scene`, and the rest — this skill is fully
-served by them. Do not run any shell command from this skill. The server is
+served by them. Do not run any shell command from this skill. The MCP server is
 already running: the host started it when it connected the tools.
 
-- The canvas lives at `http://127.0.0.1:3000` (or `EXPRESS_SERVER_URL`). Your
-  first tool call opens the canvas session; tell the user that URL and ask them
-  to open it in a browser once.
+- **Open a canvas session on the first turn.** Before any drawing tool, call
+  `session_start` with `projectPath` set to the absolute path of the project
+  you are working in. Pass it every time: the server cannot tell the project
+  from its own folder, and the project root it finds there (the git root) is
+  where evidence and snapshots belong. Each conversation gets its own canvas,
+  so two conversations in one folder never draw over each other.
+- Tell the user the URL that comes back and ask them to open it in a browser
+  once. The tab title shows the session key.
+- If the result names other live canvas sessions in this project, tell the user
+  in one line and carry on with the new one — do not ask. When the user says
+  they want one of those, call `session_attach` with its key.
+- If a drawing tool says no canvas session is attached, this conversation has
+  no canvas any more (it was ended, its server stopped, or the host started a
+  new MCP process). Call `session_start` again and give the user the new URL.
 - Create elements as a batch with `batch_create_elements`.
 - Look at what you drew with `get_canvas_screenshot` before telling the user it
   is done. It needs an open browser tab; if it reports no client connected, ask
@@ -244,6 +255,12 @@ unsaved, plus the last snapshot. Do not count or remember it yourself: the
 value comes from the server. Do not ask whether to save. When the user says
 they are done, and some diagram is unsaved or modified since its save, ask
 once whether to save, then call `session_end` (`session end`).
+
+`session_end` with a key ends a canvas session other than yours. Do that only
+when the user asks for that session — another conversation may be drawing on
+it. A canvas session also ends by itself 30 minutes after the last attached
+conversation and the last open browser tab are gone, and its unsaved drawings
+go with it.
 
 ## 11. Two modes
 
