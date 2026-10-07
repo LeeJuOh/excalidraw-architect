@@ -45,7 +45,7 @@ export const tools: Tool[] = [
   },
   {
     name: 'create_element',
-    description: 'Create a new Excalidraw element. For arrows, use startElementId/endElementId to bind to shapes (auto-routes to edges).',
+    description: 'Create a new Excalidraw element. For arrows, use startElementId/endElementId to bind to shapes (auto-routes to edges). A drawing is a frame: create {type: "frame", name: "<title>"} and give each child frameId = the frame id. A frame without width/height takes the range of its children plus 40, so it needs children in the same batch. The frame grows when a child lands outside it; moving it moves its children; deleting it deletes them.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -67,6 +67,8 @@ export const tools: Tool[] = [
         text: { type: 'string' },
         fontSize: { type: 'number' },
         fontFamily: { type: ['string', 'number'], description: 'Font family: virgil/hand/handwritten (1), helvetica/sans/sans-serif (2), cascadia/mono/monospace (3), excalifont (5), nunito (6), lilita/lilita one (7), comic shanns/comic (8), or numeric ID' },
+        frameId: { type: ['string', 'null'], description: 'ID of the frame (drawing) this element belongs to. The frame must exist or be in the same batch. null takes the element out of its frame.' },
+        name: { type: 'string', description: 'For frames: the drawing title shown on the frame' },
         startElementId: { type: 'string', description: 'For arrows: ID of the element to bind the arrow start to. Arrow auto-routes to element edge.' },
         endElementId: { type: 'string', description: 'For arrows: ID of the element to bind the arrow end to. Arrow auto-routes to element edge.' },
         endArrowhead: { type: 'string', description: 'Arrowhead style at end: arrow, bar, dot, triangle, or null' },
@@ -98,14 +100,16 @@ export const tools: Tool[] = [
         opacity: { type: 'number' },
         text: { type: 'string' },
         fontSize: { type: 'number' },
-        fontFamily: { type: ['string', 'number'], description: 'Font family: virgil/hand/handwritten (1), helvetica/sans/sans-serif (2), cascadia/mono/monospace (3), excalifont (5), nunito (6), lilita/lilita one (7), comic shanns/comic (8), or numeric ID' }
+        fontFamily: { type: ['string', 'number'], description: 'Font family: virgil/hand/handwritten (1), helvetica/sans/sans-serif (2), cascadia/mono/monospace (3), excalifont (5), nunito (6), lilita/lilita one (7), comic shanns/comic (8), or numeric ID' },
+        frameId: { type: ['string', 'null'], description: 'ID of the frame (drawing) this element belongs to. The frame must exist or be in the same batch. null takes the element out of its frame.' },
+        name: { type: 'string', description: 'For frames: the drawing title shown on the frame' }
       },
       required: ['id']
     }
   },
   {
     name: 'delete_element',
-    description: 'Delete an Excalidraw element',
+    description: 'Delete an Excalidraw element. Deleting a frame also deletes the elements in it.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -281,7 +285,7 @@ export const tools: Tool[] = [
   },
   {
     name: 'batch_create_elements',
-    description: 'Create multiple Excalidraw elements at once. For arrows, use startElementId/endElementId to bind arrows to shapes — Excalidraw auto-routes to element edges. Assign custom id to shapes so arrows can reference them.',
+    description: 'Create multiple Excalidraw elements at once. For arrows, use startElementId/endElementId to bind arrows to shapes — Excalidraw auto-routes to element edges. Assign custom id to shapes so arrows can reference them. A drawing is a frame: create {type: "frame", name: "<title>"} and give each child frameId = the frame id. A frame without width/height takes the range of its children plus 40, so it needs children in the same batch. The frame grows when a child lands outside it; moving it moves its children; deleting it deletes them. One invalid frameId rejects the whole batch.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -308,6 +312,8 @@ export const tools: Tool[] = [
               text: { type: 'string' },
               fontSize: { type: 'number' },
               fontFamily: { type: ['string', 'number'], description: 'Font family: virgil/hand/handwritten (1), helvetica/sans/sans-serif (2), cascadia/mono/monospace (3), excalifont (5), nunito (6), lilita/lilita one (7), comic shanns/comic (8), or numeric ID' },
+              frameId: { type: ['string', 'null'], description: 'ID of the frame (drawing) this element belongs to. The frame must exist or be in the same batch. null takes the element out of its frame.' },
+              name: { type: 'string', description: 'For frames: the drawing title shown on the frame' },
               startElementId: { type: 'string', description: 'For arrows: ID of element to bind arrow start to' },
               endElementId: { type: 'string', description: 'For arrows: ID of element to bind arrow end to' },
               endArrowhead: { type: 'string', description: 'Arrowhead style at end: arrow, bar, dot, triangle, or null' },
@@ -445,7 +451,7 @@ export const tools: Tool[] = [
   },
   {
     name: 'describe_scene',
-    description: 'Get an AI-readable description of the current canvas: element types, positions, connections, labels, spatial layout, and bounding box. Use this to understand what is on the canvas before making changes.',
+    description: 'Get an AI-readable description of the current canvas: element types, positions, connections, labels, spatial layout, and bounding box. Elements are grouped by drawing (frame) with a count per frame; elements in no frame are listed last. Use this to understand what is on the canvas before making changes.',
     inputSchema: {
       type: 'object',
       properties: {}

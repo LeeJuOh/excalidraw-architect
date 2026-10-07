@@ -76,6 +76,10 @@ export interface SyncResponse {
 }
 
 // Helper functions to sync with Express server (canvas)
+// The canvas answered and refused the request (e.g. an invalid frameId): the
+// agent needs the reason, not "HTTP server unavailable".
+class CanvasRejectedError extends Error {}
+
 export async function syncToCanvas(operation: string, data: any): Promise<SyncResponse | null> {
   if (!ENABLE_CANVAS_SYNC) {
     logger.debug('Canvas sync disabled, skipping');
@@ -134,13 +138,15 @@ export async function syncToCanvas(operation: string, data: any): Promise<SyncRe
 
     if (!response.ok) {
       logger.warn(`Canvas sync returned error status: ${response.status}`, result);
-      throw new Error(result.error || `Canvas sync failed: ${response.status} ${response.statusText}`);
+      const message = result.error || `Canvas sync failed: ${response.status} ${response.statusText}`;
+      throw response.status === 400 ? new CanvasRejectedError(message) : new Error(message);
     }
 
     logger.debug(`Canvas sync successful: ${operation}`, result);
     return result as SyncResponse;
 
   } catch (error) {
+    if (error instanceof CanvasRejectedError) throw error;
     logger.warn(`Canvas sync failed for ${operation}:`, (error as Error).message);
     // Don't throw - we want MCP operations to work even if canvas is unavailable
     return null;

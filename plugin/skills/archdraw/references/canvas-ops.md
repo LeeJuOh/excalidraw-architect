@@ -62,6 +62,13 @@ Both interfaces take the same agent-friendly shape and normalise it:
   `guide://canvas` requires.
 - **Custom ids** — give shapes your own `"id"` (`"auth-svc"`) so you can bind
   arrows to them in the same call and update them later.
+- **Frame (one diagram)** — `{"id": "order-flow", "type": "frame", "name":
+  "<the question this diagram answers>"}`, and every element of the diagram
+  carries `"frameId": "order-flow"`. Send the frame with its children in one
+  batch; without `width`/`height` it takes their range plus 40. The server
+  grows the frame when a child lands outside it, moves the children when the
+  frame moves, and deletes them with the frame. A `frameId` that names no
+  frame, or a frame inside a frame, rejects the whole batch.
 - **Diagram reference** — a box that zooms into another diagram carries
   `"link": "?element=<target frame id>"`.
 - **Evidence** — `"evidence": {"tag": "code"|"design"|"log", "path": ..., "line": ...}`.

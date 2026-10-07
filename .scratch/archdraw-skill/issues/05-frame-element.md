@@ -27,7 +27,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** resolved (2026-10-08 — 인수 16개 통과, 2개 일부. 결과는 맨 아래 "슬라이스 A 결과")
 
 규칙:
 
@@ -43,24 +43,24 @@
 
 인수:
 
-- [ ] CLI로 frame 하나와 자식 박스 둘을 만들면 브라우저에 이름 붙은 frame 안에 박스가 보인다. 스크린샷에도 frame의 이름과 테두리가 그려진다(프론트는 `exportToBlob`에 화면의 appState를 그대로 넘긴다 — 가정하지 말고 먼저 확인한다)
+- [x] CLI로 frame 하나와 자식 박스 둘을 만들면 브라우저에 이름 붙은 frame 안에 박스가 보인다. 스크린샷에도 frame의 이름과 테두리가 그려진다(프론트는 `exportToBlob`에 화면의 appState를 그대로 넘긴다 — 가정하지 말고 먼저 확인한다)
 - [ ] MCP `batch_create_elements` 한 번으로 `name`이 있는 frame과 `frameId`가 그 frame인 박스 둘을 만들면 요소 데이터에 `name`과 `frameId`가 남고 브라우저에 같은 결과가 보인다
-- [ ] 없는 id, 박스의 id, frame 안의 frame을 `frameId`로 주면 서버가 거부하고 에러에 그 id가 있다. batch 안에 하나라도 있으면 전체가 거부되고 아무것도 안 만들어진다. frame이 자식 뒤에 오는 batch는 통과한다. 캔버스는 멈추지 않는다
-- [ ] 크기도 자식도 없는 frame을 만들면 서버가 거부하고, 에러에 크기 또는 자식을 넣으라는 말이 있다. 캔버스는 멈추지 않는다
-- [ ] 크기 없이 만든 frame이 자식 범위 + 여백 40의 크기를 가진다
-- [ ] frame 경계 밖 좌표로 자식을 넣으면 frame이 자식을 포함하도록 커지고, 자식 좌표는 그대로다. 커진 뒤 자식과 테두리 사이가 40 이상이다. 이미 안에 있는 자식을 다시 넣으면 frame 크기가 안 바뀐다(테두리와 40보다 가까워도)
-- [ ] `update_element`로 자식을 frame 밖 좌표로 옮기면 frame이 커지고 스크린샷에서 자식이 잘리지 않는다
-- [ ] frame 오른쪽 끝 가까이에 `width` 없는 긴 한글 텍스트(예: "안 그림: …" 20자)를 넣으면 frame이 추정 폭만큼 커지고, 브라우저 스크린샷에서 글자가 잘리지 않는다. 화살표의 꺾인 점이 frame 밖이면 그만큼 커진다
+- [x] 없는 id, 박스의 id, frame 안의 frame을 `frameId`로 주면 서버가 거부하고 에러에 그 id가 있다. batch 안에 하나라도 있으면 전체가 거부되고 아무것도 안 만들어진다. frame이 자식 뒤에 오는 batch는 통과한다. 캔버스는 멈추지 않는다
+- [x] 크기도 자식도 없는 frame을 만들면 서버가 거부하고, 에러에 크기 또는 자식을 넣으라는 말이 있다. 캔버스는 멈추지 않는다
+- [x] 크기 없이 만든 frame이 자식 범위 + 여백 40의 크기를 가진다
+- [x] frame 경계 밖 좌표로 자식을 넣으면 frame이 자식을 포함하도록 커지고, 자식 좌표는 그대로다. 커진 뒤 자식과 테두리 사이가 40 이상이다. 이미 안에 있는 자식을 다시 넣으면 frame 크기가 안 바뀐다(테두리와 40보다 가까워도)
+- [x] `update_element`로 자식을 frame 밖 좌표로 옮기면 frame이 커지고 스크린샷에서 자식이 잘리지 않는다
+- [x] frame 오른쪽 끝 가까이에 `width` 없는 긴 한글 텍스트(예: "안 그림: …" 20자)를 넣으면 frame이 추정 폭만큼 커지고, 브라우저 스크린샷에서 글자가 잘리지 않는다. 화살표의 꺾인 점이 frame 밖이면 그만큼 커진다
 - [ ] `update_element`로 frame의 `x`·`y`를 바꾸면 자식 박스와 화살표가 같은 만큼 움직이고, 브라우저에서 frame을 끌었을 때와 같은 모양이다. frame의 `width`를 자식 범위보다 작게 주면 자식 범위 + 여백 40에서 멈춘다
-- [ ] `align_elements`로 frame 안 박스를 정렬해 하나가 경계 밖으로 나가면 frame이 커진다(REST를 거치므로 같은 규칙)
-- [ ] 브라우저에서 frame을 끌면 자식이 같이 움직이고, `describe` 좌표가 그걸 반영한다
-- [ ] 자식이 있는 frame을 서버 경로로 지우면 자식도 없어지고, 다른 frame과 그 자식은 그대로이며, 브라우저가 에러 없이 갱신된다
-- [ ] `describe` 출력에서 어떤 요소가 어느 그림(frame)에 속하는지 읽히고, frame마다 요소 수가 있다
-- [ ] frame 둘과 어느 frame에도 없는 요소 하나가 있을 때 `describe`의 맨 끝 "frame 밖" 묶음에 그 요소가 나온다
-- [ ] frame 안에 라벨 있는 박스 둘을 만들고 브라우저에서 박스 하나를 살짝 옮겨 동기화시킨 뒤, 서버 데이터에서 두 라벨 텍스트의 `frameId`가 박스와 같고, `describe`의 그 frame 요소 수가 동기화 전후 같으며(라벨은 세지 않는다), "frame 밖" 묶음에 라벨이 없다
-- [ ] export한 `.excalidraw`를 excalidraw.com에서 열면 frame이 유지된다. 파일 안에서 frame 안 박스의 라벨 텍스트의 `frameId`가 박스와 같다
-- [ ] `canvas-ops.md`의 Element format과 MCP 툴 설명에 frame 만드는 법(`type: "frame"`, `name`, 자식의 `frameId`)이 있다
-- [ ] 기존 `npm test` 통과
+- [x] `align_elements`로 frame 안 박스를 정렬해 하나가 경계 밖으로 나가면 frame이 커진다(REST를 거치므로 같은 규칙)
+- [x] 브라우저에서 frame을 끌면 자식이 같이 움직이고, `describe` 좌표가 그걸 반영한다
+- [x] 자식이 있는 frame을 서버 경로로 지우면 자식도 없어지고, 다른 frame과 그 자식은 그대로이며, 브라우저가 에러 없이 갱신된다
+- [x] `describe` 출력에서 어떤 요소가 어느 그림(frame)에 속하는지 읽히고, frame마다 요소 수가 있다
+- [x] frame 둘과 어느 frame에도 없는 요소 하나가 있을 때 `describe`의 맨 끝 "frame 밖" 묶음에 그 요소가 나온다
+- [x] frame 안에 라벨 있는 박스 둘을 만들고 브라우저에서 박스 하나를 살짝 옮겨 동기화시킨 뒤, 서버 데이터에서 두 라벨 텍스트의 `frameId`가 박스와 같고, `describe`의 그 frame 요소 수가 동기화 전후 같으며(라벨은 세지 않는다), "frame 밖" 묶음에 라벨이 없다
+- [x] export한 `.excalidraw`를 excalidraw.com에서 열면 frame이 유지된다. 파일 안에서 frame 안 박스의 라벨 텍스트의 `frameId`가 박스와 같다
+- [x] `canvas-ops.md`의 Element format과 MCP 툴 설명에 frame 만드는 법(`type: "frame"`, `name`, 자식의 `frameId`)이 있다
+- [x] 기존 `npm test` 통과
 
 ## 슬라이스 B — 그림 참조 링크와 클릭 이동
 
@@ -137,50 +137,31 @@
 - 2026-10-05 그릴: frame 삭제, 자동 확장 범위, 기본 글꼴 Nunito, `describe`의 frame 밖 묶음.
 - 2026-10-06~07 그릴(착수 전 검수에서 나온 8개): Q1 잘못된 `frameId` 거부 / Q2 빈 frame 거부 / Q3 링크 클릭 이동은 프론트 `onLinkOpen`(시연으로 확인, ADR-0008 정정) / Q4 frame 이동은 자식 동반 / Q5 자식 범위 추정 / Q6 라벨 `frameId`를 프론트가 채움(06에 전달) / Q7 mermaid 범위 밖 / Q8 글자 크기 기본값 서버.
 - 그릴에서 통한 것: 말로만 설명한 Q3는 세 번 되물었다. 캔버스에 예시를 그리고 동작을 실제로 띄워 보여 주니 바로 결정됐다. 용어(frame, 서버 경로, 라벨)는 먼저 한 줄로 풀고 묻는다. 긴 보고는 거부된다 — 표 하나와 질문 하나.
+- 2026-10-08 슬라이스 A 구현 중 업스트림 결함 발견, 사용자 결정으로 이 슬라이스에서 고침: 서버 경로로 라벨 박스를 수정하면 화면이 라벨 텍스트를 하나 더 만든다(동기화 뒤 서버 데이터에 같은 `containerId` 텍스트 2개). 서버 라벨 글자 변경은 화면에 안 보였다. frame 없는 박스로 재현, 원인 코드는 업스트림 스냅샷과 같다.
 
-## 핸드오프 — 구현 시작 전 (2026-10-07)
+## 슬라이스 A 결과 (2026-10-08)
 
-### Goal
+| 인수 | 결과 | 근거 |
+|---|---|---|
+| CLI frame + 박스 둘, 스크린샷에 이름·테두리 | 통과 | 브라우저, CLI `screenshot`. `exportToBlob`에 화면 appState 그대로 넘김 확인 |
+| MCP batch로 `name`·`frameId` 유지, 브라우저 같은 결과 | 일부 | `check-frames` MCP stdio 케이스(실제 `dist`). 실제 호스트(`ARCHDRAW_BIN`)에서는 미확인 → 02 |
+| 틀린 `frameId` 거부, batch 전체 거부, 순서 무관, 캔버스 안 멈춤 | 통과 | `check-frames` + 실세션 REST 거부 뒤 브라우저 경고 없음·동기화 정상 |
+| 빈 frame 거부 | 통과 | 위와 같음. PUT으로 자식 없는 frame 크기를 0으로 만드는 것도 거부 |
+| 크기 없는 frame = 자식 범위 + 40 | 통과 | 테스트 + 브라우저 |
+| 경계 밖 자식 → 확장, 안쪽은 불변 | 통과 | 테스트 + 스크린샷 |
+| `update`로 자식 밖으로 → 확장, 안 잘림 | 통과 | 스크린샷 |
+| 긴 한글 텍스트·화살표 꺾인 점 | 통과 | 스크린샷, 테스트. 텍스트 글자 변경도 추정 폭으로 확장(테스트) |
+| `update`로 frame `x`·`y` → 자식 동반, 폭 clamp | 일부 | 테스트 + 스크린샷. "브라우저에서 끌었을 때와 같은 모양" 나란히 비교는 안 함 |
+| `align`으로 밖 → 확장 | 통과 | CLI `arrange align` 뒤 `describe` |
+| 브라우저에서 frame 끌기 → 자식 동반, `describe` 반영 | 통과 | 브라우저 드래그 뒤 서버 데이터·`describe` |
+| 서버 경로 frame 삭제 → 자식 삭제, 다른 frame 유지, 브라우저 에러 없음 | 통과 | 테스트(알림 순서: 라벨 → 박스 → frame) + 실세션 삭제 뒤 경고 없음·동기화 정상 |
+| `describe` frame별 묶음·요소 수 | 통과 | 테스트 + 실데이터 |
+| frame 밖 묶음 맨 끝 | 통과 | 테스트 + 실데이터 |
+| 라벨 `frameId` 동기화 전후 | 통과 | 실세션 frame `lf`: 브라우저 드래그 전후 요소 수 2, 라벨 `frameId` = `lf`, frame 밖 묶음에 라벨 없음 |
+| export → excalidraw.com에서 frame 유지, 라벨 `frameId` | 통과 | export 파일의 라벨 `frameId` = 박스. excalidraw.com에 끌어 놓아 frame·박스 표시 확인 뒤 되돌림 |
+| `canvas-ops.md`·툴 설명에 frame 만드는 법 | 통과 | 파일 확인 |
+| 기존 `npm test` | 통과 | `npm test` 전체(`check-frames` 13개), `npm run test:canvas` 16개, 타입 검사 둘 |
 
-이 이슈의 슬라이스 A(frame) → B(link 이동) → C(글꼴·크기)를 구현한다. 결정은 이 문서 본문에 다 있다. 구현 중 새 규칙을 만들지 않는다.
+라벨 중복 수정: 서버는 라벨을 바꾸지 않은 수정에서 `label`을 화면에 보내지 않고, 바뀐 라벨은 저장된 옛 라벨 텍스트를 지운다. 프론트 `reconcileAgentLabels`는 같은 라벨이면 버리고 다른 라벨이면 옛 텍스트를 바꾼다(재로드 경로). 회귀 테스트: `tests/browser/scene-reload.spec.mjs` 마지막, `check-frames`의 라벨 케이스.
 
-### First Action
-
-슬라이스 A를 시작한다. 이 파일의 "슬라이스 A — frame" 절을 읽고, 첫 작업은 **타입과 스키마**다: `src/types.ts`의 요소 타입 목록에 `frame`을 더하고, `src/core/mcp-dispatch.ts`의 zod `ElementSchema`와 `src/core/mcp-tools.ts`의 툴 JSON 스키마에 `frameId`·`name`을 연다. 끝나면 A의 첫 두 인수(CLI로 frame + 박스 둘 / MCP batch로 같은 것)를 실제 캔버스로 확인한다. 확인은 `npm run build` 뒤 `ARCHDRAW_BIN=<레포>/dist/bin.js`를 둔 셸에서 호스트를 다시 띄워서 한다 — 비어 있으면 npm 게시본(0.1.1)이 돌아 고친 코드가 안 보인다. `/mattpocock-skills:tdd`로 서버 규칙(검사·자동 확장·삭제)에 테스트를 먼저 두면 좋다.
-
-### Context
-
-2026-10-07 세션은 결정만 했고 서버 코드는 한 줄도 안 바꿨다. 사용자는 긴 보고를 거부하고, 용어(frame, 서버 경로, 라벨, 링크 아이콘)를 말로만 설명하면 되묻는다. 캔버스에 예시를 그리고 실제로 띄워 보여 주는 쪽이 통했다. 구현 중 사용자에게 보여 줄 때도 같은 방식으로 한다.
-
-### Current Progress (git 기준)
-
-브랜치 `main`, 작업 트리 깨끗함. 마지막 커밋 `5290f84` — 이 이슈를 슬라이스 A·B·C로 재작성, 이슈 06 한 줄, `spec.md`(7-6·줌 레벨 절·진행 순서·05 상태), ADR-0008 정정, `frontend/src/App.tsx`의 `onLinkOpen` 시연 코드(`PROTOTYPE` 주석, 슬라이스 B에서 주석만 정리하고 그대로 쓴다). 구현된 슬라이스: 없음. 인수 체크: 0개.
-
-### Decisions Made
-
-본문 각 슬라이스의 "규칙"과 `## Comments`의 Q1~Q8 요약. ADR: [0008](../../../docs/adr/0008-frame-is-the-drawing-unit.md)(frame, link 이동), [0010](../../../docs/adr/0010-server-reports-save-state-skill-never-asks.md)(서버는 묻지 않음), [0006](../../../docs/adr/0006-canvas-guide-single-source-via-mcp.md)(글꼴 이름은 `docs/canvas-guide.md`에).
-
-### What Worked
-
-- 결정이 막히면 캔버스에 예시를 그린다(`batch_create_elements`), 동작이 필요하면 레포 코드를 고쳐 띄워 사용자가 직접 눌러 보게 한다. Q3는 이걸로 바로 끝났다.
-- 세션 간 캔버스 복사: 게시본(3000)의 `GET /api/elements` 결과를 `{elements, timestamp}`로 감싸 새 세션의 `POST /api/elements/sync`에 보내면 된다.
-- REST `PUT /api/elements/:id`는 `.passthrough()`라 `link` 같은 미지원 칸도 통과한다. MCP 툴은 버린다. 스키마 확인은 이 차이로 실측했다.
-
-### What Didn't Work
-
-- ⚠️ 자동 모드에서 npm 캐시(`~/.npm/_npx/…`)의 게시본 파일 교체와 `node dist/bin.js session start`가 권한 거부됐다. 서버를 띄워야 하면 사용자에게 `! npm run build:server && node dist/bin.js session start --project .`를 쳐 달라고 한다.
-- ⚠️ 지금 게시본 서버(3000)는 `label: {text}`를 버린다 — 박스를 만들어도 글자가 안 보인다(원인 미조사, 이 이슈의 글꼴 결함과 별개일 수 있다). 사용자에게 보여 줄 예시는 글자를 독립 `text` 요소로 따로 넣었다. 레포 코드에서 재현되면 슬라이스 C 1번과 같이 본다.
-- 스크린샷(`get_canvas_screenshot`)에 박스 라벨이 안 찍힌 것도 위와 같은 원인으로 보인다(미확인).
-
-### Infrastructure State
-
-- 포트 3000: npm 게시본 0.1.1 서버(플러그인 MCP가 붙어 있는 것). 로드맵 그림 + Q3 예시 그림이 있다.
-- 포트 54064: 레포 빌드 서버, 세션 키 `14abd4`, 기록 `~/.excalidraw-architect/sessions/14abd4.json`. `onLinkOpen` 시연본이 떠 있고 같은 그림이 복사돼 있다. 30분 유휴면 스스로 끝난다. 끝나 있으면 First Action의 명령으로 다시 띄운다.
-- `dist/`는 2026-10-07 빌드본(프론트 + 서버). 커밋하지 않는다.
-
-### Next Steps
-
-1. 슬라이스 A 나머지: `frameId` 검사 → 빈 frame 거부 → 자동 확장(자식 범위 추정 함수를 `expand-elements.ts`에서 빼냄) → frame 이동·크기 → 삭제(자식 먼저 알림) → 라벨 `frameId`(프론트 `prepareServerScene` + export) → `describe` 묶음 → `canvas-ops.md`·툴 설명. 인수 전부 확인하고 커밋.
-2. 슬라이스 B: MCP 스키마에 `link`, `App.tsx` 시연 코드 정리. 인수 확인, 커밋.
-3. 슬라이스 C: 라벨 글꼴 결함(4곳) → 기본값 서버 주입(글꼴 6, 크기 16/14) → 프론트 `currentItemFontFamily` → `docs/canvas-guide.md`·`canvas-ops.md`·툴 설명. 인수 확인, 커밋.
-4. 다 끝나면 `spec.md` 진행 순서 7번과 05 상태를 완료로, 06을 착수 가능으로 바꾼다.
+남은 위험: 사용자가 브라우저에서 라벨 글자를 고치고 자동 동기화 전에 에이전트가 같은 박스의 라벨을 바꾸면 에이전트 값이 이긴다.

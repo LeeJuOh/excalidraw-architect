@@ -1,4 +1,5 @@
 import { ServerElement, normalizeFontFamily } from '../types.js';
+import { estimateTextSize } from './frames.js';
 
 // Expand the server's agent-friendly element format into real Excalidraw
 // elements: strip server metadata, add Excalidraw defaults, generate bound
@@ -112,17 +113,15 @@ export function expandElementsForExport(
       base.originalText = text ?? '';
       base.fontSize = rest.fontSize ?? 20;
       // Agent-created text often has no dimensions (server stores null);
-      // third-party consumers clip width-less text, so estimate like the
-      // design guide does (~0.6×fontSize per char, 1.25 line height).
-      // Treat 0 as unmeasured, not just null/undefined: pre-2.0.0 headless
-      // creation stored width/height 0, and re-imported scenes carry it back
-      // into the store — zero-size text renders invisible in consumers that
-      // trust stored dimensions.
+      // third-party consumers clip width-less text, so estimate it the same
+      // way frame growth does. Treat 0 as unmeasured, not just
+      // null/undefined: pre-2.0.0 headless creation stored width/height 0,
+      // and re-imported scenes carry it back into the store — zero-size text
+      // renders invisible in consumers that trust stored dimensions.
       if (!base.width || !base.height) {
-        const lines = String(base.text).split('\n');
-        const longestLine = Math.max(1, ...lines.map((l: string) => l.length));
-        base.width = base.width || Math.ceil(longestLine * base.fontSize * 0.6);
-        base.height = base.height || Math.ceil(lines.length * base.fontSize * 1.25);
+        const estimate = estimateTextSize(base.text, base.fontSize);
+        base.width = base.width || estimate.width;
+        base.height = base.height || estimate.height;
       }
       base.fontFamily = normalizeFontFamily(rest.fontFamily) ?? 1;
       base.textAlign = rest.textAlign ?? 'center';
@@ -158,6 +157,11 @@ export function expandElementsForExport(
       base.startArrowhead = rest.startArrowhead ?? null;
       base.endArrowhead = rest.endArrowhead ?? (el.type === 'arrow' ? 'arrow' : null);
       base.elbowed = rest.elbowed ?? false;
+    }
+
+    if (el.type === 'frame') {
+      base.name = rest.name ?? null;
+      base.roundness = null;
     }
 
     // Generate a bound text element for `label`/`text` on shapes and arrows —
@@ -215,7 +219,9 @@ export function expandElementsForExport(
         roughness: 1,
         opacity: 100,
         groupIds: [],
-        frameId: null,
+        // Excalidraw's bindTextToContainer leaves a label's frameId null; the
+        // label belongs to its container's drawing.
+        frameId: base.frameId,
         index: `a${indexCounter++}`,
         roundness: null,
         seed: seedFor(`${textId}:seed`),

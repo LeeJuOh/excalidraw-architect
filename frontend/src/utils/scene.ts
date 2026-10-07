@@ -277,10 +277,50 @@ export const assertScenePreserved = (
   }
 }
 
-export const prepareServerScene = (
+// Excalidraw 0.18.1's bindTextToContainer leaves a label's frameId null. A
+// label belongs to its container's drawing, so the server gets it that way.
+export const withLabelFrameIds = <T extends Partial<ExcalidrawElement>>(elements: readonly T[]): T[] => {
+  const byId = new Map(elements.map(el => [el.id, el]))
+  return elements.map(element => {
+    if (element.type !== 'text' || !element.containerId) return element
+    const frameId = byId.get(element.containerId)?.frameId ?? null
+    return (element.frameId ?? null) === frameId ? element : { ...element, frameId }
+  })
+}
+
+// The server keeps an agent's `label` on a box after the box already has its
+// bound text, and convertToExcalidrawElements would add a second text for it.
+// An unchanged label is dropped; a changed one replaces the old text.
+export const reconcileAgentLabels = (
   elements: readonly Partial<ExcalidrawElement>[]
+): Partial<ExcalidrawElement>[] => {
+  const replaced = new Set<string>()
+  const reconciled = elements.map(element => {
+    const label = (element as { label?: Record<string, unknown> }).label
+    if (!label) return element
+    const texts = elements.filter(el => el.type === 'text' && (el as { containerId?: string | null }).containerId === element.id)
+    if (texts.length === 0) return element
+    const current = texts[0] as Record<string, unknown>
+    const unchanged = Object.entries(label).every(([key, value]) =>
+      current[key === 'text' ? 'originalText' : key] === value)
+    if (unchanged) {
+      const { label: _label, ...rest } = element as Partial<ExcalidrawElement> & { label?: unknown }
+      return rest
+    }
+    texts.forEach(text => replaced.add(text.id!))
+    return {
+      ...element,
+      boundElements: (element.boundElements ?? []).filter(bound => !replaced.has(bound.id)),
+    }
+  })
+  return reconciled.filter(element => !replaced.has(element.id!))
+}
+
+export const prepareServerScene = (
+  incoming: readonly Partial<ExcalidrawElement>[]
 ): ExcalidrawElement[] => {
-  if (!Array.isArray(elements)) throw new Error('Expected a scene element array')
+  if (!Array.isArray(incoming)) throw new Error('Expected a scene element array')
+  const elements = reconcileAgentLabels(incoming)
   const ids = new Set<string>()
   for (const element of elements) {
     if (!element || typeof element.id !== 'string' || !element.id ||

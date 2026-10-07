@@ -37,6 +37,14 @@ import {
   SessionRecord,
   CanvasReadyMessage
 } from './core/sessions.js';
+import {
+  assertFrameMembership,
+  assertFramesHaveContent,
+  clampFrameSize,
+  fitFrame,
+  frameMembers,
+  moveFrameMembers
+} from './core/frames.js';
 
 // Load environment variables
 dotenv.config();
@@ -173,6 +181,8 @@ const CreateElementSchema = z.object({
   versionNonce: z.number().optional(),
   updated: z.number().optional(),
   groupIds: z.array(z.string()).optional(),
+  frameId: z.string().nullable().optional(),
+  name: z.string().nullable().optional(),
   locked: z.boolean().optional(),
   roundness: z.object({ type: z.number(), value: z.number().optional() }).nullable().optional(),
   fillStyle: z.string().optional(),
@@ -239,6 +249,8 @@ const UpdateElementSchema = z.object({
   versionNonce: z.number().optional(),
   updated: z.number().optional(),
   groupIds: z.array(z.string()).optional(),
+  frameId: z.string().nullable().optional(),
+  name: z.string().nullable().optional(),
   locked: z.boolean().optional(),
   roundness: z.object({ type: z.number(), value: z.number().optional() }).nullable().optional(),
   fillStyle: z.string().optional(),
@@ -302,23 +314,8 @@ app.post('/api/elements', (req: Request, res: Response) => {
     const params = CreateElementSchema.parse(req.body);
     logger.info('Creating element via API', { type: params.type });
 
-    // Prioritize passed ID (for MCP sync), otherwise generate new ID
-    const id = params.id || generateId();
-    const element: ServerElement = {
-      id,
-      ...params,
-      fontFamily: normalizeFontFamily(params.fontFamily),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      version: 1
-    };
-
-    // Resolve arrow bindings against existing elements
-    if (element.type === 'arrow' || element.type === 'line') {
-      resolveArrowBindings([element]);
-    }
-
-    elements.set(id, element);
+    const element = buildCreatedElement(params);
+    const grownFrames = storeCreatedElements([element]);
 
     // Broadcast to all connected clients
     const message: ElementCreatedMessage = {
@@ -326,6 +323,7 @@ app.post('/api/elements', (req: Request, res: Response) => {
       element: element
     };
     broadcast(message);
+    broadcastUpdated(grownFrames);
 
     res.json({
       success: true,
@@ -370,6 +368,48 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
       version: (existingElement.version || 0) + 1
     };
 
+    const touches = (keys: string[]): boolean =>
+      keys.some(key => Object.prototype.hasOwnProperty.call(body, key));
+    if (touches(['frameId']) || updatedElement.type === 'frame') {
+      assertFrameMembership([updatedElement], elements);
+    }
+
+    const movedMembers: ServerElement[] = [];
+    if (updatedElement.type === 'frame') {
+      const members = frameMembers(id, elements);
+      if (touches(['width', 'height'])) {
+        clampFrameSize(updatedElement, members);
+        assertFramesHaveContent([updatedElement, ...members]);
+      }
+      const dx = updatedElement.x - existingElement.x;
+      const dy = updatedElement.y - existingElement.y;
+      if (dx !== 0 || dy !== 0) {
+        moveFrameMembers(members, dx, dy, updatedElement.updatedAt!);
+        movedMembers.push(...members);
+      }
+    }
+
+    // A browser-measured size belongs to the old text; without it the frame
+    // grows by the estimate until the browser measures again.
+    if (updatedElement.type === 'text' && !updatedElement.containerId &&
+        touches(['text', 'fontSize']) && !touches(['width', 'height'])) {
+      delete updatedElement.width;
+      delete updatedElement.height;
+    }
+
+    // A changed label replaces the stored label text, or export and describe
+    // would keep showing the old text until the next browser sync.
+    if (touches(['label']) && updatedElement.label) {
+      const staleTexts = [...elements.values()].filter(el =>
+        el.type === 'text' && el.containerId === id &&
+        (el.originalText ?? el.text) !== updatedElement.label!.text);
+      for (const text of staleTexts) elements.delete(text.id);
+      if (staleTexts.length > 0 && Array.isArray(updatedElement.boundElements)) {
+        const staleIds = new Set(staleTexts.map(el => el.id));
+        updatedElement.boundElements = updatedElement.boundElements.filter(b => !staleIds.has(b.id));
+      }
+    }
+
     // Keep Excalidraw text source in sync when clients update text via REST.
     // If originalText lags behind text, rendered wrapping/position can drift.
     const hasTextUpdate = Object.prototype.hasOwnProperty.call(body, 'text');
@@ -399,18 +439,23 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
     // Broadcast to all connected clients
     const message: ElementUpdatedMessage = {
       type: 'element_updated',
-      element: updatedElement
+      element: touches(['label']) ? updatedElement : withoutLabel(updatedElement)
     };
     broadcast(message);
 
     // Moving/resizing a shape must drag its bound arrows along
-    const geometryChanged = ['x', 'y', 'width', 'height']
-      .some(key => Object.prototype.hasOwnProperty.call(body, key));
+    const geometryChanged = touches(['x', 'y', 'width', 'height']);
+    const moved = new Map<string, ServerElement>(movedMembers.map(el => [el.id, el]));
     if (geometryChanged && updatedElement.type !== 'arrow' && updatedElement.type !== 'line') {
-      for (const arrow of rerouteBoundArrows(id)) {
-        broadcast({ type: 'element_updated', element: arrow } as ElementUpdatedMessage);
+      for (const movedId of [id, ...movedMembers.map(el => el.id)]) {
+        for (const arrow of rerouteBoundArrows(movedId)) moved.set(arrow.id, arrow);
       }
     }
+    broadcastUpdated([...moved.values()]);
+
+    const resized = [...moved.values()];
+    if (updatedElement.type !== 'frame' && touches(FRAME_FIT_KEYS)) resized.push(updatedElement);
+    broadcastUpdated(growFramesOf(resized));
 
     res.json({
       success: true,
@@ -464,25 +509,33 @@ app.delete('/api/elements/:id', (req: Request, res: Response) => {
       });
     }
 
-    if (!elements.has(id)) {
+    const target = elements.get(id);
+    if (!target) {
       return res.status(404).json({
         success: false,
         error: `Element with ID ${id} not found`
       });
     }
 
-    elements.delete(id);
-
-    // Broadcast to all connected clients
-    const message: ElementDeletedMessage = {
-      type: 'element_deleted',
-      elementId: id!
-    };
-    broadcast(message);
+    // A frame takes its drawing with it. Children go first: a child announced
+    // after its frame would point at a missing frame in the browser. Labels
+    // go before their containers for the same reason.
+    const members = target.type === 'frame' ? frameMembers(id, elements).reverse() : [];
+    for (const elementId of [...members.map(el => el.id), id]) {
+      elements.delete(elementId);
+      const message: ElementDeletedMessage = {
+        type: 'element_deleted',
+        elementId
+      };
+      broadcast(message);
+    }
 
     res.json({
       success: true,
-      message: `Element ${id} deleted successfully`
+      message: members.length > 0
+        ? `Element ${id} and its ${members.length} children deleted successfully`
+        : `Element ${id} deleted successfully`,
+      deletedIds: [...members.map(el => el.id), id]
     });
   } catch (error) {
     logger.error('Error deleting element:', error);
@@ -711,6 +764,66 @@ function rerouteBoundArrows(movedId: string): ServerElement[] {
   return rerouted;
 }
 
+function buildCreatedElement(params: z.infer<typeof CreateElementSchema>): ServerElement {
+  return {
+    id: params.id || generateId(),
+    ...(params.type === 'frame' ? { name: null } : {}),
+    ...params,
+    fontFamily: normalizeFontFamily(params.fontFamily),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    version: 1
+  } as ServerElement;
+}
+
+// Validates frame membership before anything is stored, so a bad request
+// creates nothing. Returns the existing frames that grew to fit new children.
+function storeCreatedElements(created: ServerElement[]): ServerElement[] {
+  assertFrameMembership(created, elements);
+  assertFramesHaveContent(created);
+  // Resolve arrow bindings (computes positions, startBinding, endBinding, boundElements)
+  resolveArrowBindings(created);
+  created.forEach(el => elements.set(el.id, el));
+  for (const frame of created) {
+    if (frame.type === 'frame') fitFrame(frame, frameMembers(frame.id, elements));
+  }
+  const createdIds = new Set(created.map(el => el.id));
+  return growFramesOf(created).filter(frame => !createdIds.has(frame.id));
+}
+
+// Changing any of these on a child may push it past its frame's border.
+const FRAME_FIT_KEYS = ['x', 'y', 'width', 'height', 'points', 'frameId', 'text', 'fontSize'];
+
+// Grows the frames of the given children until they fit. Returns the frames
+// that changed.
+function growFramesOf(children: ServerElement[]): ServerElement[] {
+  const frameIds = new Set(children.map(el => el.frameId).filter((fid): fid is string => !!fid));
+  const grown: ServerElement[] = [];
+  for (const frameId of frameIds) {
+    const frame = elements.get(frameId);
+    if (frame?.type !== 'frame') continue;
+    if (fitFrame(frame, children.filter(el => el.frameId === frameId))) {
+      frame.updatedAt = new Date().toISOString();
+      frame.version = (frame.version || 0) + 1;
+      grown.push(frame);
+    }
+  }
+  return grown;
+}
+
+// The browser turns a `label` into a new bound text. An update that did not
+// change the label must not send it, or the box ends up with two labels.
+function withoutLabel(element: ServerElement): ServerElement {
+  const { label: _label, ...rest } = element;
+  return rest;
+}
+
+function broadcastUpdated(changed: ServerElement[]): void {
+  for (const element of changed) {
+    broadcast({ type: 'element_updated', element: withoutLabel(element) } as ElementUpdatedMessage);
+  }
+}
+
 // Batch create elements
 app.post('/api/elements/batch', (req: Request, res: Response) => {
   try {
@@ -723,29 +836,9 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
       });
     }
 
-    const createdElements: ServerElement[] = [];
-
-    elementsToCreate.forEach(elementData => {
-      const params = CreateElementSchema.parse(elementData);
-      // Prioritize passed ID (for MCP sync), otherwise generate new ID
-      const id = params.id || generateId();
-      const element: ServerElement = {
-        id,
-        ...params,
-        fontFamily: normalizeFontFamily(params.fontFamily),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        version: 1
-      };
-
-      createdElements.push(element);
-    });
-
-    // Resolve arrow bindings (computes positions, startBinding, endBinding, boundElements)
-    resolveArrowBindings(createdElements);
-
-    // Store all elements after binding resolution
-    createdElements.forEach(el => elements.set(el.id, el));
+    const createdElements: ServerElement[] = elementsToCreate
+      .map(elementData => buildCreatedElement(CreateElementSchema.parse(elementData)));
+    const grownFrames = storeCreatedElements(createdElements);
 
     // Broadcast to all connected clients
     const message: BatchCreatedMessage = {
@@ -753,6 +846,7 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
       elements: createdElements
     };
     broadcast(message);
+    broadcastUpdated(grownFrames);
 
     res.json({
       success: true,

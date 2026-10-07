@@ -291,3 +291,20 @@ test('failed clear keeps the visible and saved scene protected', async ({ page, 
   await expect(page.getByText('repro-frame', { exact: true })).toBeVisible();
   expect(await serverScene(request)).toEqual(before);
 });
+
+test('server updates to a labelled box keep one label and apply new label text', async ({ page, request }) => {
+  const labels = scene => scene.filter(e => e.type === 'text' && e.containerId === 'box');
+  const put = async data => expect((await request.put('/api/elements/box', { data })).ok()).toBeTruthy();
+  expect((await request.post('/api/elements', {
+    data: { id: 'box', type: 'rectangle', x: 0, y: 0, width: 200, height: 60, label: { text: 'before' } },
+  })).ok()).toBeTruthy();
+  await page.goto('/');
+  // Before the first sync the stored box still carries the agent's `label`.
+  await expect(syncButton(page)).toBeEnabled();
+  await put({ y: 200 });
+  await expect.poll(async () => (await sync(page, request)).find(e => e.id === 'box').y).toBe(200);
+  expect(labels(await serverScene(request))).toHaveLength(1);
+
+  await put({ label: { text: 'after' } });
+  await expect.poll(async () => labels(await sync(page, request)).map(e => e.text)).toEqual(['after']);
+});

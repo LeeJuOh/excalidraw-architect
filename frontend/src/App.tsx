@@ -9,7 +9,7 @@ import {
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types'
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 import { convertMermaidToExcalidraw, DEFAULT_MERMAID_CONFIG } from './utils/mermaidConverter'
-import { cleanElementForExcalidraw, prepareServerScene, assertScenePreserved } from './utils/scene'
+import { cleanElementForExcalidraw, prepareServerScene, assertScenePreserved, withLabelFrameIds } from './utils/scene'
 import type { ServerElement } from './utils/scene'
 import type { MermaidConfig } from '@excalidraw/mermaid-to-excalidraw'
 
@@ -629,7 +629,7 @@ function App(): JSX.Element {
       const activeElements = currentElements.filter(el => !el.isDeleted)
 
       // 3. Convert to backend format
-      const backendElements = activeElements.map(convertToBackendFormat)
+      const backendElements = withLabelFrameIds(activeElements).map(convertToBackendFormat)
 
       // 4. Send to backend
       const response = await fetch('/api/elements/sync', {
