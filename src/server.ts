@@ -27,6 +27,7 @@ import {
   Snapshot,
   normalizeFontFamily,
   defaultLabelFontSize,
+  labelStrokeColorFor,
   DEFAULT_FONT_FAMILY
 } from './types.js';
 import { z } from 'zod';
@@ -378,10 +379,14 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
     const touches = (keys: string[]): boolean =>
       keys.some(key => Object.prototype.hasOwnProperty.call(body, key));
 
-    if (labelUpdate && updatedElement.type !== 'text') {
-      const label = mergeLabel(updatedElement, existingElement.label ?? storedLabelOf(existingElement), labelUpdate);
+    // A box turned borderless gets dark label text, as at creation.
+    const darkLabel = touches(['strokeColor']) ? labelStrokeColorFor(updatedElement) : undefined;
+    const labelChange = labelUpdate ?? (darkLabel ? { strokeColor: darkLabel } : undefined);
+    if (labelChange && updatedElement.type !== 'text') {
+      const label = mergeLabel(updatedElement, existingElement.label ?? storedLabelOf(existingElement), labelChange);
       if (label) updatedElement.label = label;
     }
+    const labelChanged = Boolean(labelChange && updatedElement.label);
     if (touches(['frameId']) || updatedElement.type === 'frame') {
       assertFrameMembership([updatedElement], elements);
     }
@@ -411,13 +416,14 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
 
     // A changed label replaces the stored label text, or export and describe
     // would keep showing the old text until the next browser sync.
-    if (touches(['label']) && updatedElement.label) {
+    if (labelChanged && updatedElement.label) {
       const label = updatedElement.label;
       const staleTexts = [...elements.values()].filter(el =>
         el.type === 'text' && el.containerId === id &&
         ((el.originalText ?? el.text) !== label.text ||
          (label.fontFamily !== undefined && el.fontFamily !== label.fontFamily) ||
-         (label.fontSize !== undefined && el.fontSize !== label.fontSize)));
+         (label.fontSize !== undefined && el.fontSize !== label.fontSize) ||
+         (label.strokeColor !== undefined && el.strokeColor !== label.strokeColor)));
       for (const text of staleTexts) elements.delete(text.id);
       if (staleTexts.length > 0 && Array.isArray(updatedElement.boundElements)) {
         const staleIds = new Set(staleTexts.map(el => el.id));
@@ -454,7 +460,7 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
     // Broadcast to all connected clients
     const message: ElementUpdatedMessage = {
       type: 'element_updated',
-      element: touches(['label']) ? updatedElement : withoutLabel(updatedElement)
+      element: labelChanged ? updatedElement : withoutLabel(updatedElement)
     };
     broadcast(message);
 
@@ -855,6 +861,7 @@ function mergeLabel(container: ServerElement, current: Label | undefined, update
     ...update,
     fontFamily: update.fontFamily !== undefined ? normalizeFontFamily(update.fontFamily) : base.fontFamily
   };
+  merged.strokeColor ??= labelStrokeColorFor(container);
   return merged.text === undefined ? undefined : merged as Label;
 }
 

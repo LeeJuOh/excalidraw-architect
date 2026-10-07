@@ -175,7 +175,27 @@ async function borderlessBoxLabelIsDark() {
   assert.equal((await get('note')).label.strokeColor, '#1e1e1e', 'a text update after sync keeps the dark label');
 }
 
+async function boxTurnedBorderlessGetsDarkLabel() {
+  await create([box('b', { text: 'API' }), box('synced', { text: 'DB', strokeColor: '#e03131' }), box('empty', { strokeColor: 'transparent' })]);
+  await update('b', { strokeColor: 'transparent' });
+  assert.equal((await get('b')).label.strokeColor, '#1e1e1e', 'before a browser sync');
+
+  const { label: _label, ...shape } = await get('synced');
+  await syncScene([
+    ...(await all()).filter(el => el.id !== 'synced'),
+    { ...shape, boundElements: [{ id: 'synced-text', type: 'text' }] },
+    { id: 'synced-text', type: 'text', x: 60, y: 20, width: 40, height: 25, text: 'DB', originalText: 'DB', containerId: 'synced', strokeColor: '#e03131', fontFamily: NUNITO, fontSize: 16 }
+  ]);
+  await update('synced', { strokeColor: 'transparent' });
+  assert.deepEqual((await get('synced')).label, { text: 'DB', fontFamily: NUNITO, fontSize: 16, strokeColor: '#1e1e1e' }, 'after a browser sync');
+  assert.deepEqual((await all()).filter(el => el.containerId === 'synced'), [], 'the old label text is replaced');
+
+  await update('empty', { text: 'note' });
+  assert.equal((await get('empty')).label.strokeColor, '#1e1e1e', 'a label added to a borderless box');
+}
+
 const cases = [
+  ['a box turned borderless, or given its first label, gets a dark label', boxTurnedBorderlessGetsDarkLabel],
   ['a borderless box gets a dark label, on the canvas and in export', borderlessBoxLabelIsDark],
   ['box and arrow labels carry their own font', labelCarriesItsFont],
   ['missing font gets Nunito, 16 for boxes and text, 14 for arrow labels', defaultsFillMissingFont],
