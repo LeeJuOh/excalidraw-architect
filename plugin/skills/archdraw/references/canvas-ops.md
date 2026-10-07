@@ -72,7 +72,9 @@ Both interfaces take the same agent-friendly shape and normalise it:
 - **Diagram reference** — a box that zooms into another diagram carries
   `"link": "?element=<target frame id>"`.
 - **Evidence** — `"evidence": {"tag": "code"|"design"|"log", "path": ..., "line": ...}`.
-- **fontFamily** — a name (`"helvetica"`) or a string number.
+- **fontFamily** — a name (`"nunito"`, `"comic shanns"`) or a string number.
+  Leave it out for Nunito. On a box or an arrow, `fontFamily` and `fontSize`
+  apply to its label.
 - **points** — `[[x, y], ...]` tuples and `[{"x":…,"y":…}]` objects both work.
 - **Patch updates** — in `apply`, an update entry uses either direct fields
   (`{"id":"a","x":120}`) or a `set` object (`{"id":"a","set":{"x":120}}`),

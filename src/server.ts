@@ -25,7 +25,9 @@ import {
   SyncStatusMessage,
   InitialElementsMessage,
   Snapshot,
-  normalizeFontFamily
+  normalizeFontFamily,
+  defaultLabelFontSize,
+  DEFAULT_FONT_FAMILY
 } from './types.js';
 import { z } from 'zod';
 import WebSocket from 'ws';
@@ -151,6 +153,13 @@ wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
 });
 
 // Schema validation
+const LabelSchema = z.object({
+  text: z.string(),
+  fontFamily: z.union([z.string(), z.number()]).optional(),
+  fontSize: z.number().optional(),
+  strokeColor: z.string().optional()
+});
+
 const CreateElementSchema = z.object({
   id: z.string().optional(), // Allow passing ID for MCP sync
   type: z.enum(Object.values(EXCALIDRAW_ELEMENT_TYPES) as [ExcalidrawElementType, ...ExcalidrawElementType[]]),
@@ -165,9 +174,7 @@ const CreateElementSchema = z.object({
   roughness: z.number().optional(),
   opacity: z.number().optional(),
   text: z.string().optional(),
-  label: z.object({
-    text: z.string()
-  }).optional(),
+  label: LabelSchema.optional(),
   fontSize: z.number().optional(),
   fontFamily: z.union([z.string(), z.number()]).optional(),
   // Bound-text back-pointer — without it, zod strips containerId on import
@@ -233,9 +240,8 @@ const UpdateElementSchema = z.object({
   opacity: z.number().optional(),
   text: z.string().optional(),
   originalText: z.string().optional(),
-  label: z.object({
-    text: z.string()
-  }).optional(),
+  // `text` may be missing: a font-only change merges into the stored label
+  label: LabelSchema.partial().optional(),
   fontSize: z.number().optional(),
   fontFamily: z.union([z.string(), z.number()]).optional(),
   // Bound-text back-pointer — without it, zod strips containerId on import
@@ -360,9 +366,10 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
       });
     }
 
+    const { label: labelUpdate, ...otherUpdates } = updates;
     const updatedElement: ServerElement = {
       ...existingElement,
-      ...updates,
+      ...otherUpdates,
       fontFamily: updates.fontFamily !== undefined ? normalizeFontFamily(updates.fontFamily) : existingElement.fontFamily,
       updatedAt: new Date().toISOString(),
       version: (existingElement.version || 0) + 1
@@ -370,6 +377,11 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
 
     const touches = (keys: string[]): boolean =>
       keys.some(key => Object.prototype.hasOwnProperty.call(body, key));
+
+    if (labelUpdate && updatedElement.type !== 'text') {
+      const label = mergeLabel(updatedElement, existingElement.label ?? storedLabelOf(existingElement), labelUpdate);
+      if (label) updatedElement.label = label;
+    }
     if (touches(['frameId']) || updatedElement.type === 'frame') {
       assertFrameMembership([updatedElement], elements);
     }
@@ -400,9 +412,12 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
     // A changed label replaces the stored label text, or export and describe
     // would keep showing the old text until the next browser sync.
     if (touches(['label']) && updatedElement.label) {
+      const label = updatedElement.label;
       const staleTexts = [...elements.values()].filter(el =>
         el.type === 'text' && el.containerId === id &&
-        (el.originalText ?? el.text) !== updatedElement.label!.text);
+        ((el.originalText ?? el.text) !== label.text ||
+         (label.fontFamily !== undefined && el.fontFamily !== label.fontFamily) ||
+         (label.fontSize !== undefined && el.fontSize !== label.fontSize)));
       for (const text of staleTexts) elements.delete(text.id);
       if (staleTexts.length > 0 && Array.isArray(updatedElement.boundElements)) {
         const staleIds = new Set(staleTexts.map(el => el.id));
@@ -770,6 +785,7 @@ function buildCreatedElement(params: z.infer<typeof CreateElementSchema>): Serve
     ...(params.type === 'frame' ? { name: null } : {}),
     ...params,
     fontFamily: normalizeFontFamily(params.fontFamily),
+    ...(params.label ? { label: { ...params.label, fontFamily: normalizeFontFamily(params.label.fontFamily) } } : {}),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     version: 1
@@ -809,6 +825,37 @@ function growFramesOf(children: ServerElement[]): ServerElement[] {
     }
   }
   return grown;
+}
+
+type Label = NonNullable<ServerElement['label']>;
+type LabelUpdate = Partial<z.infer<typeof LabelSchema>>;
+
+// After a browser sync a box has no `label`; its label is a bound text.
+// A label colour that differs from the box (a note's dark text) is kept.
+function storedLabelOf(container: ServerElement): Label | undefined {
+  const text = [...elements.values()].find(el => el.type === 'text' && el.containerId === container.id);
+  if (!text) return undefined;
+  return {
+    text: text.originalText ?? text.text ?? '',
+    fontFamily: normalizeFontFamily(text.fontFamily),
+    fontSize: text.fontSize,
+    ...(text.strokeColor && text.strokeColor !== container.strokeColor ? { strokeColor: text.strokeColor } : {})
+  };
+}
+
+// Font and size not named in the update stay as they were. A new label gets
+// the defaults. Without text there is no label to change.
+function mergeLabel(container: ServerElement, current: Label | undefined, update: LabelUpdate): Label | undefined {
+  const base: Partial<Label> = current ?? {
+    fontFamily: DEFAULT_FONT_FAMILY,
+    fontSize: defaultLabelFontSize(container.type)
+  };
+  const merged = {
+    ...base,
+    ...update,
+    fontFamily: update.fontFamily !== undefined ? normalizeFontFamily(update.fontFamily) : base.fontFamily
+  };
+  return merged.text === undefined ? undefined : merged as Label;
 }
 
 // The browser turns a `label` into a new bound text. An update that did not

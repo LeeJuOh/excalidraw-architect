@@ -6,7 +6,7 @@
 
 **Blocked by:** 01 (플러그인 골격), 04 (캔버스 세션 — CLI는 `--session`이 필수, 두 이슈가 `mcp-tools.ts`·`mcp-dispatch.ts`·`server.ts`·CLI를 같이 고친다). 둘 다 완료.
 
-**Status:** ready-for-agent
+**Status:** resolved (2026-10-08 — 슬라이스 A·B·C 완료. A의 인수 2개는 일부(MCP 실제 호스트 확인은 02로). 결과는 맨 아래 슬라이스별 표)
 
 ## 공통
 
@@ -101,7 +101,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** resolved (2026-10-08 — 인수 7개 통과. 결과는 맨 아래 "슬라이스 C 결과")
 
 규칙(스펙 §7-9. 구 "Helvetica(2), 고정폭 안 씀"은 폐기 — Excalidraw 화면이 Helvetica에 "old" 표시를 붙인다. 글꼴 조건은 "한글과 영어 둘 다 읽기 좋은 글꼴"):
 
@@ -118,19 +118,19 @@
 
 인수:
 
-- [ ] 박스 라벨과 화살표 라벨에 `fontFamily`를 지정하면 화면의 실제 요소 데이터에 그 값이 있고 스크린샷에서 그 글꼴로 보인다(결함 수정)
-- [ ] 라벨의 글자만 `update_element`로 바꾼 뒤에도 라벨의 `fontFamily`·`fontSize`가 그대로다
-- [ ] `fontFamily` 없이 만든 텍스트·박스 라벨·화살표 라벨의 실제 요소 데이터의 `fontFamily`가 Nunito(6)이고, export한 파일도 같고, 브라우저에서 새로 친 글씨도 같다. 한글 + 영어 라벨이 스크린샷에서 읽힌다
-- [ ] `fontSize` 없이 만든 박스 라벨·독립 텍스트는 요소 데이터가 16, 화살표 라벨은 14이고, export한 파일의 값이 화면의 값과 같다
-- [ ] 코드와 계약 메모지의 글자는 고정폭 Comic Shanns다(요소 데이터의 `fontFamily`가 8). 스크린샷에서 코드 글자가 읽힌다
-- [ ] `docs/canvas-guide.md`에 기본 글꼴과 고정폭 글꼴의 이름이 있고, `canvas-ops.md`와 MCP 툴 설명의 글꼴 예시가 그것과 맞는다
-- [ ] 기존 `npm test` 통과
+- [x] 박스 라벨과 화살표 라벨에 `fontFamily`를 지정하면 화면의 실제 요소 데이터에 그 값이 있고 스크린샷에서 그 글꼴로 보인다(결함 수정)
+- [x] 라벨의 글자만 `update_element`로 바꾼 뒤에도 라벨의 `fontFamily`·`fontSize`가 그대로다
+- [x] `fontFamily` 없이 만든 텍스트·박스 라벨·화살표 라벨의 실제 요소 데이터의 `fontFamily`가 Nunito(6)이고, export한 파일도 같고, 브라우저에서 새로 친 글씨도 같다. 한글 + 영어 라벨이 스크린샷에서 읽힌다
+- [x] `fontSize` 없이 만든 박스 라벨·독립 텍스트는 요소 데이터가 16, 화살표 라벨은 14이고, export한 파일의 값이 화면의 값과 같다
+- [x] 코드와 계약 메모지의 글자는 고정폭 Comic Shanns다(요소 데이터의 `fontFamily`가 8). 스크린샷에서 코드 글자가 읽힌다
+- [x] `docs/canvas-guide.md`에 기본 글꼴과 고정폭 글꼴의 이름이 있고, `canvas-ops.md`와 MCP 툴 설명의 글꼴 예시가 그것과 맞는다
+- [x] 기존 `npm test` 통과
 
 ## 검증 방법과 결과 기록 (R10)
 
 구현 담당 에이전트가 CLI·MCP로 만든 frame·자식의 실제 요소 데이터와 `describe`의 소속 요약을 대조한다. frame 표시·제목·자식 포함은 스크린샷으로 확인한다. frame 드래그, 링크 클릭, 외부 편집기에서 파일 열기는 실제 브라우저 동작으로 확인하고 전후 데이터·화면 결과를 남긴다. 글꼴 값은 실제 요소 데이터로 검사하고 영어·한글 가독성은 화면에서 확인한다. `describe`가 글꼴 값을 제공한다고 가정하지 않는다.
 
-- [ ] 슬라이스마다 각 인수 기준의 기대 결과·실제 결과·통과/실패/미시험과 데이터 또는 화면 근거, 기존 테스트 결과를 기록했다.
+- [x] 슬라이스마다 각 인수 기준의 기대 결과·실제 결과·통과/실패/미시험과 데이터 또는 화면 근거, 기존 테스트 결과를 기록했다.
 
 ## Comments
 
@@ -139,6 +139,10 @@
 - 그릴에서 통한 것: 말로만 설명한 Q3는 세 번 되물었다. 캔버스에 예시를 그리고 동작을 실제로 띄워 보여 주니 바로 결정됐다. 용어(frame, 서버 경로, 라벨)는 먼저 한 줄로 풀고 묻는다. 긴 보고는 거부된다 — 표 하나와 질문 하나.
 - 2026-10-08 B 착수 전 판단 4개(사용자 확정): ADR-0008의 코드 사실 문장은 지우고 `onLinkOpen` 부분은 한 줄로 줄임 / MCP 실제 호스트 확인은 02로 / 서버 frame 이동과 브라우저 드래그 모양 비교는 안 함 / A의 임의 결정 7개는 그대로 둠.
 - 2026-10-08 슬라이스 A 구현 중 업스트림 결함 발견, 사용자 결정으로 이 슬라이스에서 고침: 서버 경로로 라벨 박스를 수정하면 화면이 라벨 텍스트를 하나 더 만든다(동기화 뒤 서버 데이터에 같은 `containerId` 텍스트 2개). 서버 라벨 글자 변경은 화면에 안 보였다. frame 없는 박스로 재현, 원인 코드는 업스트림 스냅샷과 같다.
+- 2026-10-08 C의 빈 곳 5개(사용자 확정, 모두 추천안): (1) 글자 없이 박스의 `fontFamily`·`fontSize`만 바꾸는 수정은 라벨에 적용한다(라벨 없는 박스엔 라벨을 만들지 않는다) (2) 수정으로 처음 생긴 라벨도 기본값 Nunito·16(화살표 14) (3) export의 값 없는 독립 텍스트는 16·Nunito — **옛 데이터는 무시하고 최신 기준** (4) 프론트 `currentItemFontSize: 16`도 넣는다 (5) 컨테이너 최상위 `fontFamily`·`fontSize`는 남긴다.
+- 2026-10-08 C 브라우저 확인에서 결함 2개 발견, 사용자 결정으로 이 슬라이스에서 고침(둘 다 C 전부터 있던 것). 캔버스에 그려 보여 주고 결정했다.
+  - 계약 메모지 글자가 안 보인다: 규격의 `strokeColor: "transparent"`를 Excalidraw가 라벨 글자색으로도 쓴다(`bindTextToContainer`가 `textProps.strokeColor || container.strokeColor`). → 테두리가 `transparent`인 박스의 라벨에 서버가 글자색 `#1e1e1e`를 넣는다. 규격 문서는 그대로.
+  - 새 탭에서 처음 그릴 때 Nunito·Comic Shanns 글자 끝이 잘린다: 글꼴 파일을 받기 전에 폭을 잰다(실측 107, 맞는 값 132). 동기화가 틀린 폭을 저장해 새로고침해도 남는다. → 프론트가 서버 요소를 변환하기 전에 그 장면의 글꼴 로드를 기다린다. 이미 저장된 틀린 폭은 다시 재지 않는다(옛 데이터 무시).
 
 ## 슬라이스 A 결과 (2026-10-08)
 
@@ -178,63 +182,18 @@
 
 라벨 박스에 `link`만 바꾸는 CLI `update`도 화면까지 갔다: 새로고침 없이 링크 아이콘이 생기고, 동기화 뒤 라벨 텍스트는 하나다.
 
-## 핸드오프 — 판단 끝, 슬라이스 B 구현 착수 (2026-10-08)
+## 슬라이스 C 결과 (2026-10-08)
 
-### Goal
+| 인수 | 결과 | 근거 |
+|---|---|---|
+| 박스·화살표 라벨의 `fontFamily`가 데이터와 화면에 | 통과 | 실세션 `67619d`: 동기화 뒤 라벨 텍스트 `pay` 8·18, `call2` 8. 스크린샷에서 Comic Shanns. `check-fonts` |
+| 글자만 수정해도 글꼴·크기 유지 | 통과 | 동기화 뒤 CLI `update pay`·`note` → 라벨 8·18, 8·16, 동기화 뒤 라벨 텍스트 하나. `check-fonts` |
+| 기본 Nunito(6): 데이터·export·새로 친 글씨, 한글+영어 읽힘 | 통과 | 실데이터·`export` 파일 모두 6. 브라우저에서 친 "new text 새 글씨" 6·16. 스크린샷 |
+| 기본 크기 박스·텍스트 16, 화살표 14, export = 화면 | 통과 | 실데이터와 `export` 파일 값 같음(16·14) |
+| 코드·메모지 Comic Shanns(8), 읽힘 | 통과 | `code`·`note` 8. 새 탭 첫 표시에서 안 잘림(폭 132), 메모지 글자 `#1e1e1e`로 보임 |
+| `canvas-guide.md`·`canvas-ops.md`·툴 설명 글꼴 일치 | 통과 | 파일 확인 |
+| 기존 `npm test` | 통과 | `npm test` 전체(`test:fonts` 8개), `npm run test:canvas` 17개, 타입 검사 둘 |
 
-05의 남은 슬라이스 B(그림 참조 링크와 클릭 이동) → C(글꼴과 크기 기본값)를 구현한다. 결정은 이 문서 본문에 있고, 착수 전 판단 4개는 사용자가 2026-10-08에 끝냈다(Comments). 새 규칙을 만들지 않는다 — 어긋나면 멈추고 사용자에게 묻는다(무엇이 어긋나는지, 선택지).
+결함 2개(Comments 2026-10-08): 메모지 라벨 글자색은 생성 때 서버가 `label.strokeColor`에 넣고 export도 읽는다. 동기화 뒤 글자 수정은 박스와 다른 라벨 글자색을 유지한다. 글꼴 로드 대기는 프론트 `loadSceneFonts` — 장면 메시지와 스크린샷 요청이 순서대로 기다린다. 5초가 넘으면 대체 글꼴로 진행한다. 회귀 테스트: `check-fonts`의 메모지 케이스, `tests/browser/scene-reload.spec.mjs` 마지막(글꼴 파일을 늦게 줌, 고침 없이 폭 차이 28.6으로 실패 확인).
 
-### First Action
-
-사용자에게 "슬라이스 B 구현을 시작한다"고 한 줄로 말하고 시작한다. 묻지 않는다 — 사용자가 2026-10-08에 "A 마무리됐고 B 구현하면 되는 상태"를 확인했다.
-
-B의 빨간 테스트는 이미 있다. `scripts/check-frames.mjs`의 `mcpBatchKeepsFrameFields` 끝에 `link` 케이스 3개(`create_element`로 `link: "?element=mf"` 유지 / `update_element`로 `link: null` / `batch_create_elements`로 유지)가 들어 있고, 현재 `dist`에서 실패한다(`"link": "?element=mf"`가 안 나옴 — MCP 스키마가 `link`를 버린다). 고칠 곳:
-
-1. `src/core/mcp-dispatch.ts`의 zod `ElementSchema`에 `link: z.string().nullable().optional()` — `frameId`·`name` 옆.
-2. `src/core/mcp-tools.ts`의 JSON 스키마 세 곳(`create_element`, `update_element`, `batch_create_elements`의 items)에 `link: { type: ['string', 'null'], description: ... }`. 설명은 칸이 무엇인지만("`?element=<frame id>`는 다른 그림을 가리킨다"). 언제 쓰는지는 03의 규칙이라 적지 않는다. 설명 문자열은 작은따옴표라 `'`를 넣으면 빌드가 깨진다.
-3. `frontend/src/App.tsx`의 `onLinkOpen` — `PROTOTYPE` 주석만 보통 주석으로 바꾼다. 로직은 본문 규칙 그대로라 손대지 않는다.
-
-그 뒤 `npm run test:frames`(빌드 포함)로 초록 확인 → 브라우저 인수(아래 Context) → B 인수 4개 체크·결과 표 → 커밋.
-
-### Context
-
-- 이 세션은 `/grill-with-docs`로 판단 4개를 하나씩 물어 끝냈다. 결과는 Comments 2026-10-08 줄과 "Decisions Made". ADR-0008은 코드 사실 문장을 지우고 `onLinkOpen` 부분을 한 줄로 줄였다(ADR 기준: 되돌리기 어려움·놀라움·트레이드오프 — 코드 사실은 ADR이 아니다).
-- 브라우저 인수는 세 가지를 본다: (1) 링크 박스를 선택하면 나오는 링크 아이콘을 눌러 같은 탭에서 대상 frame으로 이동, 탭 수 전후 같음(`tabs_context_mcp`). (2) 없는 id를 가리키는 `?element=` 링크는 새 탭(기본 동작). (3) `https://` 링크도 새 탭. 라벨 있는 박스에 `link`만 바꾸는 `update_element`가 화면까지 가는지도 본다 — A에서 PUT 경로가 `label`을 안 바꾼 수정은 `withoutLabel`로 보내게 바뀌었다(`src/server.ts`).
-- **이 세션의 MCP 툴(`mcp__plugin_excalidraw-architect_archdraw__*`)로 확인하지 않는다.** npm 게시본이라 옛 스키마가 `link`를 버려 고친 코드가 안 보인다. 확인은 `check-frames`의 MCP stdio 케이스와, `npm run build` 뒤 `node dist/bin.js session start --project .`로 띄운 서버에 CLI·REST로 한다.
-- 슬라이스 C 주의: A에서 바뀐 PUT 경로(`src/server.ts`의 `touches(['label'])` 부분)와 프론트 `reconcileAgentLabels`(`frontend/src/utils/scene.ts`)가 `label`의 키를 라벨 텍스트와 비교한다. C의 "글자만 바꿔도 글꼴·크기 유지" 규칙은 이 두 곳을 같이 봐야 한다.
-
-### Current Progress (git 기준, 2026-10-08)
-
-- 브랜치 `main`. 마지막 커밋 `57453b1`(옛 핸드오프). 슬라이스 A 코드는 `18dcdbf`. push 안 함.
-- 미커밋 3개(`git diff --stat`): 이 문서(판단 기록·핸드오프 교체), `docs/adr/0008-frame-is-the-drawing-unit.md`(1문장 삭제·1문장 축약), `scripts/check-frames.mjs`(B의 `link` 테스트 13줄 추가, 현재 빨강). B 커밋에 같이 넣는다.
-- 슬라이스 B 코드: 시작 안 함. C: 시작 안 함.
-- `dist/`는 `18dcdbf` 코드의 빌드다(`57453b1`은 문서만).
-
-### Decisions Made
-
-- 2026-10-08 사용자 확정 4개: ADR-0008 코드 사실 문장 삭제 / MCP 실제 호스트 확인은 02 도그푸딩으로 / 서버 frame 이동과 브라우저 드래그 모양 비교는 안 함 / 아래 A의 결정 7개 그대로.
-- A의 결정 7개(에이전트가 정하고 사용자가 뒤에 확인): 라벨 `frameId`는 프론트 `syncToBackend`에서 채움 / 빈 frame 거부를 PUT에도 / 자동 확장은 이번에 바뀐 자식만 본다 / 텍스트 글자 변경 시 옛 측정 크기를 버리고 추정 / frame 삭제 알림 순서 라벨 → 박스 → frame / frame 생성 시 `name` 기본 `null` / 400 거부는 MCP 에러로 그대로 전달.
-
-### What Worked
-
-- 판단은 **한 번에 하나씩**, 표 하나와 추천 하나. 사용자가 "하나씩"을 명시했다. 4개가 네 턴에 끝났다.
-- "이게 ADR 기준에 맞아?"에 기준 셋을 표로 대조하니 바로 결정됐다.
-- A에서: 버그는 `/mattpocock-skills:diagnosing-bugs`로 frame 없는 박스에서 재현해 업스트림 결함인지 가렸다. 서버 규칙 테스트는 `scripts/check-frames.mjs`(실제 `dist/server.js` + MCP stdio), 브라우저 회귀는 `tests/browser/scene-reload.spec.mjs`(`npm run test:canvas`).
-
-### What Didn't Work
-
-- ⚠️ **질문이 끝났다고 구현을 시작하지 않는다.** 이 세션은 판단 4개가 끝나자 묻지 않고 B 테스트를 쓰기 시작했고 사용자가 멈췄다("누가 슬라이스 b 시작하래?"). 그릴의 끝은 "공통 이해 확인"이지 착수가 아니다. 다음 단계로 넘어갈 때는 한 줄로 묻는다.
-- ⚠️ 사용자는 긴 보고를 거부한다. 한국어, 결과부터, 표 하나. "일부" 같은 말은 무엇을 확인했고 무엇을 못 했는지로 바로 풀어 쓴다.
-- ⚠️ claude-in-chrome에서 페이지를 새로 연 직후 "Sync to Backend" 클릭이 동기화를 안 일으킬 때가 있다. `javascript_tool`로 버튼 `click()`을 부르고 콘솔 "Syncing N elements"로 확인한다.
-- ⚠️ excalidraw.com에 파일을 끌어 놓으면 그 탭의 내용이 바뀐다. 확인 뒤 바로 `cmd+z`.
-- `mcp-tools.ts` 설명 문자열에 `'`를 넣으면 빌드가 깨진다. CLI `describe`는 `--session`만 받는다.
-
-### Infrastructure State
-
-- 캔버스 세션 `14abd4`(http://127.0.0.1:54064)와 `fde6fc`가 2026-10-08 세션 시작 시점에 떠 있었다(`node dist/bin.js session list`). 30분 유휴면 스스로 끝난다. `fde6fc`에는 A의 시험 데이터가 남아 있다 — B 확인은 `npm run build` 뒤 새 세션을 띄운다.
-
-### Next Steps
-
-1. 슬라이스 B 구현(First Action) → 인수 4개 확인 → 결과 표 → 커밋(영어 1~2문장, 트레일러 없음, push 안 함).
-2. 슬라이스 C 구현 → 인수 확인 → 커밋.
-3. 05를 닫을 때 `spec.md` 진행 순서 7번과 05 행, 이 문서 맨 위 `Status:`를 고친다. 다음은 03 슬라이스 B.
+결정하지 않은 경우(그대로 둠): 수정으로 테두리를 `transparent`로 바꾸거나, 수정으로 메모지에 라벨을 처음 넣으면 라벨 글자는 박스 테두리색을 따른다(투명). 남은 위험: 첫 글꼴 로드를 기다리는 동안(새 탭에서 한 번) 사용자가 캔버스를 만지면 자동 동기화가 아직 안 그린 요소를 빠뜨릴 수 있다 — 전부터 있던 경쟁이고 시간 창만 조금 넓어졌다.

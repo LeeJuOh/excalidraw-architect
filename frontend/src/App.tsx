@@ -11,6 +11,7 @@ import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types'
 import { convertMermaidToExcalidraw, DEFAULT_MERMAID_CONFIG } from './utils/mermaidConverter'
 import { cleanElementForExcalidraw, prepareServerScene, assertScenePreserved, withLabelFrameIds } from './utils/scene'
 import type { ServerElement } from './utils/scene'
+import { loadSceneFonts } from './utils/fonts'
 import type { MermaidConfig } from '@excalidraw/mermaid-to-excalidraw'
 
 // Type definitions
@@ -54,6 +55,8 @@ const AUTO_SYNC_DEBOUNCE_MS = 1200;
 const SCENE_MUTATIONS = new Set([
   'element_created', 'element_updated', 'element_deleted', 'elements_batch_created'
 ]);
+// An export waits behind earlier scenes so it shows them.
+const FONT_GATED_MESSAGES = new Set([...SCENE_MUTATIONS, 'initial_elements', 'canvas_cleared', 'export_image_request']);
 
 function App(): JSX.Element {
   const [excalidrawAPI, setExcalidrawAPI] = useState<ExcalidrawAPIRefValue | null>(null)
@@ -87,6 +90,7 @@ function App(): JSX.Element {
   const [sceneLoadStatus, setSceneLoadStatus] = useState<SceneLoadStatus>('loading')
   const sceneLoadStatusRef = useRef<SceneLoadStatus>('loading')
   const sceneGenerationRef = useRef(0)
+  const sceneFontsRef = useRef<Promise<void>>(Promise.resolve())
 
   const pauseSceneSync = (status: SceneLoadStatus = 'loading'): number => {
     sceneGenerationRef.current += 1
@@ -103,6 +107,13 @@ function App(): JSX.Element {
     if (generation !== sceneGenerationRef.current) return
     console.error('Scene load failed; backend sync is paused:', error)
     pauseSceneSync('failed')
+  }
+
+  // Every server scene waits its turn here, so a scene that waits for a font
+  // cannot be overtaken by a later one that does not.
+  const waitForSceneFonts = (elements: readonly unknown[]): Promise<void> => {
+    sceneFontsRef.current = sceneFontsRef.current.then(() => loadSceneFonts(elements))
+    return sceneFontsRef.current
   }
 
   const canSyncScene = (): boolean =>
@@ -191,6 +202,8 @@ function App(): JSX.Element {
       if (!filesResponse.ok || !filesResult.files) {
         throw new Error('Could not load scene files')
       }
+      await waitForSceneFonts(result.elements)
+      if (generation !== sceneGenerationRef.current) return
       applyServerScene(result.elements.map(cleanElementForExcalidraw), generation, filesResult.files)
     } catch (error) {
       failSceneLoad(error, generation)
@@ -252,6 +265,10 @@ function App(): JSX.Element {
     const excalidrawAPI = excalidrawAPIRef.current
     if (!excalidrawAPI) {
       return
+    }
+
+    if (FONT_GATED_MESSAGES.has(data.type)) {
+      await waitForSceneFonts(data.elements ?? (data.element ? [data.element] : []))
     }
 
     if (SCENE_MUTATIONS.has(data.type) && sceneLoadStatusRef.current !== 'ready') {
@@ -801,7 +818,9 @@ function App(): JSX.Element {
             initialData={{
               elements: [],
               appState: {
-                theme
+                theme,
+                currentItemFontFamily: 6,
+                currentItemFontSize: 16
               }
             }}
           />

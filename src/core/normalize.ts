@@ -1,5 +1,13 @@
 import path from 'path';
-import { generateId, ServerElement, normalizeFontFamily } from '../types.js';
+import {
+  generateId,
+  ServerElement,
+  normalizeFontFamily,
+  defaultLabelFontSize,
+  labelStrokeColorFor,
+  DEFAULT_FONT_FAMILY,
+  DEFAULT_FONT_SIZE
+} from '../types.js';
 import { ALLOWED_EXPORT_DIR } from './config.js';
 
 // Safe file path validation to prevent path traversal attacks
@@ -31,10 +39,17 @@ export function convertTextToLabel(element: ServerElement): ServerElement {
     if (element.type === 'text') {
       return element; // Keep text as direct property
     }
-    // For other elements (rectangle, ellipse, diamond), convert to label format
+    // For other elements (rectangle, ellipse, diamond), convert to label format.
+    // Excalidraw builds the label text from `label` alone, not from the container.
+    const strokeColor = labelStrokeColorFor(element);
     return {
       ...rest,
-      label: { text }
+      label: {
+        text,
+        fontFamily: normalizeFontFamily(element.fontFamily) ?? DEFAULT_FONT_FAMILY,
+        fontSize: element.fontSize ?? defaultLabelFontSize(element.type),
+        ...(strokeColor ? { strokeColor } : {})
+      }
     } as ServerElement;
   }
   return element;
@@ -72,6 +87,11 @@ export function prepareElement(elementData: ElementInput): ServerElement {
   // Normalize fontFamily from string names to numeric values
   if (element.fontFamily !== undefined) {
     element.fontFamily = normalizeFontFamily(element.fontFamily);
+  }
+
+  if (element.type === 'text') {
+    element.fontFamily ??= DEFAULT_FONT_FAMILY;
+    element.fontSize ??= DEFAULT_FONT_SIZE;
   }
 
   // For bound arrows without explicit points, set a default
@@ -114,10 +134,19 @@ export function prepareElementUpdate(
   // Convert text→label only when the element is known to be a non-text
   // shape. Unknown type keeps `text` as-is (the safe direction for text
   // elements; when the canvas is up, callers always know the type).
+  // A shape draws no text itself, so its font belongs to its label. The label
+  // here may lack `text`; the server merges it into the stored label.
   const effectiveType = (updates.type as string | undefined) ?? knownType;
-  if (updatePayload.text !== undefined && effectiveType && effectiveType !== 'text') {
-    const { text, ...withoutText } = updatePayload;
-    return { ...withoutText, label: { text } } as Partial<ServerElement> & { id: string };
+  const { text, fontFamily, fontSize } = updatePayload;
+  if (effectiveType && effectiveType !== 'text' &&
+      (text !== undefined || fontFamily !== undefined || fontSize !== undefined)) {
+    const { text: _text, ...withoutText } = updatePayload;
+    const label = {
+      ...(text !== undefined ? { text } : {}),
+      ...(fontFamily !== undefined ? { fontFamily } : {}),
+      ...(fontSize !== undefined ? { fontSize } : {})
+    };
+    return { ...withoutText, label } as Partial<ServerElement> & { id: string };
   }
 
   return updatePayload;

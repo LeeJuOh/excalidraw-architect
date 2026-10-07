@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { frameScene, mixedScene, pixelFile } from './fixtures.mjs';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const syncButton = page => page.getByRole('button', { name: 'Sync to Backend', exact: true });
 const warning = page => page.getByRole('alert').filter({ hasText: 'Sync is paused' });
@@ -307,4 +310,28 @@ test('server updates to a labelled box keep one label and apply new label text',
 
   await put({ label: { text: 'after' } });
   await expect.poll(async () => labels(await sync(page, request)).map(e => e.text)).toEqual(['after']);
+});
+
+test('first load measures text after its font file arrives', async ({ page, request }) => {
+  const text = 'retryCount <= 3';
+  // Serve Excalidraw's CDN fonts from node_modules, late, so the first scene
+  // would be measured with a fallback font if the canvas did not wait.
+  const fonts = join(dirname(fileURLToPath(import.meta.url)), '../../node_modules/@excalidraw/excalidraw/dist/prod/fonts');
+  await page.route('https://esm.sh/**/fonts/**', async route => {
+    const [family, file] = new URL(route.request().url()).pathname.split('/').slice(-2);
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    await route.fulfill({ body: readFileSync(join(fonts, family, file)), contentType: 'font/woff2' });
+  });
+  expect((await request.post('/api/elements', {
+    data: { id: 'code', type: 'text', x: 0, y: 0, text, fontFamily: 8, fontSize: 16 },
+  })).ok()).toBeTruthy();
+  await page.goto('/');
+  const stored = (await sync(page, request)).find(e => e.id === 'code');
+  const measured = await page.evaluate(async text => {
+    await document.fonts.load('16px "Comic Shanns"', text);
+    const context = document.createElement('canvas').getContext('2d');
+    context.font = '16px "Comic Shanns"';
+    return context.measureText(text).width;
+  }, text);
+  expect(Math.abs(stored.width - measured)).toBeLessThan(2);
 });

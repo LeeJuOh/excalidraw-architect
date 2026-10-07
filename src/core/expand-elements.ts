@@ -1,4 +1,10 @@
-import { ServerElement, normalizeFontFamily } from '../types.js';
+import {
+  ServerElement,
+  normalizeFontFamily,
+  defaultLabelFontSize,
+  DEFAULT_FONT_FAMILY,
+  DEFAULT_FONT_SIZE
+} from '../types.js';
 import { estimateTextSize } from './frames.js';
 
 // Expand the server's agent-friendly element format into real Excalidraw
@@ -111,7 +117,7 @@ export function expandElementsForExport(
     if (el.type === 'text') {
       base.text = text ?? '';
       base.originalText = text ?? '';
-      base.fontSize = rest.fontSize ?? 20;
+      base.fontSize = rest.fontSize ?? DEFAULT_FONT_SIZE;
       // Agent-created text often has no dimensions (server stores null);
       // third-party consumers clip width-less text, so estimate it the same
       // way frame growth does. Treat 0 as unmeasured, not just
@@ -123,7 +129,7 @@ export function expandElementsForExport(
         base.width = base.width || estimate.width;
         base.height = base.height || estimate.height;
       }
-      base.fontFamily = normalizeFontFamily(rest.fontFamily) ?? 1;
+      base.fontFamily = normalizeFontFamily(rest.fontFamily) ?? DEFAULT_FONT_FAMILY;
       base.textAlign = rest.textAlign ?? 'center';
       base.verticalAlign = rest.verticalAlign ?? 'middle';
       base.autoResize = rest.autoResize ?? true;
@@ -211,7 +217,7 @@ export function expandElementsForExport(
         width: textW,
         height: textH,
         angle: 0,
-        strokeColor: isArrow ? '#1e1e1e' : base.strokeColor,
+        strokeColor: label?.strokeColor ?? (isArrow ? '#1e1e1e' : base.strokeColor),
         backgroundColor: 'transparent',
         fillStyle: 'solid',
         strokeWidth: 1,
@@ -234,8 +240,8 @@ export function expandElementsForExport(
         locked: false,
         text: labelText,
         originalText: labelText,
-        fontSize: isArrow ? 14 : (rest.fontSize ?? 16),
-        fontFamily: normalizeFontFamily(rest.fontFamily) ?? 1,
+        fontSize: label?.fontSize ?? rest.fontSize ?? defaultLabelFontSize(el.type),
+        fontFamily: normalizeFontFamily(label?.fontFamily ?? rest.fontFamily) ?? DEFAULT_FONT_FAMILY,
         textAlign: 'center',
         verticalAlign: 'middle',
         autoResize: true,

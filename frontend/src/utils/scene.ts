@@ -18,6 +18,9 @@ export interface ServerElement {
   fontFamily?: string | number;
   label?: {
     text: string;
+    fontFamily?: number;
+    fontSize?: number;
+    strokeColor?: string;
   };
   createdAt?: string;
   updatedAt?: string;

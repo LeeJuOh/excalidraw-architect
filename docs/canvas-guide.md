@@ -56,6 +56,10 @@ placement that is already there.
 - Shapes other than nodes: at least 120x60.
 - Every shape has a label.
 - Font size: titles 20 or more, small labels 14 or more.
+- Font: Nunito (`fontFamily: "nunito"`) for all text; the server fills it in
+  when you leave `fontFamily` out. Code and contract notes use the monospace
+  font Comic Shanns (`fontFamily: "comic shanns"`). Never use the fonts
+  Excalidraw marks old: Virgil, Helvetica, Cascadia.
 - Leave 20px of padding inside a shape around its text.
 - Same-role shapes keep identical dimensions.
 

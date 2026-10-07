@@ -137,6 +137,9 @@ export interface ServerElement extends Omit<ExcalidrawElementBase, 'id'> {
   fontFamily?: string | number;
   label?: {
     text: string;
+    fontFamily?: number;
+    fontSize?: number;
+    strokeColor?: string;
   };
   // Frame title (type 'frame')
   name?: string | null;
@@ -340,4 +343,22 @@ export function normalizeFontFamily(fontFamily: string | number | undefined): nu
     '1': 1, '2': 2, '3': 3, '5': 5, '6': 6, '7': 7, '8': 8,
   };
   return map[fontFamily.toLowerCase()];
+}
+
+// Font defaults (spec 7-9): Nunito reads well in Korean and English, and
+// Excalidraw 0.18.1 marks Virgil, Helvetica and Cascadia as deprecated.
+export const DEFAULT_FONT_FAMILY = 6;
+export const DEFAULT_FONT_SIZE = 16;
+export const DEFAULT_ARROW_LABEL_FONT_SIZE = 14;
+
+export function defaultLabelFontSize(containerType: string | undefined): number {
+  return containerType === 'arrow' || containerType === 'line'
+    ? DEFAULT_ARROW_LABEL_FONT_SIZE
+    : DEFAULT_FONT_SIZE;
+}
+
+// Excalidraw draws a label in its container's strokeColor, so a borderless
+// box (a note) would show invisible text.
+export function labelStrokeColorFor(container: { strokeColor?: string }): string | undefined {
+  return container.strokeColor === 'transparent' ? '#1e1e1e' : undefined;
 }
