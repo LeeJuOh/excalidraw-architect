@@ -38,7 +38,7 @@
 - **자식의 범위**(Q5): 박스는 `x`·`y`·`width`·`height`. 화살표·선은 `x`·`y` + `points`의 범위. 텍스트는 `width`·`height`가 있으면 그 값, 없으면(브라우저가 아직 재지 않은 에이전트 생성 텍스트) 추정한다 — `src/core/expand-elements.ts`의 추정식(글자당 0.6×`fontSize`, 줄 높이 1.25)을 함수 하나로 빼서 export와 자동 확장이 같이 쓰고, 한글(완성형 음절·자모)은 글자당 1.0×`fontSize`로 센다. 틀린 만큼은 여백 40이 받고, 브라우저가 잰 값이 오면 그 값이 추정을 덮는다. 기각: 좌표만 보기(긴 텍스트가 오른쪽에서 잘림), 브라우저 측정 기다리기(사용자가 안 만지거나 브라우저가 없으면 영영 안 옴), 서버에서 글꼴 파일로 재기(한글은 시스템 글꼴이라 어차피 추정).
 - **frame 이동·크기**(Q4): 서버 경로로 frame의 위치를 바꾸면 `frameId`가 그 frame인 자식도 같은 만큼 옮기고, 자식에 묶인 화살표는 서버가 다시 잇는다 — 브라우저에서 사용자가 frame을 끌 때와 같은 결과. 크기는 자식 범위 + 여백 40보다 작아지지 않는다(그 값으로 자른다). "frame 테두리만 옮기고 자식은 두는" 요구는 없다(그림 하나 = frame 하나).
 - **frame 삭제**(2026-10-05 그릴, ADR-0008): 서버 경로로 frame을 지우면 `frameId`가 그 frame인 자식도 같이 지운다. 지금 `DELETE /api/elements/:id`는 자식을 그대로 둔다. 화면에 알릴 때 자식 삭제를 먼저, frame을 마지막에 보낸다 — 반대면 화면이 `Missing frame`으로 잠깐 실패한다. 서버는 묻지 않는다. 미저장 그림을 지우기 전에 1회 묻는 것은 스킬 규칙이고 06 담당([ADR-0010](../../../docs/adr/0010-server-reports-save-state-skill-never-asks.md)).
-- **라벨 텍스트의 `frameId`**(Q6): Excalidraw 0.18.1의 `bindTextToContainer`는 컨테이너의 `frameId`를 라벨 텍스트에 복사하지 않아 `null`로 남는다. 라이브러리는 고치지 않는다. 프론트가 서버로 보내기 직전(`prepareServerScene`)에 `containerId`가 있는 텍스트의 `frameId`를 컨테이너의 `frameId`로 채운다. export가 만드는 라벨 텍스트(`expand-elements.ts`, 지금 `frameId: null` 고정)도 컨테이너를 따른다. `describe`는 `containerId`가 있는 텍스트를 컨테이너의 frame에 넣고 요소 수에 세지 않는다(라벨은 박스의 일부지 요소가 아니다). 기각: `describe`만 고치기(저장·export마다 같은 예외를 또 적어야 함).
+- **라벨 텍스트의 `frameId`**(Q6): Excalidraw 0.18.1의 `bindTextToContainer`는 컨테이너의 `frameId`를 라벨 텍스트에 복사하지 않아 `null`로 남는다. 라이브러리는 고치지 않는다. 프론트가 서버로 보내기 직전(`syncToBackend`)에 `containerId`가 있는 텍스트의 `frameId`를 컨테이너의 `frameId`로 채운다. export가 만드는 라벨 텍스트(`expand-elements.ts`, 지금 `frameId: null` 고정)도 컨테이너를 따른다. `describe`는 `containerId`가 있는 텍스트를 컨테이너의 frame에 넣고 요소 수에 세지 않는다(라벨은 박스의 일부지 요소가 아니다). 기각: `describe`만 고치기(저장·export마다 같은 예외를 또 적어야 함).
 - **`describe`**: frame과 자식을 그림 단위로 묶어 보여 준다. frame마다 이름과 요소 수. 어느 frame에도 없는 요소는 맨 끝의 "frame 밖" 묶음에 나온다. 숨기지 않고, 가까운 frame에 넣지도 않는다 — 서버가 추측하지 않는다.
 
 인수:
@@ -137,6 +137,7 @@
 - 2026-10-05 그릴: frame 삭제, 자동 확장 범위, 기본 글꼴 Nunito, `describe`의 frame 밖 묶음.
 - 2026-10-06~07 그릴(착수 전 검수에서 나온 8개): Q1 잘못된 `frameId` 거부 / Q2 빈 frame 거부 / Q3 링크 클릭 이동은 프론트 `onLinkOpen`(시연으로 확인, ADR-0008 정정) / Q4 frame 이동은 자식 동반 / Q5 자식 범위 추정 / Q6 라벨 `frameId`를 프론트가 채움(06에 전달) / Q7 mermaid 범위 밖 / Q8 글자 크기 기본값 서버.
 - 그릴에서 통한 것: 말로만 설명한 Q3는 세 번 되물었다. 캔버스에 예시를 그리고 동작을 실제로 띄워 보여 주니 바로 결정됐다. 용어(frame, 서버 경로, 라벨)는 먼저 한 줄로 풀고 묻는다. 긴 보고는 거부된다 — 표 하나와 질문 하나.
+- 2026-10-08 B 착수 전 판단 4개(사용자 확정): ADR-0008의 코드 사실 문장은 지우고 `onLinkOpen` 부분은 한 줄로 줄임 / MCP 실제 호스트 확인은 02로 / 서버 frame 이동과 브라우저 드래그 모양 비교는 안 함 / A의 임의 결정 7개는 그대로 둠.
 - 2026-10-08 슬라이스 A 구현 중 업스트림 결함 발견, 사용자 결정으로 이 슬라이스에서 고침: 서버 경로로 라벨 박스를 수정하면 화면이 라벨 텍스트를 하나 더 만든다(동기화 뒤 서버 데이터에 같은 `containerId` 텍스트 2개). 서버 라벨 글자 변경은 화면에 안 보였다. frame 없는 박스로 재현, 원인 코드는 업스트림 스냅샷과 같다.
 
 ## 슬라이스 A 결과 (2026-10-08)
@@ -166,59 +167,63 @@
 
 남은 위험: 사용자가 브라우저에서 라벨 글자를 고치고 자동 동기화 전에 에이전트가 같은 박스의 라벨을 바꾸면 에이전트 값이 이긴다.
 
-## 핸드오프 — 슬라이스 A 완료, B 착수 전 (2026-10-08)
+## 핸드오프 — 판단 끝, 슬라이스 B 구현 착수 (2026-10-08)
 
 ### Goal
 
-05의 남은 슬라이스 B(그림 참조 링크와 클릭 이동) → C(글꼴과 크기 기본값)를 구현한다. 결정은 이 문서 본문에 있다. 새 규칙을 만들지 않는다 — 어긋나면 멈추고 사용자에게 묻는다(무엇이 어긋나는지, 선택지).
+05의 남은 슬라이스 B(그림 참조 링크와 클릭 이동) → C(글꼴과 크기 기본값)를 구현한다. 결정은 이 문서 본문에 있고, 착수 전 판단 4개는 사용자가 2026-10-08에 끝냈다(Comments). 새 규칙을 만들지 않는다 — 어긋나면 멈추고 사용자에게 묻는다(무엇이 어긋나는지, 선택지).
 
 ### First Action
 
-**사용자에게 판단 3개를 묻는다. 사용자는 2026-10-08에 아무것도 정하지 않고 이 세션으로 미뤘다.** 한 번에 짧게 묻는다(표 하나와 질문). 아래 "Decisions Made"의 임의 결정 목록도 같이 보여 주고 그대로 둘지 묻는다.
+사용자에게 "슬라이스 B 구현을 시작한다"고 한 줄로 말하고 시작한다. 묻지 않는다 — 사용자가 2026-10-08에 "A 마무리됐고 B 구현하면 되는 상태"를 확인했다.
 
-1. ADR-0008 마지막 문장 "frame 자체는 Excalidraw 0.18이 원래 그리므로 프론트 수정이 없다"가 실제와 다르다(Q6 라벨 `frameId` 채움과 라벨 중복 수정이 프론트를 고쳤다). 고칠지.
-2. 슬라이스 A 인수 "일부" (1) MCP 실제 호스트 확인(아래 Context): 02 도그푸딩으로 넘길지, 지금 할지.
-3. 슬라이스 A 인수 "일부" (2) 서버로 frame 이동한 모양과 브라우저 드래그 모양 비교: 지금 할지, 이대로 둘지.
+B의 빨간 테스트는 이미 있다. `scripts/check-frames.mjs`의 `mcpBatchKeepsFrameFields` 끝에 `link` 케이스 3개(`create_element`로 `link: "?element=mf"` 유지 / `update_element`로 `link: null` / `batch_create_elements`로 유지)가 들어 있고, 현재 `dist`에서 실패한다(`"link": "?element=mf"`가 안 나옴 — MCP 스키마가 `link`를 버린다). 고칠 곳:
 
-답을 받은 뒤 슬라이스 B: `link`(string|null)를 `src/core/mcp-dispatch.ts`의 zod `ElementSchema`와 `src/core/mcp-tools.ts`의 `create_element`·`batch_create_elements`·`update_element` JSON 스키마에 연다(지금 `link`는 둘 다 없다 — 2026-10-08 grep 확인). 테스트는 `scripts/check-frames.mjs`에 케이스를 더하는 것으로 먼저 쓴다(`/mattpocock-skills:tdd`).
+1. `src/core/mcp-dispatch.ts`의 zod `ElementSchema`에 `link: z.string().nullable().optional()` — `frameId`·`name` 옆.
+2. `src/core/mcp-tools.ts`의 JSON 스키마 세 곳(`create_element`, `update_element`, `batch_create_elements`의 items)에 `link: { type: ['string', 'null'], description: ... }`. 설명은 칸이 무엇인지만("`?element=<frame id>`는 다른 그림을 가리킨다"). 언제 쓰는지는 03의 규칙이라 적지 않는다. 설명 문자열은 작은따옴표라 `'`를 넣으면 빌드가 깨진다.
+3. `frontend/src/App.tsx`의 `onLinkOpen` — `PROTOTYPE` 주석만 보통 주석으로 바꾼다. 로직은 본문 규칙 그대로라 손대지 않는다.
+
+그 뒤 `npm run test:frames`(빌드 포함)로 초록 확인 → 브라우저 인수(아래 Context) → B 인수 4개 체크·결과 표 → 커밋.
 
 ### Context
 
-- 슬라이스 A는 커밋 `18dcdbf`로 끝났다. 인수 결과 표는 위 "슬라이스 A 결과". "일부" 2개의 뜻: (1) MCP 테스트로 `name`·`frameId` 유지는 확인했지만, 새 빌드로 Claude Code를 다시 띄워 MCP로 직접 그려 보지는 못했다(이 세션은 npm 게시본으로 떠 있었다). (2) `update_element`로 frame을 옮기면 자식이 따라가는 것은 확인했지만, 브라우저 드래그 결과와 나란히 비교하지 않았다.
-- 구현 중 업스트림 결함(서버 수정 뒤 라벨 텍스트 2개)을 찾았고 사용자 결정으로 A 안에서 고쳤다. 고친 곳: `src/server.ts`의 `withoutLabel`(라벨을 안 바꾼 수정은 `label`을 화면에 안 보냄)과 PUT의 옛 라벨 텍스트 삭제, `frontend/src/utils/scene.ts`의 `reconcileAgentLabels`(재로드 경로).
-- 슬라이스 B의 클릭 이동 코드는 이미 `frontend/src/App.tsx`의 `onLinkOpen`에 시연으로 있다(`PROTOTYPE` 주석). 본문 규칙대로 주석만 정리하고 그대로 쓴다.
-- 슬라이스 C는 라벨 `fontFamily` 결함 수정이 핵심이다. A에서 바뀐 것과 겹치는 곳: 라벨 수정 PUT은 이제 `label`을 바꿀 때만 화면에 보내고, 바뀐 라벨이면 저장된 옛 라벨 텍스트를 지운다. C의 "글자만 바꿔도 글꼴·크기 유지" 규칙은 이 경로(`src/server.ts` PUT의 `touches(['label'])` 부분)와 `reconcileAgentLabels`의 키 비교를 같이 봐야 한다 — `reconcileAgentLabels`는 `label`의 모든 키를 라벨 텍스트의 같은 키와 비교한다(`text`만 `originalText`와).
+- 이 세션은 `/grill-with-docs`로 판단 4개를 하나씩 물어 끝냈다. 결과는 Comments 2026-10-08 줄과 "Decisions Made". ADR-0008은 코드 사실 문장을 지우고 `onLinkOpen` 부분을 한 줄로 줄였다(ADR 기준: 되돌리기 어려움·놀라움·트레이드오프 — 코드 사실은 ADR이 아니다).
+- 브라우저 인수는 세 가지를 본다: (1) 링크 박스를 선택하면 나오는 링크 아이콘을 눌러 같은 탭에서 대상 frame으로 이동, 탭 수 전후 같음(`tabs_context_mcp`). (2) 없는 id를 가리키는 `?element=` 링크는 새 탭(기본 동작). (3) `https://` 링크도 새 탭. 라벨 있는 박스에 `link`만 바꾸는 `update_element`가 화면까지 가는지도 본다 — A에서 PUT 경로가 `label`을 안 바꾼 수정은 `withoutLabel`로 보내게 바뀌었다(`src/server.ts`).
+- **이 세션의 MCP 툴(`mcp__plugin_excalidraw-architect_archdraw__*`)로 확인하지 않는다.** npm 게시본이라 옛 스키마가 `link`를 버려 고친 코드가 안 보인다. 확인은 `check-frames`의 MCP stdio 케이스와, `npm run build` 뒤 `node dist/bin.js session start --project .`로 띄운 서버에 CLI·REST로 한다.
+- 슬라이스 C 주의: A에서 바뀐 PUT 경로(`src/server.ts`의 `touches(['label'])` 부분)와 프론트 `reconcileAgentLabels`(`frontend/src/utils/scene.ts`)가 `label`의 키를 라벨 텍스트와 비교한다. C의 "글자만 바꿔도 글꼴·크기 유지" 규칙은 이 두 곳을 같이 봐야 한다.
 
-### Current Progress (git 기준)
+### Current Progress (git 기준, 2026-10-08)
 
-- 브랜치 `main`, 작업 트리 깨끗함. 마지막 커밋 `18dcdbf`(슬라이스 A + 라벨 중복 수정). push 안 함.
-- 완료: 슬라이스 A 코드, 테스트(`scripts/check-frames.mjs` 13개, `tests/browser/scene-reload.spec.mjs` 마지막 케이스), 이 문서의 A 인수 체크(18개 중 16개 체크, "일부" 2개는 빈 칸)·결과 표, `spec.md` 진행 순서 7번과 05 행 갱신.
-- 슬라이스 B·C: 시작 안 함.
+- 브랜치 `main`. 마지막 커밋 `57453b1`(옛 핸드오프). 슬라이스 A 코드는 `18dcdbf`. push 안 함.
+- 미커밋 3개(`git diff --stat`): 이 문서(판단 기록·핸드오프 교체), `docs/adr/0008-frame-is-the-drawing-unit.md`(1문장 삭제·1문장 축약), `scripts/check-frames.mjs`(B의 `link` 테스트 13줄 추가, 현재 빨강). B 커밋에 같이 넣는다.
+- 슬라이스 B 코드: 시작 안 함. C: 시작 안 함.
+- `dist/`는 `18dcdbf` 코드의 빌드다(`57453b1`은 문서만).
 
 ### Decisions Made
 
-**전부 사용자 미확인.** 에이전트가 임의로 정해 슬라이스 A에 넣었고 끝 보고에 올렸지만 사용자는 정하지 않았다(라벨 중복 버그를 A에서 고치는 것만 사용자가 정했다). First Action에서 같이 묻는다: 라벨 `frameId`는 `syncToBackend`에서 채움(본문의 `prepareServerScene`은 반대 방향이라) / 빈 frame 거부를 PUT에도 / 자동 확장은 이번에 바뀐 자식만 본다(사용자가 끌어낸 자식 무시) / 텍스트 글자 변경 시 옛 측정 크기를 버리고 추정 / frame 삭제 알림 순서 라벨 → 박스 → frame / frame 생성 시 `name` 기본 `null` / 400 거부는 MCP 에러로 그대로 전달(`CanvasRejectedError`).
+- 2026-10-08 사용자 확정 4개: ADR-0008 코드 사실 문장 삭제 / MCP 실제 호스트 확인은 02 도그푸딩으로 / 서버 frame 이동과 브라우저 드래그 모양 비교는 안 함 / 아래 A의 결정 7개 그대로.
+- A의 결정 7개(에이전트가 정하고 사용자가 뒤에 확인): 라벨 `frameId`는 프론트 `syncToBackend`에서 채움 / 빈 frame 거부를 PUT에도 / 자동 확장은 이번에 바뀐 자식만 본다 / 텍스트 글자 변경 시 옛 측정 크기를 버리고 추정 / frame 삭제 알림 순서 라벨 → 박스 → frame / frame 생성 시 `name` 기본 `null` / 400 거부는 MCP 에러로 그대로 전달.
 
 ### What Worked
 
-- 버그는 `/mattpocock-skills:diagnosing-bugs`로 frame 없는 박스에서 재현해 "이번 변경 탓인지"를 바로 가렸다. 업스트림 스냅샷(`references/mcp-excalidraw-yctimlin/`)과 코드를 비교해 업스트림 결함으로 확정했다.
-- 브라우저 회귀 테스트는 `tests/browser/scene-reload.spec.mjs`에 Playwright로 쓴다(`npm run test:canvas`, 빌드 포함). 서버 규칙은 `scripts/check-frames.mjs`(실제 `dist/server.js` + MCP stdio). 브라우저 동기화를 흉내 낼 때는 `POST /api/elements/sync`로 씬을 넣는다.
-- 코드 리뷰를 두 서브에이전트(규칙·스펙)로 돌려 정확성 결함 4개를 잡았다.
+- 판단은 **한 번에 하나씩**, 표 하나와 추천 하나. 사용자가 "하나씩"을 명시했다. 4개가 네 턴에 끝났다.
+- "이게 ADR 기준에 맞아?"에 기준 셋을 표로 대조하니 바로 결정됐다.
+- A에서: 버그는 `/mattpocock-skills:diagnosing-bugs`로 frame 없는 박스에서 재현해 업스트림 결함인지 가렸다. 서버 규칙 테스트는 `scripts/check-frames.mjs`(실제 `dist/server.js` + MCP stdio), 브라우저 회귀는 `tests/browser/scene-reload.spec.mjs`(`npm run test:canvas`).
 
 ### What Didn't Work
 
-- ⚠️ 사용자는 긴 보고를 거부한다. 한국어, 결과부터, 짧게. 용어는 한 줄로 풀어 쓴다. "일부" 같은 말은 무엇을 확인했고 무엇을 못 했는지로 바로 풀어 쓴다.
-- ⚠️ claude-in-chrome에서 페이지를 새로 연 직후 "Sync to Backend" 버튼 클릭(ref·좌표)이 동기화를 일으키지 않을 때가 있다. `javascript_tool`로 버튼의 `click()`을 부르면 확실하다. 콘솔 "Syncing N elements"로 확인한다.
-- ⚠️ excalidraw.com에 파일을 끌어 놓으면 그 탭의 기존 내용이 바뀐다("Content replaced"). 확인 뒤 바로 `cmd+z`로 되돌린다. `file_upload`는 scratchpad 파일을 못 올리므로 `DragEvent` drop을 `javascript_tool`로 보낸다.
-- `mcp-tools.ts` 툴 설명은 작은따옴표 문자열이라 `'`를 넣으면 빌드가 깨진다. CLI `describe`는 `--session`만 받는다(`--project` 없음).
+- ⚠️ **질문이 끝났다고 구현을 시작하지 않는다.** 이 세션은 판단 4개가 끝나자 묻지 않고 B 테스트를 쓰기 시작했고 사용자가 멈췄다("누가 슬라이스 b 시작하래?"). 그릴의 끝은 "공통 이해 확인"이지 착수가 아니다. 다음 단계로 넘어갈 때는 한 줄로 묻는다.
+- ⚠️ 사용자는 긴 보고를 거부한다. 한국어, 결과부터, 표 하나. "일부" 같은 말은 무엇을 확인했고 무엇을 못 했는지로 바로 풀어 쓴다.
+- ⚠️ claude-in-chrome에서 페이지를 새로 연 직후 "Sync to Backend" 클릭이 동기화를 안 일으킬 때가 있다. `javascript_tool`로 버튼 `click()`을 부르고 콘솔 "Syncing N elements"로 확인한다.
+- ⚠️ excalidraw.com에 파일을 끌어 놓으면 그 탭의 내용이 바뀐다. 확인 뒤 바로 `cmd+z`.
+- `mcp-tools.ts` 설명 문자열에 `'`를 넣으면 빌드가 깨진다. CLI `describe`는 `--session`만 받는다.
 
 ### Infrastructure State
 
-- 캔버스 세션 `fde6fc`(http://127.0.0.1:54378)과 `14abd4`(http://127.0.0.1:54064)가 2026-10-08에 떠 있었다. 30분 유휴면 스스로 끝난다. `fde6fc`에는 시험 데이터(`probeA`, `lf`, `dupA` 등, 옛 결함으로 생긴 `api`의 중복 라벨)가 남아 있다 — 새로 쓸 땐 `npm run build` 뒤 `node dist/bin.js session start --project <레포>`로 새 세션을 띄운다.
-- `dist/`는 `18dcdbf` 코드의 빌드다.
+- 캔버스 세션 `14abd4`(http://127.0.0.1:54064)와 `fde6fc`가 2026-10-08 세션 시작 시점에 떠 있었다(`node dist/bin.js session list`). 30분 유휴면 스스로 끝난다. `fde6fc`에는 A의 시험 데이터가 남아 있다 — B 확인은 `npm run build` 뒤 새 세션을 띄운다.
 
 ### Next Steps
 
-1. 슬라이스 B 구현 → 인수 확인(브라우저 링크 클릭은 claude-in-chrome) → 커밋.
+1. 슬라이스 B 구현(First Action) → 인수 4개 확인 → 결과 표 → 커밋(영어 1~2문장, 트레일러 없음, push 안 함).
 2. 슬라이스 C 구현 → 인수 확인 → 커밋.
 3. 05를 닫을 때 `spec.md` 진행 순서 7번과 05 행, 이 문서 맨 위 `Status:`를 고친다. 다음은 03 슬라이스 B.

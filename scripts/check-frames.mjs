@@ -372,6 +372,19 @@ async function mcpBatchKeepsFrameFields() {
     const moved = await call('update_element', { id: 'm1', frameId: null });
     assert.equal(moved.isError, false, moved.text);
     assert.match(moved.text, /"frameId": null/);
+
+    // link: a box that points at another drawing keeps "?element=<frame id>" through MCP
+    const linked = await call('create_element', { id: 'm4', type: 'rectangle', x: 40, y: 200, width: 200, height: 60, frameId: 'mf', text: 'see Checkout', link: '?element=mf' });
+    assert.equal(linked.isError, false, linked.text);
+    assert.match(linked.text, /"link": "\?element=mf"/);
+    const unlinked = await call('update_element', { id: 'm4', link: null });
+    assert.equal(unlinked.isError, false, unlinked.text);
+    assert.match(unlinked.text, /"link": null/);
+    const relinked = await call('batch_create_elements', { elements: [
+      { id: 'm5', type: 'rectangle', x: 320, y: 200, width: 200, height: 60, frameId: 'mf', link: '?element=mf' }
+    ] });
+    assert.equal(relinked.isError, false, relinked.text);
+    assert.match(relinked.text, /"link": "\?element=mf"/);
     await call('session_end', {});
   } finally {
     child.kill();
