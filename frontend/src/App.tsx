@@ -787,6 +787,17 @@ function App(): JSX.Element {
               }
               scheduleAutoSync()
             }}
+            onLinkOpen={(element, event) => {
+              // PROTOTYPE (issue 05 Q3 (a)): "?element=<id>" scrolls to that element in this tab.
+              const match = element.link?.match(/[?&]element=([^&#]+)/)
+              if (!match) return
+              const api = excalidrawAPIRef.current
+              if (!api) return
+              const target = api.getSceneElements().find((el) => el.id === decodeURIComponent(match[1]))
+              if (!target) return
+              event.preventDefault()
+              api.scrollToContent([target], { fitToContent: true, animate: true })
+            }}
             initialData={{
               elements: [],
               appState: {
