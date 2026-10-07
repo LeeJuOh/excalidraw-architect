@@ -69,6 +69,7 @@ export const tools: Tool[] = [
         fontFamily: { type: ['string', 'number'], description: 'Font family: virgil/hand/handwritten (1), helvetica/sans/sans-serif (2), cascadia/mono/monospace (3), excalifont (5), nunito (6), lilita/lilita one (7), comic shanns/comic (8), or numeric ID' },
         frameId: { type: ['string', 'null'], description: 'ID of the frame (drawing) this element belongs to. The frame must exist or be in the same batch. null takes the element out of its frame.' },
         name: { type: 'string', description: 'For frames: the drawing title shown on the frame' },
+        link: { type: ['string', 'null'], description: 'Link opened from the element. "?element=<frame id>" points at another drawing and moves the canvas to it on click. null removes the link.' },
         startElementId: { type: 'string', description: 'For arrows: ID of the element to bind the arrow start to. Arrow auto-routes to element edge.' },
         endElementId: { type: 'string', description: 'For arrows: ID of the element to bind the arrow end to. Arrow auto-routes to element edge.' },
         endArrowhead: { type: 'string', description: 'Arrowhead style at end: arrow, bar, dot, triangle, or null' },
@@ -102,7 +103,8 @@ export const tools: Tool[] = [
         fontSize: { type: 'number' },
         fontFamily: { type: ['string', 'number'], description: 'Font family: virgil/hand/handwritten (1), helvetica/sans/sans-serif (2), cascadia/mono/monospace (3), excalifont (5), nunito (6), lilita/lilita one (7), comic shanns/comic (8), or numeric ID' },
         frameId: { type: ['string', 'null'], description: 'ID of the frame (drawing) this element belongs to. The frame must exist or be in the same batch. null takes the element out of its frame.' },
-        name: { type: 'string', description: 'For frames: the drawing title shown on the frame' }
+        name: { type: 'string', description: 'For frames: the drawing title shown on the frame' },
+        link: { type: ['string', 'null'], description: 'Link opened from the element. "?element=<frame id>" points at another drawing and moves the canvas to it on click. null removes the link.' }
       },
       required: ['id']
     }
@@ -314,6 +316,7 @@ export const tools: Tool[] = [
               fontFamily: { type: ['string', 'number'], description: 'Font family: virgil/hand/handwritten (1), helvetica/sans/sans-serif (2), cascadia/mono/monospace (3), excalifont (5), nunito (6), lilita/lilita one (7), comic shanns/comic (8), or numeric ID' },
               frameId: { type: ['string', 'null'], description: 'ID of the frame (drawing) this element belongs to. The frame must exist or be in the same batch. null takes the element out of its frame.' },
               name: { type: 'string', description: 'For frames: the drawing title shown on the frame' },
+              link: { type: ['string', 'null'], description: 'Link opened from the element. "?element=<frame id>" points at another drawing and moves the canvas to it on click. null removes the link.' },
               startElementId: { type: 'string', description: 'For arrows: ID of element to bind arrow start to' },
               endElementId: { type: 'string', description: 'For arrows: ID of element to bind arrow end to' },
               endArrowhead: { type: 'string', description: 'Arrowhead style at end: arrow, bar, dot, triangle, or null' },

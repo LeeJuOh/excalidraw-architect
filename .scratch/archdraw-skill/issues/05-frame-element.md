@@ -68,7 +68,7 @@
 
 **Blocked by:** 슬라이스 A (참조 대상이 frame이다)
 
-**Status:** ready-for-agent
+**Status:** resolved (2026-10-08 — 인수 4개 통과. 결과는 맨 아래 "슬라이스 B 결과")
 
 규칙:
 
@@ -90,10 +90,10 @@
 
 인수:
 
-- [ ] frame B 안에 박스가 있을 때 `create_element`로 `link: "?element=<B의 id>"`를 준 박스를 만들면 요소 데이터에 그 `link`가 남는다. `update_element`로 `link`를 바꾸거나 `null`로 지울 수 있다
-- [ ] 브라우저에서 그 박스의 링크 아이콘을 누르면 같은 탭에서 화면이 B로 이동하고 새 탭이 열리지 않는다
-- [ ] 없는 id를 가리키는 링크와 보통 `https://` 링크는 Excalidraw 기본 동작 그대로다(새 탭)
-- [ ] 기존 `npm test` 통과
+- [x] frame B 안에 박스가 있을 때 `create_element`로 `link: "?element=<B의 id>"`를 준 박스를 만들면 요소 데이터에 그 `link`가 남는다. `update_element`로 `link`를 바꾸거나 `null`로 지울 수 있다
+- [x] 브라우저에서 그 박스의 링크 아이콘을 누르면 같은 탭에서 화면이 B로 이동하고 새 탭이 열리지 않는다
+- [x] 없는 id를 가리키는 링크와 보통 `https://` 링크는 Excalidraw 기본 동작 그대로다(새 탭)
+- [x] 기존 `npm test` 통과
 
 ## 슬라이스 C — 글꼴과 크기 기본값
 
@@ -166,6 +166,17 @@
 라벨 중복 수정: 서버는 라벨을 바꾸지 않은 수정에서 `label`을 화면에 보내지 않고, 바뀐 라벨은 저장된 옛 라벨 텍스트를 지운다. 프론트 `reconcileAgentLabels`는 같은 라벨이면 버리고 다른 라벨이면 옛 텍스트를 바꾼다(재로드 경로). 회귀 테스트: `tests/browser/scene-reload.spec.mjs` 마지막, `check-frames`의 라벨 케이스.
 
 남은 위험: 사용자가 브라우저에서 라벨 글자를 고치고 자동 동기화 전에 에이전트가 같은 박스의 라벨을 바꾸면 에이전트 값이 이긴다.
+
+## 슬라이스 B 결과 (2026-10-08)
+
+| 인수 | 결과 | 근거 |
+|---|---|---|
+| MCP `create`·`update`·`batch`로 `link` 유지·변경·`null` | 통과 | `check-frames` MCP stdio 케이스(실제 `dist`). CLI `add`·`update`도 실세션에서 `link` 유지 |
+| 링크 아이콘 → 같은 탭에서 B로 이동 | 통과 | 실세션 `e46ce6` 브라우저. 아이콘 클릭 뒤 화면에 frame B, 탭 수 1, 가로챈 `window.open` 호출 0 |
+| 없는 id·`https://` 링크는 새 탭 | 통과 | 같은 화면에서 두 아이콘 클릭 → `window.open(_, "_blank")` 2회(Excalidraw 기본 동작) |
+| 기존 `npm test` | 통과 | `npm test` 전체 |
+
+라벨 박스에 `link`만 바꾸는 CLI `update`도 화면까지 갔다: 새로고침 없이 링크 아이콘이 생기고, 동기화 뒤 라벨 텍스트는 하나다.
 
 ## 핸드오프 — 판단 끝, 슬라이스 B 구현 착수 (2026-10-08)
 

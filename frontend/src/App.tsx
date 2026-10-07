@@ -788,7 +788,7 @@ function App(): JSX.Element {
               scheduleAutoSync()
             }}
             onLinkOpen={(element, event) => {
-              // PROTOTYPE (issue 05 Q3 (a)): "?element=<id>" scrolls to that element in this tab.
+              // Excalidraw reads only absolute URLs as element links, so a relative "?element=<id>" would open a new tab.
               const match = element.link?.match(/[?&]element=([^&#]+)/)
               if (!match) return
               const api = excalidrawAPIRef.current

@@ -377,6 +377,9 @@ async function mcpBatchKeepsFrameFields() {
     const linked = await call('create_element', { id: 'm4', type: 'rectangle', x: 40, y: 200, width: 200, height: 60, frameId: 'mf', text: 'see Checkout', link: '?element=mf' });
     assert.equal(linked.isError, false, linked.text);
     assert.match(linked.text, /"link": "\?element=mf"/);
+    const changed = await call('update_element', { id: 'm4', link: 'https://example.com' });
+    assert.equal(changed.isError, false, changed.text);
+    assert.match(changed.text, /"link": "https:\/\/example\.com"/);
     const unlinked = await call('update_element', { id: 'm4', link: null });
     assert.equal(unlinked.isError, false, unlinked.text);
     assert.match(unlinked.text, /"link": null/);

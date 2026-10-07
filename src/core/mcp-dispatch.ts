@@ -65,6 +65,7 @@ const ElementSchema = z.object({
   groupIds: z.array(z.string()).optional(),
   frameId: z.string().nullable().optional(),
   name: z.string().nullable().optional(),
+  link: z.string().nullable().optional(),
   locked: z.boolean().optional(),
   strokeStyle: z.string().optional(),
   roundness: z.object({ type: z.number(), value: z.number().optional() }).nullable().optional(),
