@@ -137,3 +137,50 @@
 - 2026-10-05 그릴: frame 삭제, 자동 확장 범위, 기본 글꼴 Nunito, `describe`의 frame 밖 묶음.
 - 2026-10-06~07 그릴(착수 전 검수에서 나온 8개): Q1 잘못된 `frameId` 거부 / Q2 빈 frame 거부 / Q3 링크 클릭 이동은 프론트 `onLinkOpen`(시연으로 확인, ADR-0008 정정) / Q4 frame 이동은 자식 동반 / Q5 자식 범위 추정 / Q6 라벨 `frameId`를 프론트가 채움(06에 전달) / Q7 mermaid 범위 밖 / Q8 글자 크기 기본값 서버.
 - 그릴에서 통한 것: 말로만 설명한 Q3는 세 번 되물었다. 캔버스에 예시를 그리고 동작을 실제로 띄워 보여 주니 바로 결정됐다. 용어(frame, 서버 경로, 라벨)는 먼저 한 줄로 풀고 묻는다. 긴 보고는 거부된다 — 표 하나와 질문 하나.
+
+## 핸드오프 — 구현 시작 전 (2026-10-07)
+
+### Goal
+
+이 이슈의 슬라이스 A(frame) → B(link 이동) → C(글꼴·크기)를 구현한다. 결정은 이 문서 본문에 다 있다. 구현 중 새 규칙을 만들지 않는다.
+
+### First Action
+
+슬라이스 A를 시작한다. 이 파일의 "슬라이스 A — frame" 절을 읽고, 첫 작업은 **타입과 스키마**다: `src/types.ts`의 요소 타입 목록에 `frame`을 더하고, `src/core/mcp-dispatch.ts`의 zod `ElementSchema`와 `src/core/mcp-tools.ts`의 툴 JSON 스키마에 `frameId`·`name`을 연다. 끝나면 A의 첫 두 인수(CLI로 frame + 박스 둘 / MCP batch로 같은 것)를 실제 캔버스로 확인한다. 확인은 `npm run build` 뒤 `ARCHDRAW_BIN=<레포>/dist/bin.js`를 둔 셸에서 호스트를 다시 띄워서 한다 — 비어 있으면 npm 게시본(0.1.1)이 돌아 고친 코드가 안 보인다. `/mattpocock-skills:tdd`로 서버 규칙(검사·자동 확장·삭제)에 테스트를 먼저 두면 좋다.
+
+### Context
+
+2026-10-07 세션은 결정만 했고 서버 코드는 한 줄도 안 바꿨다. 사용자는 긴 보고를 거부하고, 용어(frame, 서버 경로, 라벨, 링크 아이콘)를 말로만 설명하면 되묻는다. 캔버스에 예시를 그리고 실제로 띄워 보여 주는 쪽이 통했다. 구현 중 사용자에게 보여 줄 때도 같은 방식으로 한다.
+
+### Current Progress (git 기준)
+
+브랜치 `main`, 작업 트리 깨끗함. 마지막 커밋 `5290f84` — 이 이슈를 슬라이스 A·B·C로 재작성, 이슈 06 한 줄, `spec.md`(7-6·줌 레벨 절·진행 순서·05 상태), ADR-0008 정정, `frontend/src/App.tsx`의 `onLinkOpen` 시연 코드(`PROTOTYPE` 주석, 슬라이스 B에서 주석만 정리하고 그대로 쓴다). 구현된 슬라이스: 없음. 인수 체크: 0개.
+
+### Decisions Made
+
+본문 각 슬라이스의 "규칙"과 `## Comments`의 Q1~Q8 요약. ADR: [0008](../../../docs/adr/0008-frame-is-the-drawing-unit.md)(frame, link 이동), [0010](../../../docs/adr/0010-server-reports-save-state-skill-never-asks.md)(서버는 묻지 않음), [0006](../../../docs/adr/0006-canvas-guide-single-source-via-mcp.md)(글꼴 이름은 `docs/canvas-guide.md`에).
+
+### What Worked
+
+- 결정이 막히면 캔버스에 예시를 그린다(`batch_create_elements`), 동작이 필요하면 레포 코드를 고쳐 띄워 사용자가 직접 눌러 보게 한다. Q3는 이걸로 바로 끝났다.
+- 세션 간 캔버스 복사: 게시본(3000)의 `GET /api/elements` 결과를 `{elements, timestamp}`로 감싸 새 세션의 `POST /api/elements/sync`에 보내면 된다.
+- REST `PUT /api/elements/:id`는 `.passthrough()`라 `link` 같은 미지원 칸도 통과한다. MCP 툴은 버린다. 스키마 확인은 이 차이로 실측했다.
+
+### What Didn't Work
+
+- ⚠️ 자동 모드에서 npm 캐시(`~/.npm/_npx/…`)의 게시본 파일 교체와 `node dist/bin.js session start`가 권한 거부됐다. 서버를 띄워야 하면 사용자에게 `! npm run build:server && node dist/bin.js session start --project .`를 쳐 달라고 한다.
+- ⚠️ 지금 게시본 서버(3000)는 `label: {text}`를 버린다 — 박스를 만들어도 글자가 안 보인다(원인 미조사, 이 이슈의 글꼴 결함과 별개일 수 있다). 사용자에게 보여 줄 예시는 글자를 독립 `text` 요소로 따로 넣었다. 레포 코드에서 재현되면 슬라이스 C 1번과 같이 본다.
+- 스크린샷(`get_canvas_screenshot`)에 박스 라벨이 안 찍힌 것도 위와 같은 원인으로 보인다(미확인).
+
+### Infrastructure State
+
+- 포트 3000: npm 게시본 0.1.1 서버(플러그인 MCP가 붙어 있는 것). 로드맵 그림 + Q3 예시 그림이 있다.
+- 포트 54064: 레포 빌드 서버, 세션 키 `14abd4`, 기록 `~/.excalidraw-architect/sessions/14abd4.json`. `onLinkOpen` 시연본이 떠 있고 같은 그림이 복사돼 있다. 30분 유휴면 스스로 끝난다. 끝나 있으면 First Action의 명령으로 다시 띄운다.
+- `dist/`는 2026-10-07 빌드본(프론트 + 서버). 커밋하지 않는다.
+
+### Next Steps
+
+1. 슬라이스 A 나머지: `frameId` 검사 → 빈 frame 거부 → 자동 확장(자식 범위 추정 함수를 `expand-elements.ts`에서 빼냄) → frame 이동·크기 → 삭제(자식 먼저 알림) → 라벨 `frameId`(프론트 `prepareServerScene` + export) → `describe` 묶음 → `canvas-ops.md`·툴 설명. 인수 전부 확인하고 커밋.
+2. 슬라이스 B: MCP 스키마에 `link`, `App.tsx` 시연 코드 정리. 인수 확인, 커밋.
+3. 슬라이스 C: 라벨 글꼴 결함(4곳) → 기본값 서버 주입(글꼴 6, 크기 16/14) → 프론트 `currentItemFontFamily` → `docs/canvas-guide.md`·`canvas-ops.md`·툴 설명. 인수 확인, 커밋.
+4. 다 끝나면 `spec.md` 진행 순서 7번과 05 상태를 완료로, 06을 착수 가능으로 바꾼다.
