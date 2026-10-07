@@ -165,3 +165,60 @@
 라벨 중복 수정: 서버는 라벨을 바꾸지 않은 수정에서 `label`을 화면에 보내지 않고, 바뀐 라벨은 저장된 옛 라벨 텍스트를 지운다. 프론트 `reconcileAgentLabels`는 같은 라벨이면 버리고 다른 라벨이면 옛 텍스트를 바꾼다(재로드 경로). 회귀 테스트: `tests/browser/scene-reload.spec.mjs` 마지막, `check-frames`의 라벨 케이스.
 
 남은 위험: 사용자가 브라우저에서 라벨 글자를 고치고 자동 동기화 전에 에이전트가 같은 박스의 라벨을 바꾸면 에이전트 값이 이긴다.
+
+## 핸드오프 — 슬라이스 A 완료, B 착수 전 (2026-10-08)
+
+### Goal
+
+05의 남은 슬라이스 B(그림 참조 링크와 클릭 이동) → C(글꼴과 크기 기본값)를 구현한다. 결정은 이 문서 본문에 있다. 새 규칙을 만들지 않는다 — 어긋나면 멈추고 사용자에게 묻는다(무엇이 어긋나는지, 선택지).
+
+### First Action
+
+**사용자에게 판단 3개를 묻는다. 사용자는 2026-10-08에 아무것도 정하지 않고 이 세션으로 미뤘다.** 한 번에 짧게 묻는다(표 하나와 질문). 아래 "Decisions Made"의 임의 결정 목록도 같이 보여 주고 그대로 둘지 묻는다.
+
+1. ADR-0008 마지막 문장 "frame 자체는 Excalidraw 0.18이 원래 그리므로 프론트 수정이 없다"가 실제와 다르다(Q6 라벨 `frameId` 채움과 라벨 중복 수정이 프론트를 고쳤다). 고칠지.
+2. 슬라이스 A 인수 "일부" (1) MCP 실제 호스트 확인(아래 Context): 02 도그푸딩으로 넘길지, 지금 할지.
+3. 슬라이스 A 인수 "일부" (2) 서버로 frame 이동한 모양과 브라우저 드래그 모양 비교: 지금 할지, 이대로 둘지.
+
+답을 받은 뒤 슬라이스 B: `link`(string|null)를 `src/core/mcp-dispatch.ts`의 zod `ElementSchema`와 `src/core/mcp-tools.ts`의 `create_element`·`batch_create_elements`·`update_element` JSON 스키마에 연다(지금 `link`는 둘 다 없다 — 2026-10-08 grep 확인). 테스트는 `scripts/check-frames.mjs`에 케이스를 더하는 것으로 먼저 쓴다(`/mattpocock-skills:tdd`).
+
+### Context
+
+- 슬라이스 A는 커밋 `18dcdbf`로 끝났다. 인수 결과 표는 위 "슬라이스 A 결과". "일부" 2개의 뜻: (1) MCP 테스트로 `name`·`frameId` 유지는 확인했지만, 새 빌드로 Claude Code를 다시 띄워 MCP로 직접 그려 보지는 못했다(이 세션은 npm 게시본으로 떠 있었다). (2) `update_element`로 frame을 옮기면 자식이 따라가는 것은 확인했지만, 브라우저 드래그 결과와 나란히 비교하지 않았다.
+- 구현 중 업스트림 결함(서버 수정 뒤 라벨 텍스트 2개)을 찾았고 사용자 결정으로 A 안에서 고쳤다. 고친 곳: `src/server.ts`의 `withoutLabel`(라벨을 안 바꾼 수정은 `label`을 화면에 안 보냄)과 PUT의 옛 라벨 텍스트 삭제, `frontend/src/utils/scene.ts`의 `reconcileAgentLabels`(재로드 경로).
+- 슬라이스 B의 클릭 이동 코드는 이미 `frontend/src/App.tsx`의 `onLinkOpen`에 시연으로 있다(`PROTOTYPE` 주석). 본문 규칙대로 주석만 정리하고 그대로 쓴다.
+- 슬라이스 C는 라벨 `fontFamily` 결함 수정이 핵심이다. A에서 바뀐 것과 겹치는 곳: 라벨 수정 PUT은 이제 `label`을 바꿀 때만 화면에 보내고, 바뀐 라벨이면 저장된 옛 라벨 텍스트를 지운다. C의 "글자만 바꿔도 글꼴·크기 유지" 규칙은 이 경로(`src/server.ts` PUT의 `touches(['label'])` 부분)와 `reconcileAgentLabels`의 키 비교를 같이 봐야 한다 — `reconcileAgentLabels`는 `label`의 모든 키를 라벨 텍스트의 같은 키와 비교한다(`text`만 `originalText`와).
+
+### Current Progress (git 기준)
+
+- 브랜치 `main`, 작업 트리 깨끗함. 마지막 커밋 `18dcdbf`(슬라이스 A + 라벨 중복 수정). push 안 함.
+- 완료: 슬라이스 A 코드, 테스트(`scripts/check-frames.mjs` 13개, `tests/browser/scene-reload.spec.mjs` 마지막 케이스), 이 문서의 A 인수 체크(18개 중 16개 체크, "일부" 2개는 빈 칸)·결과 표, `spec.md` 진행 순서 7번과 05 행 갱신.
+- 슬라이스 B·C: 시작 안 함.
+
+### Decisions Made
+
+**전부 사용자 미확인.** 에이전트가 임의로 정해 슬라이스 A에 넣었고 끝 보고에 올렸지만 사용자는 정하지 않았다(라벨 중복 버그를 A에서 고치는 것만 사용자가 정했다). First Action에서 같이 묻는다: 라벨 `frameId`는 `syncToBackend`에서 채움(본문의 `prepareServerScene`은 반대 방향이라) / 빈 frame 거부를 PUT에도 / 자동 확장은 이번에 바뀐 자식만 본다(사용자가 끌어낸 자식 무시) / 텍스트 글자 변경 시 옛 측정 크기를 버리고 추정 / frame 삭제 알림 순서 라벨 → 박스 → frame / frame 생성 시 `name` 기본 `null` / 400 거부는 MCP 에러로 그대로 전달(`CanvasRejectedError`).
+
+### What Worked
+
+- 버그는 `/mattpocock-skills:diagnosing-bugs`로 frame 없는 박스에서 재현해 "이번 변경 탓인지"를 바로 가렸다. 업스트림 스냅샷(`references/mcp-excalidraw-yctimlin/`)과 코드를 비교해 업스트림 결함으로 확정했다.
+- 브라우저 회귀 테스트는 `tests/browser/scene-reload.spec.mjs`에 Playwright로 쓴다(`npm run test:canvas`, 빌드 포함). 서버 규칙은 `scripts/check-frames.mjs`(실제 `dist/server.js` + MCP stdio). 브라우저 동기화를 흉내 낼 때는 `POST /api/elements/sync`로 씬을 넣는다.
+- 코드 리뷰를 두 서브에이전트(규칙·스펙)로 돌려 정확성 결함 4개를 잡았다.
+
+### What Didn't Work
+
+- ⚠️ 사용자는 긴 보고를 거부한다. 한국어, 결과부터, 짧게. 용어는 한 줄로 풀어 쓴다. "일부" 같은 말은 무엇을 확인했고 무엇을 못 했는지로 바로 풀어 쓴다.
+- ⚠️ claude-in-chrome에서 페이지를 새로 연 직후 "Sync to Backend" 버튼 클릭(ref·좌표)이 동기화를 일으키지 않을 때가 있다. `javascript_tool`로 버튼의 `click()`을 부르면 확실하다. 콘솔 "Syncing N elements"로 확인한다.
+- ⚠️ excalidraw.com에 파일을 끌어 놓으면 그 탭의 기존 내용이 바뀐다("Content replaced"). 확인 뒤 바로 `cmd+z`로 되돌린다. `file_upload`는 scratchpad 파일을 못 올리므로 `DragEvent` drop을 `javascript_tool`로 보낸다.
+- `mcp-tools.ts` 툴 설명은 작은따옴표 문자열이라 `'`를 넣으면 빌드가 깨진다. CLI `describe`는 `--session`만 받는다(`--project` 없음).
+
+### Infrastructure State
+
+- 캔버스 세션 `fde6fc`(http://127.0.0.1:54378)과 `14abd4`(http://127.0.0.1:54064)가 2026-10-08에 떠 있었다. 30분 유휴면 스스로 끝난다. `fde6fc`에는 시험 데이터(`probeA`, `lf`, `dupA` 등, 옛 결함으로 생긴 `api`의 중복 라벨)가 남아 있다 — 새로 쓸 땐 `npm run build` 뒤 `node dist/bin.js session start --project <레포>`로 새 세션을 띄운다.
+- `dist/`는 `18dcdbf` 코드의 빌드다.
+
+### Next Steps
+
+1. 슬라이스 B 구현 → 인수 확인(브라우저 링크 클릭은 claude-in-chrome) → 커밋.
+2. 슬라이스 C 구현 → 인수 확인 → 커밋.
+3. 05를 닫을 때 `spec.md` 진행 순서 7번과 05 행, 이 문서 맨 위 `Status:`를 고친다. 다음은 03 슬라이스 B.
