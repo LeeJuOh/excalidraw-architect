@@ -105,60 +105,63 @@
 남은 위험: 스크린샷(`exportToBlob`)에서 화살표 라벨이 선과 겹쳐 그려진다. 스냅샷 없이 새로 그린 캔버스도 같아 6a와 무관하다. 브라우저 화면에서는 정상이다.
 
 
-## 핸드오프 — 슬라이스 6a 커밋됨, 6b 착수 전 (2026-10-09)
+## 핸드오프 — 6a 커밋됨, 11 뒤 6b 착수 (2026-10-09)
 
 ### Goal
 
-06을 슬라이스 4개로 끝낸다: 6a 스냅샷 디스크화(끝) → 6b export → 6c import → 6d 저장 상태. 슬라이스 하나씩 하고, 커밋과 다음 슬라이스 착수는 사용자 승인 뒤에 한다. 티켓에 없는 결정이 필요하면 멈추고 묻는다.
+06을 슬라이스 4개로 끝낸다: 6a 스냅샷 디스크화(끝, `5f83f74`) → 6b export → 6c import → 6d 저장 상태. 슬라이스 하나씩 하고, 커밋과 다음 슬라이스 착수는 사용자 승인 뒤에 한다. 티켓에 없는 결정이 필요하면 멈추고 묻는다.
 
 ### First Action
 
-6b 착수. 범위는 아래 "슬라이스 6b 합의"다. 질문은 다 끝났으니 묻지 않고 시작한다.
-
-### 슬라이스 6b 합의 (2026-10-09 그릴 Q5~Q9)
-
-- 경로 제한 폐기는 `export_scene`·`export_to_image`·`import_scene` 셋 다. cwd 밖 거부를 없앤다. 실행 환경의 쓰기 권한은 그대로 따른다.
-- MCP 상대 경로는 세션의 프로젝트 루트 기준. CLI는 cwd 기준. 절대 경로는 그대로.
-- `--frame <이름|id>`. 같은 이름 frame이 둘이면 거부하고 두 id를 보여 준다.
-- 상위 폴더가 없으면 만든다.
-- 동명 거부·`--force`는 `.excalidraw`와 이미지 모두. "만든 시각"은 파일 mtime(6a와 같음).
-- 성공 결과에 실제 저장한 전체 경로.
-- 티켓에 없어 정한 것: `--frame`으로 뺀 파일에서 frame 밖 요소에 붙은 화살표 바인딩은 끊는다. 안 끊으면 excalidraw.com에서 안 열릴 수 있다. `link`의 미포함 참조는 티켓대로 남긴다.
-- 확인함: export는 요소 id를 바꾸지 않는다(seed만 결정적). 그림 참조는 export에서 안전하다.
+**06이 아니라 [11](11-canvas-server-accepts-only-its-own-origin.md)을 먼저 구현한다**(사용자 결정 2026-10-09, 순서는 `spec.md` "구현 이슈와 진행 순서" 8번). 11은 작다: `src/server.ts`의 `app.use(cors())`를 "Origin 없음 또는 자기 자신만 통과, 그 외 403"으로 바꾸고 `wss.on('connection')` 핸드셰이크도 같은 규칙. 결정은 11 본문에 다 있다. `/tdd`로 시작하고, 끝나면 `/code-review`, 커밋, 그다음 6b.
 
 ### Context
 
-- 6a의 "티켓에 없어 정한 것"은 사용자가 2026-10-09 그릴에서 확정했다. 위 "슬라이스 6a 결과"에 있다.
-- 6b·6c·6d의 범위는 위 "슬라이스 6a 결과"의 "나눈 기준"에 있다. 인수 항목은 티켓 본문 체크박스다. 6a로 체크한 7개 말고 나머지가 남은 일이다.
+- 이 세션은 6a 커밋 전 판단 3개(mtime, 깨진 파일, 폴더명)를 그릴로 정하고 반영해 커밋했다. 그다음 6b 질문 Q5~Q9를 그릴로 끝냈다. 6b는 더 물을 것이 없다.
+- 6a 커밋 직후 보안 검토가 "모든 origin 허용"을 짚었다. 사용자와 업스트림 README·ADR-0003을 보고 "로컬 전용이라 열어 둘 이유 없음"으로 합의해 11을 열었다. 미래 원격 지원과 충돌하지 않는다(그때도 터널+인증이 따로 필요하고 CORS는 자기 origin이면 된다).
+- 6b 합의는 아래 "슬라이스 6b 합의". 6c·6d 범위는 "슬라이스 6a 결과"의 "나눈 기준". 인수 항목은 티켓 본문 체크박스다.
+
+### 슬라이스 6b 합의 (2026-10-09 그릴 Q5~Q9)
+
+- 경로 제한 폐기는 `export_scene`·`export_to_image`·`import_scene` 셋 다. `sanitizeFilePath`(`src/core/normalize.ts`)의 cwd 밖 거부와 `ALLOWED_EXPORT_DIR`(`src/core/config.ts`)을 없앤다. 실행 환경의 쓰기 권한은 그대로 따른다.
+- MCP 상대 경로는 세션의 프로젝트 루트 기준(ADR-0003에 적음). CLI는 cwd 기준. 절대 경로는 그대로.
+- `--frame <이름|id>`. 같은 이름 frame이 둘이면 거부하고 두 id를 보여 준다.
+- 상위 폴더가 없으면 만든다.
+- 동명 거부·`--force`는 `.excalidraw`와 이미지(MCP `export_to_image`, CLI `screenshot`) 모두. "만든 시각"은 파일 mtime(6a와 같음).
+- 성공 결과에 실제 저장한 전체 경로.
+- 티켓에 없어 정한 것: `--frame`으로 뺀 파일에서 frame 밖 요소에 붙은 화살표 바인딩은 끊는다. 안 끊으면 excalidraw.com에서 안 열릴 수 있다. `link`의 미포함 참조는 티켓대로 남긴다.
+- 확인함: `buildSceneFile`(`src/core/scene-io.ts`)의 export는 요소 id를 바꾸지 않는다(seed만 결정적). 그림 참조는 export에서 안전하다.
 
 ### Current Progress (git 기준)
 
-- 브랜치 `main`. 6a는 커밋됐다(`git log`에서 "snapshot" 커밋). 작업 트리 깨끗.
-- 마지막 확인: `npm test` 전체 exit 0, `npx tsc --noEmit` 통과, `npm run type-check:frontend` 통과.
+- 브랜치 `main`, 작업 트리 깨끗.
+- `5f83f74` 6a 코드·테스트(`scripts/check-snapshots.mjs` 10케이스, `src/core/snapshot-store.ts`)와 ADR-0009의 폴더명·mtime 줄. `23a79a4` 티켓 06·11, `spec.md`, `CONTEXT.md`(스냅샷·복원 용어), ADR-0003의 MCP 상대 경로 줄. 이 핸드오프 자체는 그다음 커밋.
+- 마지막 확인(5f83f74 시점): `npm test` exit 0, `npx tsc --noEmit`·`npm run type-check:frontend` 통과.
+- 6b·6c·6d·11: 미착수.
 
 ### Decisions Made
 
-- 슬라이스를 저장 대상별로 나눴다. 사용자가 시작 보고를 받은 뒤 이의를 말하지 않았다.
-- 테스트 경계: 티켓의 R10(CLI·MCP 결과와 디스크 파일을 대조)을 합의된 경계로 봤다. 실제 `dist` 빌드를 쓴다. HOME은 샌드박스로 둔다. `session start`로 띄운 실제 캔버스 서버를 상대로 시험한다.
-- 코드 리뷰(규칙·스펙 서브에이전트 둘)에서 나온 것 중 반영한 것: 동명 확인을 배타적 생성(`wx`)으로 바꿨다(두 세션 동시 저장 때 몰래 덮어쓰기 방지). restore가 모든 오류를 "not found"로 바꾸던 처리를 지웠다. `restore_snapshot` 설명의 틀린 문장을 고쳤다(`clear_canvas`도 캔버스를 지운다). `src/server.ts` 스냅샷 라우트 위에 새로 넣었던 ADR 반복 주석을 지웠다. `scripts/check-snapshots.mjs` 헤더의 `(issue 06, ADR-0009)`는 다른 `check-*.mjs`와 같은 형식이라 남겼다.
-- 반영하지 않은 것: 저장소 오류 메시지가 CLI·MCP 플래그 이름을 안다. `check-snapshots.mjs`의 헬퍼가 `check-sessions.mjs`와 중복이다(기존 스크립트들도 각자 자기 헬퍼를 가진다).
+- 6a 판단 3개의 답과 근거는 위 "슬라이스 6a 결과"의 "티켓에 없어 정한 것". 1번 "서버 요소 원본 저장"은 내가 정한 게 아니라 업스트림 방식 그대로임을 확인했다(스냅샷=원본, export=변환).
+- 11을 06 안에 넣지 않고 별도 티켓으로 뺐다. 6b 커밋에 보안 변경이 섞이면 추적이 어렵다.
+- ADR에 적은 것: 폴더명·mtime(ADR-0009), MCP 상대 경로 기준(ADR-0003). 안 적은 것: 깨진 파일 표시, 중복 frame 거부, 폴더 생성, 이미지 동명 거부, 11 — 되돌리기 쉽다.
 
 ### What Worked
 
-- TDD로 실제 CLI 경로를 시험했다. 테스트가 `session start --project`로 서버를 띄운다. 그다음 `snapshot save` → `session end` → 새 `session start` → `restore` 순서로 재시작 복원을 확인했다.
-- 브라우저 동기화 뒤의 실제 요소는 테스트에서 `POST /api/elements/sync`로 흉내 냈다.
-- 브라우저 확인은 scratchpad에 둔 HOME과 가짜 레포로 했다(`HOME=<scratchpad>/home node dist/bin.js ...`). 사용자의 `~/.excalidraw-architect`를 건드리지 않는다.
-- 화면 이상을 봤을 때 스냅샷 없이 새로 그린 캔버스와 비교했다. 이 슬라이스 탓인지 바로 가려졌다.
+- 그릴은 **한 번에 질문 하나**, 선택지 (a)/(b)와 추천안. 사용자가 "왜?"를 물으면 표나 예시로 답했다. 질문 넷을 한 번에 던졌더니 바로 거부당했다.
+- 끝 보고는 **문제 있었나 / 판단할 것 / 커밋해도 되나** 셋만. 효과 있었다.
+- 코드 리뷰 서브에이전트 둘(규칙·스펙)이 실제 구멍을 잡았다: 깨진 파일 처리에서 두 번째 `statSync`가 또 throw할 수 있음, 같은 폴더명·다른 경로 테스트 없음, 없는 이름 restore 테스트 없음. 셋 다 고쳤다.
+- 6a 테스트 방식(실제 `dist`, 샌드박스 HOME, `session start --project`로 띄운 서버, `POST /api/elements/sync`로 동기화 흉내)은 6b·11에도 그대로 쓴다.
 
 ### What Didn't Work
 
-- ⚠️ 사용자는 긴 보고를 거부한다. 끝 보고는 다음 순서로 짧게 쓴다: **문제 있었나 / 판단할 것 / 커밋해도 되나**. "구현 선택" 같은 말은 쓰지 않는다. "티켓에 없어 내가 정한 것"이라고 쓴다.
-- ⚠️ 판단할 것은 끝 보고에 섞지 않는다. 처음부터 선택지와 추천안으로 묻는다.
-- claude-in-chrome에서 "Sync to Backend"를 누른 뒤 바로 저장하면 동기화가 아직 안 끝나 있다. 저장하기 전에 `query`의 요소 수로 동기화를 확인한다.
+- ⚠️ 질문을 여러 개 묶거나 길게 쓰면 사용자가 "다시"라고 한다. 하나씩, 짧게.
+- ⚠️ "내가 정한 것"에 업스트림이 이미 정한 것을 섞어 말했다. 내가 새로 정한 것만 그렇게 부른다.
+- 보안 알림 설명이 세 번 왕복했다. "우리 페이지가 아니라 **남의 페이지**가 보내는 요청" 한 문장으로 먼저 말했어야 했다.
 
 ### Next Steps
 
-1. 6b export. 지금 MCP `export_scene`은 `sanitizeFilePath`(`src/core/normalize.ts`)로 `ALLOWED_EXPORT_DIR`(`src/core/config.ts`, `EXCALIDRAW_EXPORT_DIR` 또는 cwd) 밖 쓰기를 거부한다. CLI `exportCmd`(`src/cli/commands/scene.ts`)는 제한이 없지만 동명 거부도 없다. 할 일: 경로 제한 폐기, 동명 거부와 `--force`, `--frame`, 결과에 전체 경로. **멈춤 후보:** `export_to_image`와 `import_scene`의 `filePath`도 같은 `sanitizeFilePath`를 쓴다. 티켓은 export 경로만 말한다. 이 둘도 풀지 사용자에게 묻는다.
-2. 6c import. `importScene`(`src/core/scene-io.ts`)과 MCP `import_scene`의 `mode: replace|merge`를 없앤다. 새 ID 한 세트, 참조 재매핑, 미포함 참조, 오른쪽 배치, `(복사)` 이름, 파일명 frame.
-3. 6d 저장 상태. screenshot 결과에 동봉, `session list`·`session_list`에 수, `SKILL.md` 규칙.
-4. 마지막에 티켓 공통 체크박스(`npm test`, R10 기록)를 체크하고 Status를 바꾼다.
+1. 11 구현·리뷰·커밋. 끝나면 AGENTS.md "업스트림 머지 때 되살아나면 다시 지울 것"에 `cors()` 추가.
+2. 6b export. CLI `exportCmd`·`screenshot`(`src/cli/commands/scene.ts`), MCP `export_scene`·`export_to_image`·`import_scene`(`src/core/mcp-dispatch.ts`). 위 합의대로. 테스트는 `scripts/check-snapshots.mjs` 방식의 새 `check-export.mjs`.
+3. 6c import. `importScene`(`src/core/scene-io.ts`)과 MCP `import_scene`의 `mode: replace|merge`를 없앤다. 새 ID 한 세트, 참조 재매핑, 미포함 참조, 오른쪽 배치, `(복사)` 이름, 파일명 frame.
+4. 6d 저장 상태. screenshot 결과에 동봉, `session list`·`session_list`에 수, `SKILL.md` 규칙.
+5. 마지막에 티켓 공통 체크박스(`npm test`, R10 기록)를 체크하고 Status를 바꾼다. `spec.md` 표의 06 상태도.
