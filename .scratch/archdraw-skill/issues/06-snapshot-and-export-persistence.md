@@ -24,7 +24,7 @@
 
 **Blocked by:** 01 (플러그인 골격), 04 (캔버스 세션의 프로젝트 루트 — 스냅샷 폴더를 나누는 기준), 05 (frame — `export --frame`·import의 frame 씌우기가 frame 요소를 전제)
 
-**Status:** ready-for-agent (2026-10-10 — 6a·6b·6c 커밋됨, 6d1 구현·`npm test` 통과·커밋 대기, 6d2 미착수)
+**Status:** ready-for-agent (2026-10-10 — 6a·6b·6c·6d1 커밋됨, 6d2 미착수)
 
 - [x] `snapshot save x` → 서버 `stop` → `start` → `snapshot restore x`로 그림이 돌아온다
 - [x] `snapshot list`가 디스크의 스냅샷을 보여준다
@@ -339,51 +339,47 @@
 
 ADR·용어: 새 ADR 없음. 위 1·2·5의 문서 반영만(5는 ADR-0010 Consequences·CONTEXT.md "저장 상태").
 
-## 핸드오프 — 6d1 결정 반영을 이어서 끝낸다 (2026-10-10)
+## 핸드오프 — 6d2를 시작한다 (2026-10-10)
 
 ### Goal
 
-06을 끝낸다. 남은 순서: **6d1 결정 1·4 코드 반영 마무리(빨강 1개) → `npm test` → 사용자 확인 → 6d1 커밋 → 6d2 → 06 마무리**("슬라이스 6d 계획" 절). 사용자가 이어서 구현하라고 했다(2026-10-10). 되돌리지 않는다.
+06을 끝낸다. 남은 순서: **6d2 → 06 마무리**("슬라이스 6d 계획" 절). 6d1은 커밋됐다.
 
 ### First Action
 
-`npm run build` 뒤 `node scripts/check-export.mjs aFailedSaveRecord`로 빨강을 재현하고, `src/core/sessions.ts` → `probeSession()`이 테스트의 프록시 세션을 왜 live로 안 보는지 찾는다. 판정은 그 함수 안의 세 조건(`response.ok`, `health.service === CANVAS_SERVICE_NAME`, `health.session === record.key`) 중 어느 것이 깨지는지 — 프록시가 `/health` 본문의 `session`만 바꾸므로 `service`가 빠졌거나 프록시의 응답 상태·헤더가 다를 가능성이 크다. `/tdd` 리듬(빨강 → 최소 수정 → 초록 → `npm test` 전체).
+`/tdd`로 D6 테스트 10을 `scripts/check-export.mjs`에 먼저 쓴다: A `unsaved`·B `modified`·C `saved` → CLI `session list`에 `unsaved: 1, modified: 1`, A 파일을 지우면 `unsaved: 2`(D3 — `missing`은 미저장으로 센다). 빨강을 본 뒤 `src/server.ts`의 `/health`에 `saveStateReport(elements).drawings`를 세어 넣는다. 착수 전 사용자에게 "6d2 시작한다"에 "예"를 받는다.
 
 ### Context
 
-- 그릴로 6d1의 열린 결정 4개를 하나씩 물어 확정했다("6d1 확정 결정" 절). 결정 1(기록 실패 → 경고만)·4(`save-state.ts` 모듈)는 코드가 바뀌고, 2·3은 지금 코드 그대로다.
-- 결정 1의 테스트는 "이 기능 전부터 떠 있던 옛 서버"를 흉내 낸다: 테스트 프로세스 안에 `/api/save-state`만 404로 답하고 나머지는 진짜 캔버스로 넘기는 HTTP 프록시를 띄우고, 가짜 세션 기록(`old…`)을 세션 폴더에 써서 CLI가 `--session old…`로 그리로 가게 한다. `/health` 본문의 `session`을 프록시 키로 바꿔 신원 검사를 통과시키려 했다.
-- 테스트 방식을 바꿔도 된다 — 더 작은 수단이 있으면 그쪽으로. 단 판정은 CLI 결과(상태 0, 파일 존재, stderr 경고, `screenshot`에 `unsaved`)로 한다(D6 "행동만 검사").
+- 6d2 범위: 체크박스 56·57, D6 테스트 10. 결정은 전부 끝났다(D1~D6, "6d1 확정 결정" 1~5). 물을 것 없음.
+- 숫자를 세는 곳은 `src/core/save-state.ts` → `saveStateReport()` 하나다(6d1 결정 4의 이유). `/health`는 그 결과를 세기만 한다.
+- `session list` 경로: CLI `src/core/sessions.ts` → `probeSession()`(각 서버 `/health`를 읽음) → `formatSessionList()`. MCP `src/core/mcp-session.ts` → `sessionList()`.
+- 스킬 문서: `plugin/skills/archdraw/SKILL.md` "## 10. Saving"의 "unsaved or modified since its save"를 "not saved"로 고친다. 그림 지우기 전 1회 묻기, 붙지 않은 세션을 끝낼 때 `session list` 수로 묻기는 아직 없다. `references/saving.md`도 맞춘다. 스킬 텍스트만 바꾸면 빌드는 필요 없지만 `npm test`의 `skill-docs` 검사를 탄다.
 
-### Current Progress (git, 2026-10-10, `repo_facts.sh`로 확인)
+### Current Progress (git, `repo_facts.sh`로 확인)
 
-- 브랜치 `main`. push 안 함. 마지막 06 커밋 `27e5496`(6d1 착수 핸드오프). 그 위 `1322655`는 06과 무관.
-- **6d1 전체 미커밋.** 수정 11개 + 새 파일 1개:
-  - 6d1 본체(이전 핸드오프 기준, `npm test` 28케이스 통과했었다): `src/core/scene-io.ts`(`buildSceneFile`이 `frameIds`, `importScene`이 `recordSave`), `src/cli/commands/scene.ts`, `src/core/mcp-dispatch.ts`, `src/core/mcp-tools.ts`, `plugin/skills/archdraw/references/canvas-ops.md`, `scripts/check-export.mjs`(6d1 10케이스), 이 티켓.
-  - 결정 4 반영(빌드 통과): **`src/core/save-state.ts` 새 파일** — `recordSave(elements, path, frameIds?)`·`recordSnapshot(elements, name, savedAt)`·`saveStateReport(elements)`, 타입 `SaveState`·`DrawingSaveState`·`DrawingState`, 상태 Map·해시·그룹·`stateOf`는 모듈 안. `src/server.ts` — HEAD 대비 +15줄뿐: `./core/save-state.js` import, `/api/save-state` 라우트 2개는 호출 한 줄, `POST /api/snapshots`가 `recordSnapshot(...)`. (6d1 본체가 서버 안에 뒀던 인라인 70줄은 커밋 전에 모듈로 옮겨져 diff에 안 보인다.)
-  - 결정 1 반영(빌드 통과): `src/core/canvas-client.ts` — `recordSave`·`getSaveState`가 try/catch + `logger.warn`(stderr에 warn 이상이 찍힘), `getSaveState`는 실패 시 `null`, 타입은 `import type`. `src/cli/commands/scene.ts` `screenshot()` — `...(await getSaveState() ?? {})`. `src/core/mcp-dispatch.ts` `get_canvas_screenshot` — 세 번째 텍스트 블록 `await getSaveState() ?? { error: 'Save state unavailable' }`.
-  - 결정 1 테스트: `scripts/check-export.mjs`에 `canvasWithoutSaveState()`·`aFailedSaveRecordOnlyWarnsAndLeavesTheDrawingUnsaved`(`cases` 맨 앞, 전체 29). **빨강** — `No live canvas session has the key "old…"`.
-  - 문서: ADR-0010 Consequences 1줄(결정 1), `CONTEXT.md` "저장 상태" 반 줄(결정 2), 이 티켓("6d1 확정 결정" 절·Status·이 핸드오프).
-- 마지막 검증: `npm run build` 통과. `npm test` 전체는 결정 반영 뒤 **아직 안 돌렸다**(빨강 케이스 때문에 실패할 것).
+- 브랜치 `main`. 6d1 커밋 `22a7ecf`. 이 핸드오프 커밋 뒤 push.
+- 6d1 결과·근거는 "슬라이스 6d1 결과" 표. `npm test` 전체 exit 0(export 30케이스), 타입 검사 둘 통과(2026-10-10).
+- 6d2 코드: 미착수.
 
 ### Decisions Made
 
-"6d1 확정 결정" 절(결정 4개·근거·기각안). ADR 새로 없음. 다시 묻지 않는다.
+"6d1 확정 결정" 절 1~5. 이번 세션에 더한 것은 5(저장됨의 기준 = 파일에 들어간 내용, import는 막 놓인 복사본). 다시 묻지 않는다.
 
 ### What Worked
 
-- 결정은 하나씩, 예시 먼저, 선택지 둘에 추천 하나. 넷 다 한 번에 답이 왔다.
-- Q4를 "새 파일"에서 멈추지 않고 인터페이스(함수 3개, 상태는 모듈 안, 서버는 `elements`만 넘김)까지 정하니 6d2 `/health`의 재사용 경로가 바로 보였다.
-- 서버 코드 이동은 `src/server.ts`의 블록을 통째로 잘라 모듈로 옮기고 라우트만 남기는 식으로 한 번에 됐다(빌드 한 번에 통과).
+- `/code-review`(Standards·Spec 두 서브에이전트)가 테스트로 안 잡히던 경쟁 조건을 찾았다. 슬라이스 끝마다 돌릴 가치가 있다.
+- 리뷰 결과를 사용자에게 예시 먼저("x=100이 파일에, x=300이 캔버스에")로 설명하니 판단이 한 번에 났다.
+- 테스트 프록시: `check-export.mjs`의 `proxiedCanvas(realKey, onSaveState)`가 `/api/save-state` 요청을 가로챈다. 옛 서버(404)·기록 직전 수정 두 케이스가 쓴다. 다른 "서버 사이에 끼어드는" 테스트도 이걸로.
 
 ### What Didn't Work
 
-- ⚠️ "이슈문서 빼고 고쳐"는 **문서(ADR·CONTEXT)만** 고치라는 뜻이었는데 코드 착수로 읽었다. 결정 뒤 코드를 만지기 전에는 "코드 시작한다"에 "예"를 받는다. 문서 수정 지시는 코드 승인이 아니다. (사용자가 나중에 이어서 구현하라고 해 결과적으로는 남겼다.)
-- 프록시로 옛 서버를 흉내 내는 테스트는 세션 신원 검사(`probeSession`)와 얽혀 첫 시도에 안 돌았다. 원인은 못 찾았다.
-- ⚠️ 되돌릴 일이 생겨도 `git checkout`은 쓰면 안 된다 — 같은 파일에 커밋 안 된 6d1 본체가 섞여 있다.
+- ⚠️ 테스트 프로세스 안의 HTTP 서버(프록시·가짜 탭)를 거치는 CLI 호출은 `cli()`(`spawnSync`)로 부르면 멈춘다 — 이벤트 루프가 막힌다. `cliAsync()`를 쓴다.
+- ⚠️ 테스트 `baseEnv`가 `LOG_LEVEL: 'error'`라 `logger.warn`이 stderr에 안 나온다. 경고를 판정하는 케이스만 `{ ...baseEnv, LOG_LEVEL: 'warn' }`.
+- ⚠️ 사용자는 긴 보고를 싫어한다. 결론 한 줄 + 문제 있음/없음 먼저.
 
 ### Next Steps
 
-1. First Action(빨강 해결) → `npm run build` → `npm test` 전체(export 29) → `type-check`·`type-check:frontend` → 체크박스·"슬라이스 6d1 결과" 표에 결정 1 케이스 행 추가 → 사용자 확인 → 6d1 커밋(영어 1~2문장, 트레일러 없음).
-2. 6d2(사용자 승인 뒤): D6-10 테스트 → `/health`가 `saveStateReport(elements)`의 `drawings`를 세어 미저장(`missing` 포함)·수정됨 수 → `session list`·`session_list` → `SKILL.md`("unsaved or modified" → "not saved", 그림 지우기 전 1회 묻기, 붙지 않은 세션은 `session list` 수로 묻기)·`references/saving.md` → 체크박스 56·57.
-3. 06 마무리: 실브라우저로 D1 거짓 `modified` 1회 확인(6d1 결과 표의 미시험) → 체크박스 58·78 → Status → `spec.md` 진행 표의 06 줄 갱신.
+1. First Action → `/health`·`session list`·`session_list` → `SKILL.md`·`references/saving.md` → `npm test` 전체 → 체크박스 56·57 → 끝 보고 → 사용자 확인 → 커밋.
+2. 06 마무리: 실브라우저로 D1 거짓 `modified` 1회 확인(6d1 결과 표의 미시험) → 체크박스 58·78 → Status → `.scratch/archdraw-skill/spec.md`의 진행 줄 두 곳(297행 "다음은 6c", 310행 "6d 저장 상태 남음") 갱신.
+3. 선택(리뷰 판단 사항, 손대지 않음): 클라이언트·서버 `recordSave` 이름 겹침, 테스트·툴 설명의 "loose elements"를 용어 "frame 밖 요소"에 맞추기. 알려진 한계: export가 캔버스 요소 전체를 기록 요청에 실어 보내 서버 JSON 한도 10MB를 넘으면 경고만 남고 `unsaved`(안전한 쪽).
