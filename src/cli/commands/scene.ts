@@ -95,17 +95,28 @@ export async function exportCmd(argv: string[]): Promise<void> {
 }
 
 export async function importCmd(argv: string[]): Promise<void> {
-  const { positionals, flags } = parseArgs(argv, { replace: { takesValue: false } });
+  const { positionals } = parseArgs(argv, {});
 
-
-  const mode = flags.replace ? 'replace' as const : 'merge' as const;
-  const data = await readTextFileOrStdin(positionals[0]);
-  if (!data.trim()) {
-    throw new CliUsageError('No scene provided (pass a .excalidraw / .excalidraw.md file or pipe JSON to stdin)');
+  const input = positionals[0];
+  let source: { filePath: string } | { data: string };
+  if (input && input !== '-') {
+    source = { filePath: path.resolve(input) };
+  } else {
+    const data = await readStdin();
+    if (!data.trim()) {
+      throw new CliUsageError('No scene provided (pass a .excalidraw / .excalidraw.md file or pipe JSON to stdin)');
+    }
+    source = { data };
   }
-  const result = await importScene({ data, mode });
+  const result = await importScene(source);
 
-  printJson({ success: true, imported: result.count, files: result.fileCount, mode: result.mode });
+  printJson({
+    success: true,
+    imported: result.count,
+    files: result.fileCount,
+    frames: result.frames,
+    unnamedFrames: result.unnamedFrames
+  });
 }
 
 export async function mermaid(argv: string[]): Promise<void> {

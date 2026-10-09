@@ -507,21 +507,24 @@ export async function callExcalidrawTool(
       case 'import_scene': {
         const params = z.object({
           filePath: z.string().optional(),
-          data: z.string().optional(),
-          mode: z.enum(['replace', 'merge'])
-        }).parse(args);
+          data: z.string().optional()
+        }).strict().parse(args);
 
-        logger.info('Importing scene via MCP', { mode: params.mode });
+        logger.info('Importing scene via MCP');
 
         const result = await importScene({
           ...params,
           filePath: params.filePath ? resolveFromProjectRoot(params.filePath) : undefined
         });
 
+        const frames = result.frames.map(frame => `"${frame.name ?? ''}" (${frame.id})`).join(', ');
+        const unnamed = result.unnamedFrames.length > 0
+          ? `\nUnnamed frames, name them: ${result.unnamedFrames.join(', ')}`
+          : '';
         return {
           content: [{
             type: 'text',
-            text: `Imported ${result.count} elements${result.fileCount > 0 ? ` and ${result.fileCount} files` : ''} (mode: ${result.mode})\n\n✅ Synced to canvas`
+            text: `Imported ${result.count} elements${result.fileCount > 0 ? ` and ${result.fileCount} files` : ''} as a copy. Frames: ${frames}.${unnamed}\n\n✅ Synced to canvas`
           }]
         };
       }

@@ -50,7 +50,7 @@ export function elementBounds(el: ServerElement): Bounds {
   return { minX: el.x, minY: el.y, maxX: el.x + width, maxY: el.y + height };
 }
 
-function union(boxes: Bounds[]): Bounds | null {
+export function union(boxes: Bounds[]): Bounds | null {
   if (boxes.length === 0) return null;
   return {
     minX: Math.min(...boxes.map(b => b.minX)),

@@ -87,10 +87,7 @@ export function expandElementsForExport(
       groupIds: rest.groupIds ?? [],
       frameId: rest.frameId ?? null,
       index: rest.index ?? `a${indexCounter++}`,
-      roundness: rest.roundness ?? (
-        el.type === 'rectangle' || el.type === 'diamond' || el.type === 'ellipse'
-          ? { type: 3 } : null
-      ),
+      roundness: rest.roundness ?? null,
       seed: rest.seed ?? seedFor(`${el.id}:seed`),
       version: rest.version ?? 1,
       versionNonce: rest.versionNonce ?? seedFor(`${el.id}:nonce`),

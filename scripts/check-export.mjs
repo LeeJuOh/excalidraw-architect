@@ -1,8 +1,10 @@
 #!/usr/bin/env node
-// Export to any path the user names (issue 06 slice 6b, ADR-0009). Drives the
-// real build — `dist/bin.js` for the CLI, `dist/index.js` over stdio for MCP —
-// and the canvas servers they spawn. HOME points at a sandbox. A WebSocket
-// client stands in for the browser tab that renders images. POSIX only.
+// Export to any path the user names and load files back as copies (issue 06
+// slices 6b, 6c; ADR-0007, ADR-0009). Drives the real build — `dist/bin.js`
+// for the CLI, `dist/index.js` over stdio for MCP — and the canvas servers
+// they spawn. HOME points at a sandbox. A WebSocket client stands in for the
+// browser tab that renders images. POSIX only. An argument runs only the
+// cases whose name contains it.
 
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
@@ -235,8 +237,11 @@ async function mcpImportsFromAnywhereRelativeToTheProjectRoot() {
   const mcp = await new McpClient().init();
   try {
     await mcp.start();
-    await mcp.callOk('import_scene', { filePath: 'design/in.excalidraw', mode: 'merge' });
-    await mcp.callOk('import_scene', { filePath: join(outside, 'in.excalidraw'), mode: 'merge' });
+    const loaded = await mcp.callOk('import_scene', { filePath: 'design/in.excalidraw' });
+    assert.match(loaded, /Unnamed frames, name them: \S+/, `the unnamed frame id is reported: ${loaded}`);
+    await mcp.callOk('import_scene', { filePath: join(outside, 'in.excalidraw') });
+    const replace = await mcp.call('import_scene', { filePath: join(outside, 'in.excalidraw'), mode: 'replace' });
+    assert.equal(replace.isError, true, 'mode is gone; a caller still passing it is told so');
   } finally {
     await mcp.kill();
   }
@@ -406,6 +411,220 @@ async function mcpExportsOneFrame() {
   }
 }
 
+async function writesOnlyDrawingFileTypes() {
+  const key = start();
+  addAll(key, scene);
+  const text = join(outside, 'types', 'x.txt');
+  const refused = cli(['export', '--out', text, '--force', '--session', key]);
+  assert.notEqual(refused.status, 0, '.txt is refused even with --force');
+  assert.match(refused.stderr, /\.excalidraw.*\.excalidraw\.md.*\.png.*\.svg/, `the allowed types are named: ${refused.stderr}`);
+  assert.equal(fs.existsSync(text), false, 'no file is made');
+
+  const md = onCanvas(key, ['export', '--out', join(outside, 'types', 'vault.excalidraw.md')]);
+  assert.match(fs.readFileSync(md.file, 'utf-8'), /excalidraw-plugin/, '.excalidraw.md still exports');
+
+  const mcp = await new McpClient().init();
+  try {
+    const mcpKey = await mcp.start();
+    addAll(mcpKey, scene);
+    const tab = await openFakeTab(mcpKey);
+    try {
+      const bmp = join(outside, 'types', 'canvas.bmp');
+      const image = await mcp.call('export_to_image', { format: 'png', filePath: bmp, force: true });
+      assert.equal(image.isError, true, '.bmp is refused even with force');
+      assert.match(image.text, /\.png/);
+      assert.equal(fs.existsSync(bmp), false);
+      const txt = join(outside, 'types', 'scene.txt');
+      fs.writeFileSync(txt, JSON.stringify({ type: 'excalidraw', elements: scene }));
+      const load = await mcp.call('import_scene', { filePath: txt });
+      assert.equal(load.isError, true, 'MCP import refuses .txt');
+      assert.match(load.text, /\.json/);
+    } finally {
+      tab.close();
+    }
+  } finally {
+    await mcp.kill();
+  }
+
+  const notes = join(outside, 'notes.txt');
+  fs.writeFileSync(notes, JSON.stringify({ type: 'excalidraw', elements: scene }));
+  const readTxt = cli(['import', notes, '--session', key]);
+  assert.notEqual(readTxt.status, 0, 'import refuses .txt');
+  assert.match(readTxt.stderr, /\.excalidraw.*\.excalidraw\.md.*\.json/);
+}
+
+async function canvasElements(key) {
+  const response = await fetch(`http://127.0.0.1:${portOf(key)}/api/elements`);
+  return (await response.json()).elements;
+}
+
+async function importedFrameCopyLandsBesideTheOriginals() {
+  const key = start();
+  addAll(key, scene);
+  const file = join(outside, 'copy-a.excalidraw');
+  onCanvas(key, ['export', '--frame', 'Order flow', '--out', file]);
+  const before = await canvasElements(key);
+
+  const result = onCanvas(key, ['import', file]);
+  const after = await canvasElements(key);
+
+  for (const original of before) {
+    assert.deepEqual(byId(after, original.id), original, `original ${original.id} is untouched`);
+  }
+  const copies = after.filter(el => !byId(before, el.id));
+  assert.equal(copies.length, readScene(file).elements.length, 'every file element is copied under a new id');
+  const frame = copies.find(el => el.type === 'frame');
+  assert.equal(frame.name, 'Order flow (복사)');
+  assert.deepEqual(result.frames, [{ id: frame.id, name: 'Order flow (복사)' }]);
+  assert.deepEqual(result.unnamedFrames, []);
+
+  assert.equal(frame.x, 1280, 'right of everything (B ends at 1200) with a gap of 80');
+  assert.equal(frame.y, 0);
+  const box = copies.find(el => el.link === '?element=fb');
+  assert.equal(box.x - frame.x, 40, 'positions inside the drawing are kept');
+  assert.equal(box.frameId, frame.id);
+  const arrow = copies.find(el => el.type === 'arrow');
+  assert.equal(arrow.frameId, frame.id);
+  assert.equal(arrow.startBinding.elementId, box.id, 'the copied arrow is bound to the copied box');
+  assert.equal(arrow.endBinding, null);
+  assert.ok(box.boundElements.some(b => b.id === arrow.id), 'the copied box lists the copied arrow');
+  const label = copies.find(el => el.containerId === box.id);
+  assert.equal(label.text, 'Order API', 'the label follows its copied box');
+  const dashed = copies.find(el => el.customData?.required === 'unconfirmed');
+  assert.equal(dashed.strokeStyle, 'dashed', 'the unconfirmed item stays dashed');
+
+  onCanvas(key, ['update', box.id, '--set', '{"backgroundColor":"#ffc9c9"}']);
+  const recolored = await canvasElements(key);
+  assert.equal(byId(recolored, box.id).backgroundColor, '#ffc9c9');
+  assert.deepEqual(byId(recolored, 'a1'), byId(before, 'a1'), 'the original box keeps its colour');
+
+  const replace = cli(['import', file, '--replace', '--session', key]);
+  assert.equal(replace.status, 2, '--replace is a usage error');
+  assert.equal((await canvasElements(key)).length, recolored.length, 'nothing was cleared');
+}
+
+function writeSceneFile(name, elements) {
+  const file = join(outside, name);
+  fs.writeFileSync(file, JSON.stringify({ type: 'excalidraw', version: 2, elements }));
+  return file;
+}
+
+async function aFileWithoutFramesLandsInOneUnnamedFrameAtItsOwnCoordinates() {
+  const key = start();
+  const file = writeSceneFile('no-frames.excalidraw', [
+    { id: 'p', type: 'rectangle', x: 300, y: 200, width: 100, height: 50 },
+    { id: 'q', type: 'ellipse', x: 500, y: 260, width: 80, height: 80 }
+  ]);
+  const result = onCanvas(key, ['import', file]);
+  const elements = await canvasElements(key);
+
+  const frame = elements.find(el => el.type === 'frame');
+  assert.equal(frame.name, null, 'the server names nothing');
+  assert.deepEqual(result.unnamedFrames, [frame.id], 'the unnamed frame is reported');
+  const shapes = elements.filter(el => el.type !== 'frame');
+  assert.deepEqual(shapes.map(el => [el.x, el.y]).sort(), [[300, 200], [500, 260]], 'an empty canvas keeps file coordinates');
+  for (const el of shapes) {
+    assert.equal(el.frameId, frame.id, 'everything goes in the frame');
+    assert.ok(!['p', 'q'].includes(el.id), 'ids are new');
+  }
+  assert.ok(frame.x <= 300 && frame.x + frame.width >= 580, 'the frame holds its children');
+}
+
+async function mixedFramesAndLooseElementsComeInAsTheyAre() {
+  const key = start();
+  const file = writeSceneFile('mixed.excalidraw', [
+    { id: 'n', type: 'frame', name: 'Named', x: 0, y: 0, width: 200, height: 200 },
+    { id: 'n1', type: 'rectangle', x: 40, y: 40, width: 100, height: 50, frameId: 'n' },
+    { id: 'u', type: 'frame', name: null, x: 400, y: 0, width: 200, height: 200 },
+    { id: 'u1', type: 'rectangle', x: 440, y: 40, width: 100, height: 50, frameId: 'u' },
+    { id: 'memo', type: 'rectangle', x: 700, y: 40, width: 100, height: 50 }
+  ]);
+  const first = onCanvas(key, ['import', file]);
+  assert.deepEqual(first.frames.map(f => f.name).sort((a, b) => String(a).localeCompare(String(b))), ['Named (복사)', null]);
+  assert.equal(first.unnamedFrames.length, 1);
+  const elements = await canvasElements(key);
+  const memo = elements.find(el => el.x === 700);
+  assert.equal(memo.frameId ?? null, null, 'a loose element stays loose');
+  assert.equal(elements.filter(el => el.type === 'frame').length, 2, 'no extra frame is added');
+
+  const second = onCanvas(key, ['import', file]);
+  const frames = (await canvasElements(key)).filter(el => el.type === 'frame');
+  assert.equal(frames.filter(el => el.name === 'Named (복사)').length, 2, 'importing twice is not refused');
+  const secondNamed = second.frames.find(f => f.name === 'Named (복사)');
+  assert.equal(byId(frames, secondNamed.id).x, 880, 'right of the first copy (ends at 800) with a gap of 80');
+}
+
+// A and C both refer to B as an inner drawing.
+const sharedInner = [
+  { id: 'ra', type: 'frame', name: 'A', x: 0, y: 0, width: 300, height: 200 },
+  { id: 'ra1', type: 'rectangle', x: 40, y: 40, width: 200, height: 60, frameId: 'ra', text: 'A box', link: '?element=rb' },
+  { id: 'rc', type: 'frame', name: 'C', x: 0, y: 400, width: 300, height: 200 },
+  { id: 'rc1', type: 'rectangle', x: 40, y: 440, width: 200, height: 60, frameId: 'rc', text: 'C box', link: '?element=rb' },
+  { id: 'rb', type: 'frame', name: 'B', x: 500, y: 100, width: 300, height: 200 },
+  { id: 'rb1', type: 'rectangle', x: 540, y: 140, width: 200, height: 60, frameId: 'rb', text: 'B box' }
+];
+
+const frameNamed = (elements, name) => elements.find(el => el.type === 'frame' && el.name === name);
+const boxIn = (elements, frame) => elements.find(el => el.type === 'rectangle' && el.frameId === frame.id);
+
+async function wholeCanvasRoundTripKeepsLayoutAndRemapsSharedReferences() {
+  const from = start();
+  addAll(from, sharedInner);
+  const file = join(outside, 'whole.excalidraw');
+  onCanvas(from, ['export', '--out', file]);
+
+  const to = start();
+  onCanvas(to, ['import', file]);
+  const elements = await canvasElements(to);
+  const [a, b, c] = ['A (복사)', 'B (복사)', 'C (복사)'].map(name => frameNamed(elements, name));
+  assert.ok(a && b && c, 'all three drawings are in one file');
+  assert.deepEqual([b.x - a.x, b.y - a.y, c.x - a.x, c.y - a.y], [500, 100, 0, 400], 'their layout is kept');
+  assert.equal(boxIn(elements, a).link, `?element=${b.id}`, "A's reference points at the new B");
+  assert.equal(boxIn(elements, c).link, `?element=${b.id}`, 'C refers to the same new B');
+
+  onCanvas(from, ['import', file]);
+  const both = await canvasElements(from);
+  const copyA = frameNamed(both, 'A (복사)');
+  const copyB = frameNamed(both, 'B (복사)');
+  assert.equal(boxIn(both, copyA).link, `?element=${copyB.id}`, 'with the originals there, the copy still points at the copied B');
+  assert.equal(byId(both, 'ra1').link, '?element=rb', 'the original keeps pointing at the original');
+}
+
+async function anExcludedReferenceAttachesToNothingAfterImport() {
+  const from = start();
+  addAll(from, sharedInner);
+  const file = join(outside, 'only-a.excalidraw');
+  onCanvas(from, ['export', '--frame', 'A', '--out', file]);
+
+  const to = start();
+  addAll(to, [{ id: 'otherb', type: 'frame', name: 'B', x: 0, y: 0, width: 200, height: 200 }]);
+  onCanvas(to, ['import', file]);
+  const elements = await canvasElements(to);
+  const link = boxIn(elements, frameNamed(elements, 'A (복사)')).link;
+  assert.equal(link, '?element=rb', 'the excluded reference stays as it was');
+  assert.ok(!link.includes('otherb'), 'it does not attach to the B with the same name');
+}
+
+async function cornersAreSavedAsTheCanvasDrawsThem() {
+  const from = start();
+  addAll(from, [
+    { id: 'cf', type: 'frame', name: 'Corners', x: 0, y: 0, width: 600, height: 200 },
+    { id: 'square', type: 'rectangle', x: 40, y: 40, width: 200, height: 60, frameId: 'cf' },
+    { id: 'round', type: 'rectangle', x: 320, y: 40, width: 200, height: 60, frameId: 'cf', roundness: { type: 3 } }
+  ]);
+  const file = join(outside, 'corners.excalidraw');
+  onCanvas(from, ['export', '--out', file]);
+  const saved = readScene(file).elements;
+  assert.equal(byId(saved, 'square').roundness, null, 'a box without corners stays square in the file');
+  assert.deepEqual(byId(saved, 'round').roundness, { type: 3 }, 'a rounded box keeps its corners');
+
+  const to = start();
+  onCanvas(to, ['import', file]);
+  const boxes = (await canvasElements(to)).filter(el => el.type === 'rectangle').sort((a, b) => a.x - b.x);
+  assert.equal(boxes[0].roundness ?? null, null, 'the square copy is square');
+  assert.deepEqual(boxes[1].roundness, { type: 3 }, 'the rounded copy is rounded');
+}
+
 const cases = [
   cliExportsToAPathOutsideTheProjectAndMakesItsFolders,
   cliRefusesAnExistingFileUntilForced,
@@ -417,12 +636,19 @@ const cases = [
   cliExportsOneFrameByName,
   frameExportRefusesAnAmbiguousOrUnknownFrame,
   frameExportTakesLabelsWithTheirBox,
-  mcpExportsOneFrame
+  mcpExportsOneFrame,
+  writesOnlyDrawingFileTypes,
+  importedFrameCopyLandsBesideTheOriginals,
+  aFileWithoutFramesLandsInOneUnnamedFrameAtItsOwnCoordinates,
+  mixedFramesAndLooseElementsComeInAsTheyAre,
+  wholeCanvasRoundTripKeepsLayoutAndRemapsSharedReferences,
+  anExcludedReferenceAttachesToNothingAfterImport,
+  cornersAreSavedAsTheCanvasDrawsThem
 ];
 
 let failed = 0;
 try {
-  for (const fn of cases) {
+  for (const fn of cases.filter(c => !process.argv[2] || c.name.includes(process.argv[2]))) {
     try {
       await fn();
       console.log(`  ok  ${fn.name}`);

@@ -39,7 +39,7 @@ canvas session.
 | Lock / unlock | `lock_elements`, `unlock_elements` | `arrange lock`, `arrange unlock` |
 | Duplicate | `duplicate_elements` | `arrange duplicate` |
 | Export the scene, or one drawing (overwrite only when the user asks) | `export_scene` (`frame`, `force: true`) | `export --out <path> [--frame <name-or-id>] [--force]` |
-| Import a scene file | `import_scene` | `import` |
+| Load a drawing file as a copy on the canvas, beside what is there (clears nothing) | `import_scene` | `import <file>` |
 | Export an image (overwrite only when the user asks) | `export_to_image` (`force: true`) | `screenshot --out f.png [--force]`, `screenshot --format svg` |
 | Share link | `export_to_excalidraw_url` | `share` |
 | Save a snapshot (overwrite only when the user asks) | `snapshot_scene` (`force: true`) | `snapshot save <name> [--force]` |

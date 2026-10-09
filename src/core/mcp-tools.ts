@@ -350,7 +350,7 @@ export const tools: Tool[] = [
   },
   {
     name: 'export_scene',
-    description: 'Export the whole canvas, or one frame, to .excalidraw JSON format. Optionally write to a file; a path ending in .md is written in the Obsidian Excalidraw plugin format (.excalidraw.md). Missing folders are made. A file that already exists is refused (with when it was made) unless force is true. Returns the full path written.',
+    description: 'Export the whole canvas, or one frame, to .excalidraw JSON format. Optionally write to a file; a path ending in .excalidraw.md is written in the Obsidian Excalidraw plugin format. Missing folders are made. A file that already exists is refused (with when it was made) unless force is true. Returns the full path written.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -371,25 +371,19 @@ export const tools: Tool[] = [
   },
   {
     name: 'import_scene',
-    description: 'Import elements from a .excalidraw JSON file, an Obsidian .excalidraw.md file, or raw JSON data',
+    description: 'Load a .excalidraw, Obsidian .excalidraw.md or .json file, or raw JSON data, as an independent copy beside what is on the canvas. Nothing is cleared. Every id is new; named frames become "<name> (복사)"; a file without frames is wrapped in one unnamed frame. The result lists unnamed frame ids to name.',
     inputSchema: {
       type: 'object',
       properties: {
         filePath: {
           type: 'string',
-          description: 'Path to a .excalidraw JSON or Obsidian .excalidraw.md file. A relative path is resolved from the project root.'
+          description: 'Path to a .excalidraw, Obsidian .excalidraw.md or .json file. A relative path is resolved from the project root.'
         },
         data: {
           type: 'string',
           description: 'Raw .excalidraw JSON string (alternative to filePath)'
-        },
-        mode: {
-          type: 'string',
-          enum: ['replace', 'merge'],
-          description: '"replace" clears canvas first, "merge" appends to existing elements'
         }
-      },
-      required: ['mode']
+      }
     }
   },
   {

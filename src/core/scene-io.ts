@@ -5,12 +5,11 @@ import {
   getElements,
   getFiles,
   postFiles,
-  clearCanvas,
   batchCreateElementsOnCanvas
 } from './canvas-client.js';
 import { isObsidianExcalidrawMd, extractSceneJsonFromObsidianMd } from './obsidian-md.js';
 import { expandElementsForExport } from './expand-elements.js';
-import { frameMembers } from './frames.js';
+import { FRAME_MARGIN, elementBounds, fitFrame, frameMembers, union } from './frames.js';
 
 function createdAt(file: string): string {
   try { return fs.statSync(file).mtime.toISOString(); } catch { return 'unknown'; }
@@ -25,7 +24,17 @@ export class OutputFileExistsError extends Error {
   }
 }
 
+const WRITABLE_TYPES = ['.excalidraw', '.excalidraw.md', '.png', '.svg'];
+const READABLE_TYPES = ['.excalidraw', '.excalidraw.md', '.json'];
+
+function assertFileType(file: string, allowed: string[], action: string): void {
+  if (!allowed.some(ext => file.toLowerCase().endsWith(ext))) {
+    throw new Error(`Cannot ${action} ${file}: only ${allowed.join(', ')} files are allowed.`);
+  }
+}
+
 export function writeOutputFile(file: string, data: string | Buffer, force: boolean): void {
+  assertFileType(file, WRITABLE_TYPES, 'write');
   fs.mkdirSync(path.dirname(file), { recursive: true });
   try {
     fs.writeFileSync(file, data, { flag: force ? 'w' : 'wx' });
@@ -110,21 +119,91 @@ export async function buildSceneFile(options: { frame?: string } = {}): Promise<
   return { scene: excalidrawScene, elementCount: exportElements.length };
 }
 
+const COPY_SUFFIX = ' (복사)';
+const ELEMENT_LINK = /([?&#]element=)([^&#]+)/;
+
+function withNewIds(elements: Record<string, any>[]): Record<string, any>[] {
+  const ids = new Map<string, string>();
+  for (const el of elements) if (el.id) ids.set(el.id, generateId());
+  const groups = new Map<string, string>();
+  const newIdOf = (id: unknown): string | null => (typeof id === 'string' && ids.get(id)) || null;
+
+  return elements.map(el => {
+    const { index: _index, ...copy } = el;
+    copy.id = newIdOf(el.id) ?? generateId();
+    if ('frameId' in el) copy.frameId = newIdOf(el.frameId);
+    if ('containerId' in el) copy.containerId = newIdOf(el.containerId);
+    for (const key of ['startBinding', 'endBinding']) {
+      if (el[key]) copy[key] = newIdOf(el[key].elementId) ? { ...el[key], elementId: newIdOf(el[key].elementId) } : null;
+    }
+    for (const key of ['start', 'end']) {
+      if (!el[key]) continue;
+      if (newIdOf(el[key].id)) copy[key] = { ...el[key], id: newIdOf(el[key].id) };
+      else delete copy[key];
+    }
+    if (Array.isArray(el.boundElements)) {
+      const bound = el.boundElements
+        .filter((b: any) => newIdOf(b?.id))
+        .map((b: any) => ({ ...b, id: newIdOf(b.id) }));
+      copy.boundElements = bound.length > 0 ? bound : null;
+    }
+    if (Array.isArray(el.groupIds)) {
+      copy.groupIds = el.groupIds.map((group: string) => {
+        if (!groups.has(group)) groups.set(group, generateId());
+        return groups.get(group)!;
+      });
+    }
+    if (typeof el.link === 'string') {
+      copy.link = el.link.replace(ELEMENT_LINK, (match: string, prefix: string, id: string) =>
+        newIdOf(id) ? prefix + newIdOf(id) : match);
+    }
+    return copy;
+  });
+}
+
+const isNamed = (frame: Record<string, any>): boolean => typeof frame.name === 'string' && frame.name !== '';
+
+function nameCopies(copies: Record<string, any>[]): Record<string, any>[] {
+  const frames = copies.filter(el => el.type === 'frame');
+  if (frames.length > 0) {
+    for (const frame of frames) if (isNamed(frame)) frame.name += COPY_SUFFIX;
+    return copies;
+  }
+  const frame = { id: generateId(), type: 'frame', name: null, x: 0, y: 0 } as ServerElement;
+  for (const el of copies) el.frameId = frame.id;
+  fitFrame(frame, copies as ServerElement[]);
+  return [frame, ...copies];
+}
+
+// Top-aligned with what is already there.
+function placeBeside(copies: Record<string, any>[], existing: ServerElement[]): void {
+  const here = union(existing.map(elementBounds));
+  const incoming = union(copies.map(el => elementBounds(el as ServerElement)));
+  if (!here || !incoming) return;
+  const dx = here.maxX + FRAME_MARGIN * 2 - incoming.minX;
+  const dy = here.minY - incoming.minY;
+  for (const el of copies) {
+    el.x += dx;
+    el.y += dy;
+  }
+}
+
 export interface ImportResult {
   count: number;
   fileCount: number;
-  mode: 'replace' | 'merge';
+  frames: { id: string; name: string | null }[];
+  unnamedFrames: string[];
 }
 
-// Import elements from a .excalidraw JSON file, an Obsidian .excalidraw.md
-// file, or raw JSON data
+// Loads a .excalidraw JSON file, an Obsidian .excalidraw.md file, or raw JSON
+// data as an independent copy on top of the canvas (ADR-0007).
 export async function importScene(options: {
   filePath?: string;
   data?: string;
-  mode: 'replace' | 'merge';
 }): Promise<ImportResult> {
   let raw: string;
   if (options.filePath) {
+    assertFileType(options.filePath, READABLE_TYPES, 'import');
     raw = fs.readFileSync(options.filePath, 'utf-8');
   } else if (options.data) {
     raw = options.data;
@@ -145,25 +224,19 @@ export async function importScene(options: {
     throw new Error('No elements found in the import data');
   }
 
-  // If replace mode, clear first
-  if (options.mode === 'replace') {
-    await clearCanvas();
-  }
-
-  // Batch create the imported elements
-  const elementsToCreate = importElements.map(el => ({
+  const copies = nameCopies(withNewIds(importElements));
+  placeBeside(copies, await getElements());
+  const now = new Date().toISOString();
+  const elementsToCreate = copies.map(el => ({
     ...el,
-    id: el.id || generateId(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
     version: 1
-  }));
+  })) as ServerElement[];
 
   const created = await batchCreateElementsOnCanvas(elementsToCreate);
   if (!created) {
-    // Especially important in replace mode: the canvas was already cleared,
-    // so a silently swallowed failure here would report success on data loss
-    throw new Error('Import failed: canvas rejected the batch create (elements were not restored)');
+    throw new Error('Import failed: canvas rejected the batch create (nothing was added)');
   }
 
   // Import files if present (for image elements)
@@ -179,5 +252,11 @@ export async function importScene(options: {
     }
   }
 
-  return { count: elementsToCreate.length, fileCount: importedFileCount, mode: options.mode };
+  const frames = elementsToCreate.filter(el => el.type === 'frame');
+  return {
+    count: elementsToCreate.length,
+    fileCount: importedFileCount,
+    frames: frames.map(frame => ({ id: frame.id, name: frame.name ?? null })),
+    unnamedFrames: frames.filter(frame => !isNamed(frame)).map(frame => frame.id)
+  };
 }
