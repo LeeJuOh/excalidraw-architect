@@ -426,13 +426,17 @@ export const tools: Tool[] = [
   },
   {
     name: 'snapshot_scene',
-    description: 'Save a named snapshot of the current canvas state for later restoration',
+    description: 'Save a named snapshot of the whole canvas to disk for later restoration. Snapshots are kept per project, survive server restarts and never expire. A name that already exists is refused (with when it was made) unless force is true. Returns the name and the full file path.',
     inputSchema: {
       type: 'object',
       properties: {
         name: {
           type: 'string',
-          description: 'Name for this snapshot'
+          description: 'Name for this snapshot, without extension'
+        },
+        force: {
+          type: 'boolean',
+          description: 'Overwrite a snapshot that already has this name'
         }
       },
       required: ['name']
@@ -440,7 +444,7 @@ export const tools: Tool[] = [
   },
   {
     name: 'restore_snapshot',
-    description: 'Restore the canvas from a previously saved named snapshot',
+    description: 'Restore the canvas from a saved snapshot of this project. Clears the whole canvas first, then puts the snapshot back with its original ids.',
     inputSchema: {
       type: 'object',
       properties: {

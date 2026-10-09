@@ -24,15 +24,15 @@
 
 **Blocked by:** 01 (플러그인 골격), 04 (캔버스 세션의 프로젝트 루트 — 스냅샷 폴더를 나누는 기준), 05 (frame — `export --frame`·import의 frame 씌우기가 frame 요소를 전제)
 
-**Status:** ready-for-agent
+**Status:** ready-for-agent (2026-10-09 — 슬라이스 6a 완료, 6b·6c·6d 남음. 나눈 기준과 결과는 맨 아래 "슬라이스 6a 결과")
 
-- [ ] `snapshot save x` → 서버 `stop` → `start` → `snapshot restore x`로 그림이 돌아온다
-- [ ] `snapshot list`가 디스크의 스냅샷을 보여준다
+- [x] `snapshot save x` → 서버 `stop` → `start` → `snapshot restore x`로 그림이 돌아온다
+- [x] `snapshot list`가 디스크의 스냅샷을 보여준다
 - [ ] CLI·MCP 모두 실행 환경에서 쓰기가 허용된 사용자 지정 경로에 export한다. `docs/architecture/` 밖이라는 이유로 거부하지 않는다(프로젝트 내 다른 폴더 및 프로젝트 밖 지정 경로 확인)
 - [ ] export 성공 결과에 실제 저장한 전체 경로가 포함되어 03이 사용자에게 안내할 수 있다
-- [ ] 데이터 폴더가 없으면 첫 사용 때 만들어진다
-- [ ] 레포 둘에서 각각 `snapshot save x`하면 서로 다른 폴더에 생기고, 각자의 `snapshot list`엔 자기 것만 보인다
-- [ ] 같은 레포에서 세션 둘을 열면 한쪽이 찍은 스냅샷이 다른 쪽 `snapshot list`에 보이고 restore된다
+- [x] 데이터 폴더가 없으면 첫 사용 때 만들어진다
+- [x] 레포 둘에서 각각 `snapshot save x`하면 서로 다른 폴더에 생기고, 각자의 `snapshot list`엔 자기 것만 보인다
+- [x] 같은 레포에서 세션 둘을 열면 한쪽이 찍은 스냅샷이 다른 쪽 `snapshot list`에 보이고 restore된다
 - [ ] 같은 이름으로 `snapshot save`·`export`하면 거부되며 메시지에 만든 시각이 있고, `--force`면 덮어쓴다
 - [ ] frame A·B가 있는 캔버스에서 `export --frame A`가 A의 요소만 담은 파일을 만들고, B는 파일에 없다
 - [ ] 그 파일을 `import`하면 B와 원본 A가 그대로 남고, 새 ID를 가진 `A (복사)`가 A·B 오른쪽에 생기며, 복사본 화살표는 복사본 박스에 붙어 있다
@@ -52,8 +52,8 @@
 - [ ] A가 B를 내부 그림으로 참조하는 캔버스를 export하고 새 캔버스에 import하면 참조가 새 B를 가리킨다. 두 상위 그림이 B를 함께 참조하는 경우에도 대상은 같은 B 하나다
 - [ ] 원본 A·B가 있는 캔버스에 같은 파일을 import해도 복사본 A의 참조는 복사본 B를 가리키며 원본 B를 가리키지 않는다
 - [ ] A가 B를 참조하는 캔버스에서 `export --frame A`한 파일을, 이름이 B인 다른 그림이 있는 새 캔버스에 import하면 복사본 A의 참조는 미포함 상태이고 그 B에 붙지 않는다(2차 검수 A5)
-- [ ] snapshot save 후 서버를 재시작해 restore하면 그림 사이 참조가 유지된다. 스냅샷에는 시간 경과에 따른 자동 만료가 없다
-- [ ] 03이 정한 `YYYY-MM-DD_HHmmssZ_<영어 이름>` 스냅샷이 UTC 생성 시각과 일치하는 이름으로 저장되고, 직접 지정한 이름은 그대로 저장된다. 성공 결과에는 실제 이름·전체 경로가 있고 같은 초·이름의 충돌은 거부된다
+- [x] snapshot save 후 서버를 재시작해 restore하면 그림 사이 참조가 유지된다. 스냅샷에는 시간 경과에 따른 자동 만료가 없다
+- [x] 03이 정한 `YYYY-MM-DD_HHmmssZ_<영어 이름>` 스냅샷이 UTC 생성 시각과 일치하는 이름으로 저장되고, 직접 지정한 이름은 그대로 저장된다. 성공 결과에는 실제 이름·전체 경로가 있고 같은 초·이름의 충돌은 거부된다
 - [ ] "확인 못 함" 필수요소가 있는 그림의 export·import 및 snapshot save·restore가 성공하며 점선과 해당 표시가 유지된다
 
 
@@ -66,3 +66,82 @@
 - 디스크 보관은 서버 종료·재시작 후 목록과 복원 결과로 확인한다. TTL 없음은 저장소 구현에 자동 만료 경로가 없는지도 확인한다.
 - 복원·복사 후 frame·화살표·점선·표시는 스크린샷으로 확인해 데이터 검사와 별도 결과로 남긴다. 03과의 저장 후 내부 탐색은 03 구현이 준비된 뒤 공동 확인한다.
 - [ ] 위 인수 기준의 데이터 검사 결과와 스크린샷 확인 결과, 기존 테스트 결과가 기록됐다. 미실행 항목을 통과로 표시하지 않았다.
+
+## 슬라이스 6a 결과 (2026-10-09)
+
+나눈 기준: 인수를 저장 대상별로 묶었다. 6a 스냅샷 디스크화 → 6b export(경로·동명 거부·`--frame`) → 6c import(얹기·새 ID·참조 재매핑) → 6d 저장 상태(screenshot·`session list`·SKILL.md).
+
+| 인수 | 결과 | 근거 |
+|---|---|---|
+| `snapshot save x` → `session end` → 새 `session start` → `restore x` | 통과 | `check-snapshots` 2케이스(에이전트 모양 요소, 브라우저 동기화 뒤 실제 요소). 실세션: 동기화된 10개 저장 → 재시작 → 복원 10개, 저장 파일과 복원 데이터의 id·`containerId`·`frameId`·`link`·바인딩 같음 |
+| `snapshot list`가 디스크의 것을 보여 줌 | 통과 | 테스트 + 실세션 재시작 뒤 목록 |
+| 데이터 폴더 첫 사용 때 생성 | 통과 | 테스트(폴더를 지운 뒤 저장) |
+| 프로젝트 둘은 폴더 둘, 목록은 자기 것만 | 통과 | 테스트 |
+| 같은 프로젝트의 세션 둘이 공유·복원 | 통과 | 테스트 |
+| 동명 거부·만든 시각·`--force` | 스냅샷만 통과 | CLI·MCP 테스트. 거부 뒤 기존 파일 내용 그대로. 실세션 거부 메시지에 시각·경로. export 쪽은 6b |
+| 재시작 뒤 그림 참조 유지, 자동 만료 없음 | 통과 | 테스트(`link: ?element=fb`). 저장소에 지우는 코드 없음 |
+| 이름 그대로 저장, 결과에 이름·전체 경로, 같은 이름 충돌 거부 | 통과 | 테스트(`2026-09-16_053012Z_order-flow`). UTC 이름을 짓는 것은 03 |
+| "확인 못 함" 점선·표시 유지 | 스냅샷만 통과 | 테스트(`strokeStyle`·`customData`), 복원 스크린샷에 점선. export·import는 6b·6c |
+| 복원 스크린샷 | 통과 | 실세션 브라우저·CLI `screenshot`: frame 둘·라벨·점선·바인딩 화살표·링크 아이콘 |
+| 깨진 파일 하나가 목록을 막지 않음 | 통과 | 테스트(깨진 JSON 하나 + 정상 하나 → 둘 다 목록, 깨진 쪽만 `error`, restore 실패·캔버스 유지) |
+| 기존 `npm test` | 통과 | `npm test` 전체(`test:snapshots` 10개 추가), 타입 검사 둘 |
+
+파일 내용은 업스트림 그대로다: 서버 요소 원본을 `.excalidraw` 껍데기에 담는다(복원이 id까지 정확). export만 완성 형식으로 변환한다.
+
+티켓에 없어 정한 것(2026-10-09 그릴 확정):
+- 프로젝트 폴더 이름은 `<프로젝트 폴더명>-<루트 경로 sha256 앞 8자>`. 사람이 `ls`로 어느 프로젝트인지 안다. 해시는 같은 이름 프로젝트 둘을 가른다.
+- 동명 거부 메시지의 "만든 시각"은 파일 mtime. `--force` 뒤에는 덮어쓴 시각이다. 6b export도 같다.
+- 깨진 스냅샷 파일은 `snapshot list`에 `error`를 붙여 보여 주고 나머지는 정상으로 나온다. restore는 실패하고 캔버스는 그대로다.
+- 경로 구분자·`..`가 든 이름은 거부한다(데이터 폴더 밖 쓰기 방지). 동명 확인은 배타적 생성(`wx`)이라 두 세션이 동시에 저장해도 덮어쓰지 않는다.
+
+알려진 한계: 프로젝트 폴더를 옮기거나 이름을 바꾸면 해시가 바뀌어 옛 스냅샷이 목록에 안 나온다. `~/.excalidraw-architect/snapshots/<옛 폴더명-해시>/`의 파일을 새 폴더로 손으로 옮기면 된다. 자동 이어 주기는 06 범위 밖이다.
+
+남은 위험: 스크린샷(`exportToBlob`)에서 화살표 라벨이 선과 겹쳐 그려진다. 스냅샷 없이 새로 그린 캔버스도 같아 6a와 무관하다. 브라우저 화면에서는 정상이다.
+
+
+## 핸드오프 — 슬라이스 6a 커밋됨, 6b 착수 전 (2026-10-09)
+
+### Goal
+
+06을 슬라이스 4개로 끝낸다: 6a 스냅샷 디스크화(끝) → 6b export → 6c import → 6d 저장 상태. 슬라이스 하나씩 하고, 커밋과 다음 슬라이스 착수는 사용자 승인 뒤에 한다. 티켓에 없는 결정이 필요하면 멈추고 묻는다.
+
+### First Action
+
+6b 착수 전 사용자에게 하나만 묻는다: `export_to_image`와 `import_scene`의 `filePath`도 `sanitizeFilePath`(cwd 밖 거부)를 쓴다. 티켓은 export 경로만 말한다. (a) 셋 다 푼다 — 추천. (b) export(`.excalidraw`)만 푼다. 답을 받고 6b를 시작한다.
+
+### Context
+
+- 6a의 "티켓에 없어 정한 것"은 사용자가 2026-10-09 그릴에서 확정했다. 위 "슬라이스 6a 결과"에 있다.
+- 6b·6c·6d의 범위는 위 "슬라이스 6a 결과"의 "나눈 기준"에 있다. 인수 항목은 티켓 본문 체크박스다. 6a로 체크한 7개 말고 나머지가 남은 일이다.
+
+### Current Progress (git 기준)
+
+- 브랜치 `main`. 6a는 커밋됐다(`git log`에서 "snapshot" 커밋). 작업 트리 깨끗.
+- 마지막 확인: `npm test` 전체 exit 0, `npx tsc --noEmit` 통과, `npm run type-check:frontend` 통과.
+
+### Decisions Made
+
+- 슬라이스를 저장 대상별로 나눴다. 사용자가 시작 보고를 받은 뒤 이의를 말하지 않았다.
+- 테스트 경계: 티켓의 R10(CLI·MCP 결과와 디스크 파일을 대조)을 합의된 경계로 봤다. 실제 `dist` 빌드를 쓴다. HOME은 샌드박스로 둔다. `session start`로 띄운 실제 캔버스 서버를 상대로 시험한다.
+- 코드 리뷰(규칙·스펙 서브에이전트 둘)에서 나온 것 중 반영한 것: 동명 확인을 배타적 생성(`wx`)으로 바꿨다(두 세션 동시 저장 때 몰래 덮어쓰기 방지). restore가 모든 오류를 "not found"로 바꾸던 처리를 지웠다. `restore_snapshot` 설명의 틀린 문장을 고쳤다(`clear_canvas`도 캔버스를 지운다). `src/server.ts` 스냅샷 라우트 위에 새로 넣었던 ADR 반복 주석을 지웠다. `scripts/check-snapshots.mjs` 헤더의 `(issue 06, ADR-0009)`는 다른 `check-*.mjs`와 같은 형식이라 남겼다.
+- 반영하지 않은 것: 저장소 오류 메시지가 CLI·MCP 플래그 이름을 안다. `check-snapshots.mjs`의 헬퍼가 `check-sessions.mjs`와 중복이다(기존 스크립트들도 각자 자기 헬퍼를 가진다).
+
+### What Worked
+
+- TDD로 실제 CLI 경로를 시험했다. 테스트가 `session start --project`로 서버를 띄운다. 그다음 `snapshot save` → `session end` → 새 `session start` → `restore` 순서로 재시작 복원을 확인했다.
+- 브라우저 동기화 뒤의 실제 요소는 테스트에서 `POST /api/elements/sync`로 흉내 냈다.
+- 브라우저 확인은 scratchpad에 둔 HOME과 가짜 레포로 했다(`HOME=<scratchpad>/home node dist/bin.js ...`). 사용자의 `~/.excalidraw-architect`를 건드리지 않는다.
+- 화면 이상을 봤을 때 스냅샷 없이 새로 그린 캔버스와 비교했다. 이 슬라이스 탓인지 바로 가려졌다.
+
+### What Didn't Work
+
+- ⚠️ 사용자는 긴 보고를 거부한다. 끝 보고는 다음 순서로 짧게 쓴다: **문제 있었나 / 판단할 것 / 커밋해도 되나**. "구현 선택" 같은 말은 쓰지 않는다. "티켓에 없어 내가 정한 것"이라고 쓴다.
+- ⚠️ 판단할 것은 끝 보고에 섞지 않는다. 처음부터 선택지와 추천안으로 묻는다.
+- claude-in-chrome에서 "Sync to Backend"를 누른 뒤 바로 저장하면 동기화가 아직 안 끝나 있다. 저장하기 전에 `query`의 요소 수로 동기화를 확인한다.
+
+### Next Steps
+
+1. 6b export. 지금 MCP `export_scene`은 `sanitizeFilePath`(`src/core/normalize.ts`)로 `ALLOWED_EXPORT_DIR`(`src/core/config.ts`, `EXCALIDRAW_EXPORT_DIR` 또는 cwd) 밖 쓰기를 거부한다. CLI `exportCmd`(`src/cli/commands/scene.ts`)는 제한이 없지만 동명 거부도 없다. 할 일: 경로 제한 폐기, 동명 거부와 `--force`, `--frame`, 결과에 전체 경로. **멈춤 후보:** `export_to_image`와 `import_scene`의 `filePath`도 같은 `sanitizeFilePath`를 쓴다. 티켓은 export 경로만 말한다. 이 둘도 풀지 사용자에게 묻는다.
+2. 6c import. `importScene`(`src/core/scene-io.ts`)과 MCP `import_scene`의 `mode: replace|merge`를 없앤다. 새 ID 한 세트, 참조 재매핑, 미포함 참조, 오른쪽 배치, `(복사)` 이름, 파일명 frame.
+3. 6d 저장 상태. screenshot 결과에 동봉, `session list`·`session_list`에 수, `SKILL.md` 규칙.
+4. 마지막에 티켓 공통 체크박스(`npm test`, R10 기록)를 체크하고 Status를 바꾼다.

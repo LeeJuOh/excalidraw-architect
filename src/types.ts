@@ -283,18 +283,8 @@ export interface SetViewportMessage extends WebSocketMessage {
   offsetY?: number;
 }
 
-// Snapshot types
-export interface Snapshot {
-  name: string;
-  elements: ServerElement[];
-  createdAt: string;
-}
-
 // In-memory storage for Excalidraw elements
 export const elements = new Map<string, ServerElement>();
-
-// In-memory storage for snapshots
-export const snapshots = new Map<string, Snapshot>();
 
 // In-memory file storage for image elements (Excalidraw BinaryFiles)
 export interface ExcalidrawFile {

@@ -579,15 +579,15 @@ export async function callExcalidrawTool(
         };
       }
       case 'snapshot_scene': {
-        const params = z.object({ name: z.string() }).parse(args);
+        const params = z.object({ name: z.string(), force: z.boolean().optional() }).parse(args);
         logger.info('Saving snapshot via MCP', { name: params.name });
 
-        const result = await saveSnapshot(params.name);
+        const result = await saveSnapshot(params.name, params.force ?? false);
 
         return {
           content: [{
             type: 'text',
-            text: `Snapshot "${params.name}" saved (${result.elementCount} elements)\n\n${JSON.stringify(result, null, 2)}`
+            text: `Snapshot "${result.name}" saved to ${result.path} (${result.elementCount} elements)\n\n${JSON.stringify(result, null, 2)}`
           }]
         };
       }
@@ -595,13 +595,7 @@ export async function callExcalidrawTool(
         const params = z.object({ name: z.string() }).parse(args);
         logger.info('Restoring snapshot via MCP', { name: params.name });
 
-        // Fetch the snapshot
-        let snapshot: { name: string; elements: ServerElement[]; createdAt: string };
-        try {
-          snapshot = await getSnapshot(params.name);
-        } catch {
-          throw new Error(`Snapshot "${params.name}" not found`);
-        }
+        const snapshot = await getSnapshot(params.name);
 
         // Clear current canvas, then restore elements
         await clearCanvas();

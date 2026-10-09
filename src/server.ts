@@ -11,7 +11,6 @@ import logger from './utils/logger.js';
 import {
   elements,
   files,
-  snapshots,
   generateId,
   EXCALIDRAW_ELEMENT_TYPES,
   ServerElement,
@@ -24,7 +23,6 @@ import {
   BatchCreatedMessage,
   SyncStatusMessage,
   InitialElementsMessage,
-  Snapshot,
   normalizeFontFamily,
   defaultLabelFontSize,
   labelStrokeColorFor,
@@ -33,6 +31,13 @@ import {
 import { z } from 'zod';
 import WebSocket from 'ws';
 import { isMainModule } from './core/entry.js';
+import {
+  saveSnapshot,
+  listSnapshots,
+  readSnapshot,
+  SnapshotExistsError,
+  SnapshotNameError
+} from './core/snapshot-store.js';
 import {
   CANVAS_SERVICE_NAME,
   claimSessionRecord,
@@ -1355,88 +1360,50 @@ app.post('/api/viewport/result', (req: Request, res: Response) => {
   }
 });
 
-// Snapshots: save
+function snapshotError(res: Response, error: unknown, action: string) {
+  if (error instanceof SnapshotExistsError) {
+    return res.status(409).json({ success: false, error: error.message, existing: error.existing });
+  }
+  if (error instanceof SnapshotNameError) {
+    return res.status(400).json({ success: false, error: error.message });
+  }
+  logger.error(`Error ${action} snapshot:`, error);
+  return res.status(500).json({ success: false, error: (error as Error).message });
+}
+
 app.post('/api/snapshots', (req: Request, res: Response) => {
+  const { name, force } = req.body;
+  if (!name || typeof name !== 'string') {
+    return res.status(400).json({ success: false, error: 'Snapshot name is required' });
+  }
   try {
-    const { name } = req.body;
-
-    if (!name || typeof name !== 'string') {
-      return res.status(400).json({
-        success: false,
-        error: 'Snapshot name is required'
-      });
-    }
-
-    const snapshot: Snapshot = {
-      name,
-      elements: Array.from(elements.values()),
-      createdAt: new Date().toISOString()
-    };
-
-    snapshots.set(name, snapshot);
-    logger.info(`Snapshot saved: "${name}" with ${snapshot.elements.length} elements`);
-
-    res.json({
-      success: true,
-      name,
-      elementCount: snapshot.elements.length,
-      createdAt: snapshot.createdAt
-    });
+    const saved = saveSnapshot(PROJECT_ROOT!, name, Array.from(elements.values()), force === true);
+    logger.info(`Snapshot saved: "${name}" with ${saved.elementCount} elements at ${saved.path}`);
+    res.json({ success: true, ...saved });
   } catch (error) {
-    logger.error('Error saving snapshot:', error);
-    res.status(500).json({
-      success: false,
-      error: (error as Error).message
-    });
+    snapshotError(res, error, 'saving');
   }
 });
 
-// Snapshots: list
 app.get('/api/snapshots', (req: Request, res: Response) => {
   try {
-    const list = Array.from(snapshots.values()).map(s => ({
-      name: s.name,
-      elementCount: s.elements.length,
-      createdAt: s.createdAt
-    }));
-
-    res.json({
-      success: true,
-      snapshots: list,
-      count: list.length
-    });
+    const list = listSnapshots(PROJECT_ROOT!);
+    res.json({ success: true, snapshots: list, count: list.length });
   } catch (error) {
-    logger.error('Error listing snapshots:', error);
-    res.status(500).json({
-      success: false,
-      error: (error as Error).message
-    });
+    snapshotError(res, error, 'listing');
   }
 });
 
-// Snapshots: get by name
 app.get('/api/snapshots/:name', (req: Request, res: Response) => {
+  const { name } = req.params;
   try {
-    const { name } = req.params;
-    const snapshot = snapshots.get(name!);
-
+    const snapshot = readSnapshot(PROJECT_ROOT!, name!);
     if (!snapshot) {
-      return res.status(404).json({
-        success: false,
-        error: `Snapshot "${name}" not found`
-      });
+      return res.status(404).json({ success: false, error: `Snapshot "${name}" not found` });
     }
-
-    res.json({
-      success: true,
-      snapshot
-    });
+    res.json({ success: true, snapshot });
   } catch (error) {
-    logger.error('Error fetching snapshot:', error);
-    res.status(500).json({
-      success: false,
-      error: (error as Error).message
-    });
+    snapshotError(res, error, 'fetching');
   }
 });
 

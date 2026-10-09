@@ -9,15 +9,14 @@ import {
 } from '../../core/canvas-client.js';
 
 export async function snapshot(argv: string[]): Promise<void> {
-  const { positionals } = parseArgs(argv, {});
+  const { positionals, flags } = parseArgs(argv, { force: { takesValue: false } });
   const [action, name] = positionals;
-
 
   switch (action) {
     case 'save': {
-      if (!name) throw new CliUsageError('Usage: snapshot save <name>');
-      const result = await saveSnapshot(name);
-      printJson({ success: true, name, elements: result.elementCount, createdAt: result.createdAt });
+      if (!name) throw new CliUsageError('Usage: snapshot save <name> [--force]');
+      const result = await saveSnapshot(name, flags.force === true);
+      printJson({ success: true, name: result.name, path: result.path, elements: result.elementCount, createdAt: result.createdAt });
       return;
     }
     case 'list': {
@@ -27,18 +26,13 @@ export async function snapshot(argv: string[]): Promise<void> {
     }
     case 'restore': {
       if (!name) throw new CliUsageError('Usage: snapshot restore <name>');
-      let snap;
-      try {
-        snap = await getSnapshot(name);
-      } catch {
-        throw new Error(`Snapshot "${name}" not found`);
-      }
+      const snap = await getSnapshot(name);
       await clearCanvas();
       await batchCreateElementsStrict(snap.elements);
       printJson({ success: true, name, restored: snap.elements.length });
       return;
     }
     default:
-      throw new CliUsageError('Usage: snapshot save|list|restore [name]');
+      throw new CliUsageError('Usage: snapshot save <name> [--force] | list | restore <name>');
   }
 }

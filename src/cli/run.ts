@@ -29,7 +29,7 @@ const COMMANDS: Record<string, Command> = {
   export: { handler: scene.exportCmd, summary: 'Export the scene as .excalidraw JSON or Obsidian .excalidraw.md', usage: 'export [--out scene.excalidraw | note.excalidraw.md] [--format json|obsidian] (a .md out path implies obsidian)', canvas: true },
   import: { handler: scene.importCmd, summary: 'Import a .excalidraw or Obsidian .excalidraw.md file (merge by default)', usage: 'import [scene.excalidraw|note.excalidraw.md|-] [--replace] (or stdin)', canvas: true },
   mermaid: { handler: scene.mermaid, summary: 'Render a Mermaid diagram onto the canvas (needs a browser tab)', usage: 'mermaid [diagram.mmd|-] (or stdin)', canvas: true },
-  snapshot: { handler: snapshot, summary: 'Save / list / restore named canvas snapshots', usage: 'snapshot save|list|restore [name]', canvas: true },
+  snapshot: { handler: snapshot, summary: 'Save / list / restore named canvas snapshots (kept on disk per project)', usage: 'snapshot save <name> [--force] | list | restore <name>', canvas: true },
   arrange: { handler: arrange, summary: 'Align, distribute, group, lock, duplicate elements', usage: 'arrange align|distribute|group|ungroup|lock|unlock|duplicate --ids a,b,c [--to left|horizontal|...]', canvas: true },
   share: { handler: scene.share, summary: 'Export to a shareable excalidraw.com URL', usage: 'share', canvas: true },
   clear: { handler: scene.clear, summary: 'Clear the whole canvas', usage: 'clear --yes', canvas: true }

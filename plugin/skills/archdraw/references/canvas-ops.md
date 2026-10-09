@@ -42,7 +42,7 @@ canvas session.
 | Import a scene file | `import_scene` | `import` |
 | Export an image | `export_to_image` | `screenshot --out f.png`, `screenshot --format svg` |
 | Share link | `export_to_excalidraw_url` | `share` |
-| Save a snapshot | `snapshot_scene` | `snapshot save <name>` |
+| Save a snapshot (overwrite only when the user asks) | `snapshot_scene` (`force: true`) | `snapshot save <name> [--force]` |
 | Restore a snapshot | `restore_snapshot` | `snapshot restore <name>` |
 | List snapshots | — | `snapshot list` |
 | Clear the canvas (user's word only) | `clear_canvas` | `clear --yes` |
