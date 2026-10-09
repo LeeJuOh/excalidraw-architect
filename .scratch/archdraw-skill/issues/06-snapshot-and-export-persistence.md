@@ -13,7 +13,7 @@
 - 스냅샷은 디스크에 보관하고 TTL을 두지 않는다. 생성 성공 후 서버 종료·재시작 뒤에도 남고 자동 만료되지 않는다는 안내는 03 담당이다. 업스트림의 메모리 저장소를 교체한다.
 - 함께 저장한 그림 사이의 참조를 export·import 및 snapshot save·restore에서 보존한다. import가 ID를 새로 발급할 때 그림 참조도 같은 세트의 새 대상에 맞춰 연결한다. 여러 그림이 공용 내부 그림 하나를 참조하는 관계도 유지한다. 참조 생성·탐색은 03, frame 지원은 05 담당이다.
 - **미포함 참조 (2026-09-19 2차 검수 A5):** `--frame`으로 일부만 export하면 파일 밖 대상을 가리키는 참조는 "미포함"으로 남긴다. import 뒤 그 참조는 어떤 기존 그림에도 붙지 않는다 — 이름이 같은 그림이 있어도 연결하지 않는다. 참조는 frame 이름이 아니라 ID 기반이다. 박스 요소의 `link` 칸에 Excalidraw 요소 링크 `?element=<대상 frame id>`를 적는다(2026-09-20 그릴, ADR-0008). `link` 칸을 툴에서 받는 것은 05 담당. import가 ID를 새로 발급할 때 `link`의 frame id도 같은 세트의 새 id로 바꾸고, 세트 밖 id는 미포함으로 둔다. 미포함 `link`는 손대지 않으므로, 같은 캔버스에 같은 id의 원본이 있으면 원본으로 간다 — 그건 평범한 그림 참조다(2026-10-10 그릴 Q1). 대상을 자동으로 함께 저장해 사용자 지정 범위를 넓히지 않는다. 미포함 참조를 따라갈 때의 안내·새로 그리기는 03 담당.
-- **저장 상태 기록·동봉 (PRD §3.5 "저장 상태 표시", 2026-09-19):** `export`(전체·`--frame`)·`import`·`snapshot save`가 성공하면 세션 상태에 그림(frame)별 마지막 저장 경로·시각을, 스냅샷은 캔버스 단위 마지막 이름·시각을 적는다. 경로는 명령 인자로 받은 값을 그대로 적고 디스크를 찾지 않는다. `screenshot` 결과에 그림별 상태를 동봉한다: 저장 경로와 시각, 저장 이후 그 그림 요소가 바뀌었는지(저장 후 수정됨), 기록된 경로의 파일이 지금 없는지(파일 없음), 기록이 없으면 미저장. 스냅샷은 마지막 이름과 그 후 캔버스 변경 여부. 기록은 세션 메모리에만 두고 스냅샷·export 파일에는 넣지 않는다. 03은 이 값을 옮겨 적기만 한다.
+- **저장 상태 기록·동봉 (PRD §3.5 "저장 상태 표시", 2026-09-19):** `export`(전체·`--frame`)·`import`·`snapshot save`가 성공하면 세션 상태에 그림(frame)별 마지막 저장 경로·시각을, 스냅샷은 캔버스 단위 마지막 이름·시각을 적는다. 경로는 `export`·`import`가 돌려준 전체 경로를 적고 디스크를 찾지 않는다(2026-10-10 D4, 구 "명령 인자 그대로"). 경로 없는 저장(`--out` 없는 `export`, JSON 문자열 `import`)은 기록하지 않는다. 파일은 클라이언트가 쓰므로 `export`·`import`는 성공 뒤 서버에 그림 id·전체 경로를 알리고 서버가 기록한다(D2). `screenshot` 결과에 그림별 상태를 동봉한다: 저장 경로와 시각, 저장 이후 그 그림 요소가 바뀌었는지(저장 후 수정됨), 기록된 경로의 파일이 지금 없는지(파일 없음), 기록이 없으면 미저장. 스냅샷은 마지막 이름과 그 후 캔버스 변경 여부. 기록은 세션 메모리에만 두고 스냅샷·export 파일에는 넣지 않는다. 03은 이 값을 옮겨 적기만 한다.
 - 미확인 필수요소는 저장을 거부하는 조건이 아니다. "확인 못 함" 표시와 점선을 저장·재로드 후에도 보존한다. 미확인 항목 안내는 03 담당이다.
 - **저장 범위·파일 단위 (검수 R07 일부):** PRD §3.5를 따른다. 기본 전체 export는 여러 그림과 현재 배치를 파일 하나에 보존하며, 특정 그림 요청에는 `--frame`을 사용한다. 발화 해석은 03 담당.
 - **그림 단위 저장·복사 (검수 R02, 2026-09-14 그릴 확정):** 캔버스에 그림 A·B가 같이 있을 때 A만 저장하고, 저장된 A를 B 옆에 한 장 더 놓을 수 있어야 한다(스토리 17). 규칙 넷:
@@ -24,7 +24,7 @@
 
 **Blocked by:** 01 (플러그인 골격), 04 (캔버스 세션의 프로젝트 루트 — 스냅샷 폴더를 나누는 기준), 05 (frame — `export --frame`·import의 frame 씌우기가 frame 요소를 전제)
 
-**Status:** ready-for-agent (2026-10-10 — 6a·6b 커밋됨, 6c 결정 5까지 구현·테스트 끝(커밋 전), 6d 결정 끝·미착수)
+**Status:** ready-for-agent (2026-10-10 — 6a·6b·6c 커밋됨, 6d 미착수: D1~D6 확정·ADR-0010·CONTEXT.md 반영됨, 코드 착수 대기)
 
 - [x] `snapshot save x` → 서버 `stop` → `start` → `snapshot restore x`로 그림이 돌아온다
 - [x] `snapshot list`가 디스크의 스냅샷을 보여준다
@@ -53,8 +53,8 @@
 - [ ] `snapshot save` 뒤 `screenshot` 결과에 마지막 스냅샷 이름이 있고, 요소를 고치면 그 후 변경 여부가 참이 된다
 - [ ] `import <파일>`로 들어온 복사본 frame의 저장 경로가 그 파일로 기록된다
 - [ ] 저장 상태 기록은 export·snapshot 파일 내용에 들어가지 않는다
-- [ ] `session list`·`session_list`의 결과에 캔버스 세션마다 미저장 그림과 저장 후 수정된 그림의 수가 있다. 붙지 않은 캔버스 세션을 키로 끝내기 전에 에이전트가 이 수를 보고 1회 묻는다(2026-10-05, 04 Q6 · ADR-0010)
-- [ ] 사용자가 그림을 지우라고 했을 때 그 그림이 미저장이거나 저장 후 수정됨이면 에이전트가 지우기 전에 1회 묻고, 저장된 그림은 묻지 않고 지운다. `SKILL.md`에 이 규칙이 있다. 서버는 묻지 않고 frame과 자식을 같이 지운다(05) (2026-10-05 05 검수 · ADR-0010)
+- [ ] `session list`·`session_list`의 결과에 캔버스 세션마다 미저장 그림(파일 없음 포함, D3)과 저장 후 수정된 그림의 수가 있다. 붙지 않은 캔버스 세션을 키로 끝내기 전에 에이전트가 이 수를 보고 1회 묻는다(2026-10-05, 04 Q6 · ADR-0010)
+- [ ] 사용자가 그림을 지우라고 했을 때 그 그림이 저장됨이 아니면(미저장·저장 후 수정됨·파일 없음, D3) 에이전트가 지우기 전에 1회 묻고, 저장된 그림은 묻지 않고 지운다. `SKILL.md`에 이 규칙이 있다. 서버는 묻지 않고 frame과 자식을 같이 지운다(05) (2026-10-05 05 검수 · ADR-0010)
 - [ ] 기존 `npm test` 통과
 
 - [x] frame A·B·C가 있는 캔버스를 기본 export하면 파일 하나에 세 그림과 배치가 모두 남는다. 새 빈 캔버스로 import하면 그림 사이 상대 배치가 유지된다
@@ -215,55 +215,93 @@
 
 `screenshot` 결과 모양(지금은 `success`·`file`·`format`만): 그림별 배열을 한 칸 더한다. 항목마다 frame 이름·id, 상태 넷 중 하나(저장됨·저장 후 수정됨·미저장·파일 없음), 기록이 있으면 경로·시각. frame 밖 묶음은 이름이 비고 개수가 있다. 스냅샷은 캔버스 단위로 마지막 이름·시각·그 뒤 변경 여부.
 
-## 핸드오프 — 6c 커밋됨, 6d 착수 전 (2026-10-10)
+## 슬라이스 6d 착수 전 결정 D1~D6 (2026-10-10 그릴 확정)
 
-> 같은 내용의 짧은 세션 핸드오프: `docs/handoff/2026-10-10-issue-06-slice-6d.md`. 둘 중 이 절이 상세다.
+코드를 읽다가 찾은 사실과 티켓에 없던 인터페이스 결정. ADR-0010 Consequences·CONTEXT.md "저장 상태"·티켓 16·56·57행·spec 206행에 반영됨. 다시 논의하지 않는다.
 
-### Goal
+**D1. 브라우저 동기화만으로 "저장 후 수정됨"이 되는 문제 — 무엇을 비교하나**
+- 사실: 사용자가 캔버스를 한 번 누르면(`frontend/src/App.tsx`의 `onPointerDownCapture`·`onKeyDownCapture`가 `userInteractedRef`를 켬) 그 뒤 Excalidraw `onChange`마다 `syncToBackend()`가 **모든 요소**를 서버로 보낸다. 서버 `src/server.ts`의 `POST /api/elements/sync`는 저장소를 비우고 요소마다 `syncedAt`·`syncTimestamp`·`source`·`version: 1`을 새로 붙인다. `onChange`가 스크롤·선택에도 불리는지는 Excalidraw 동작이라 (unverified).
+- 예: export 때 `{id:"a1", label:{text:"Order"}}` → 사용자가 한 번 만진 뒤 `{id:"a1", boundElements:[{id:"t9"}], index:"a0", syncedAt:…}` + 라벨 텍스트 `t9`. 내용은 같다. 6d 결정 1("어떤 속성이든 다르면")을 글자 그대로 쓰면 "저장 후 수정됨"이 된다. 에이전트 형식(`label`)이 브라우저 형식으로 바뀌는 세부는 6a 실세션 기록(86행)에서 본 기억이라 (unverified).
+- 선택지: (a) 기록용 칸(`syncedAt`·`syncTimestamp`·`source`·`version`·`createdAt`·`updatedAt`·`versionNonce`·`updated`)만 빼고 나머지 전부 비교. 에이전트가 그렸거나 import한 그림은 첫 동기화 뒤 거짓 "수정됨"이 1회 날 수 있으나 수정을 놓치지는 않는다. (b) 보이는 칸만 골라 비교. 거짓 "수정됨"이 줄지만 다 없어지진 않고, 목록에서 빠진 칸의 수정을 놓친다.
+- 추천: (a). 거짓 "수정됨"의 비용은 질문 1번, 놓침의 비용은 그림 유실.
+- **결정(2026-10-10 그릴): (a).** 서버가 자동으로 찍는 기록 칸 8개(`syncedAt`·`syncTimestamp`·`source`·`version`·`createdAt`·`updatedAt`·`versionNonce`·`updated`)만 빼고 나머지 전부 비교한다. 코드 확인: 클릭 한 번 뒤 `onChange`마다 디바운스된 전체 동기화가 가고(`frontend/src/App.tsx` `scheduleAutoSync`), 서버는 저장소를 비우고 요소마다 기록 칸을 새로 붙인다(`src/server.ts` `POST /api/elements/sync`).
 
-06을 슬라이스 4개로 끝낸다: 6a 스냅샷 디스크화(`5f83f74`) → 6b export(`97f9408`) → 6c import(`cd6cfd6`) → **6d 저장 상태(남음)**. 슬라이스 하나씩 한다. 커밋과 다음 슬라이스 착수는 사용자 승인 뒤에 한다. 티켓에 없는 결정이 필요하면 **멈추고 묻는다.**
+**D2. 저장 기록을 어디에 두고 어떻게 적나**
+- 사실: export·import는 CLI·MCP 프로세스에서 돈다(`src/core/scene-io.ts`의 `buildSceneFile()`·`importScene()`이 HTTP로 요소를 읽고 파일을 직접 쓴다). CLI는 호출마다 끝난다. `snapshot save`는 캔버스 서버 안에서 돈다(`POST /api/snapshots`). `session list`는 `src/core/sessions.ts`의 `probeSession()`이 각 서버의 `/health`를 읽는다.
+- 추천: 캔버스 서버 메모리에 둔다. 새 HTTP 경로 둘 — `POST /api/save-state`(export·import가 파일을 쓴 뒤 경로·frame id를 보내고 서버가 그 순간 자기 요소로 해시 계산), `GET /api/save-state`(`screenshot`이 그림별 상태를 받음). `snapshot save`는 서버 안에서 바로 기록. `/health`에 미저장 수·수정됨 수를 넣어 `session list`가 그대로 보여 준다. 기각 후보: export·import를 서버로 옮기기(6b·6c 경로 해석을 다시 짜야 함).
+- **결정(2026-10-10 그릴): 캔버스 서버 메모리 + `POST /api/save-state`·`GET /api/save-state`.** 근거: 파일 쓰기가 클라이언트(MCP 프로세스·CLI 일회성 프로세스)에 있는 구조는 업스트림 그대로이고 6b·6c가 이미 그 위에 커밋됐다. 서버로 옮기면(기각안) export·import 전체와 테스트 17케이스를 이사해야 하고, 서버 cwd가 CLI·MCP 어느 쪽도 아니라 결국 클라이언트가 절대경로를 알려 주는 모양이 된다. MCP 프로세스 메모리에 두는 안도 기각: 다른 대화의 MCP 프로세스·재attach한 새 프로세스가 못 보고, `snapshot save`는 서버에서 처리돼 기록이 갈라진다. 남는 위험: export 성공 뒤 알려 주기 호출을 빼먹으면 기록이 없다 — `writeOutputFile` 직후 한 곳이라 테스트 한 케이스로 잡는다.
 
-### First Action
+**D3. "파일 없음"을 미저장으로 세나**
+- 파일이 밖에서 지워졌고 그림도 바뀐 경우 어느 상태를 보이나, 그리고 `session list` 수·지우기 전 묻기(56·57행)에 넣나. 티켓 글자는 "미저장·저장 후 수정됨"만 센다 — 그대로면 파일이 지워진 그림은 묻지 않고 사라진다.
+- 추천: "파일 없음"을 먼저 보이고, 수와 묻기에서는 미저장으로 센다.
+- **결정(2026-10-10 그릴): 묻는다.** `screenshot`에는 `missing`으로 따로 표시하고, `session list`의 미저장 수에는 `missing`을 포함하며, `SKILL.md`의 지우기 전·세션 끝내기 전 규칙은 "`saved`가 아니면 1회 묻는다"로 적는다. 파일 삭제가 실수일 수 있고 묻는 비용은 질문 한 번이다. 56·57행·ADR-0010의 "미저장·저장 후 수정됨"은 "저장됨이 아니면"으로 고친다.
 
-**사용자에게 "6d를 시작한다"고 알리고 "예"를 받은 뒤 시작 보고를 한다.** 로드맵 `6a ✅ → 6b ✅ → 6c ✅ → 6d ▶`, 완료 조건은 49~57행 체크박스. 그다음 "슬라이스 6d 결정" 절과 ADR-0010(`docs/adr/0010-server-reports-save-state-skill-never-asks.md`)을 읽고 **티켓에 없는 결정을 훑어 코드 전에 묻는다.** 그 뒤 테스트 경계(seam)를 제안해 확인받고 `/tdd`로 시작한다.
+**D4. 기록하는 경로 = 인자 그대로 vs 전체 경로**
+- 16행은 "명령 인자로 받은 값을 그대로" 적으라 한다. 그런데 캔버스 서버의 cwd는 CLI와 달라 `./a.excalidraw`로는 "파일 없음"을 확인할 수 없다.
+- 추천: export가 결과로 돌려주는 전체 경로(CLI는 cwd, MCP는 프로젝트 루트 기준으로 푼 값)를 적는다. 디스크를 찾지는 않는다. 정해지면 16행 문구를 고친다.
+- **결정(2026-10-10 그릴): 절대경로.** export·import가 결과로 돌려주는 전체 경로를 적는다. 서버 cwd는 CLI·MCP 어느 쪽도 아니라 상대경로로는 "파일 없음"을 확인할 수 없다. 16행 "명령 인자로 받은 값을 그대로"는 "export 결과의 전체 경로"로 고친다(디스크 스캔 안 함은 유지).
 
-### Context
+**D5. 결과 모양과 상태 값 글자**
+- 추천: 상태 값은 영어 `saved`·`modified`·`unsaved`·`missing`. CLI `screenshot` JSON에 `drawings`(frame마다 `id`·`name`·`state`·있으면 `path`·`savedAt`, frame 밖 묶음은 `id`·`name`이 `null`이고 `elements` 개수)와 `snapshot`(`name`·`savedAt`·`changedSince`)을 더한다. MCP `get_canvas_screenshot`에는 같은 JSON을 텍스트로 붙인다.
+- **결정(2026-10-10 그릴): 추천대로.** `state`는 `saved`·`modified`·`unsaved`·`missing`. `drawings` 항목: `id`·`name`·`state`, 기록 있으면 `path`·`savedAt`, frame 밖 묶음은 `id`·`name`이 `null`이고 `elements` 개수. `snapshot`: `name`·`savedAt`·`changedSince`, 없으면 `null`. MCP는 이미지 블록 뒤 텍스트 블록에 같은 JSON 문자열 — 업스트림 툴 20개와 같은 방식. `structuredContent`+`outputSchema`(MCP 스펙 정식 칸, SDK 2.0.0 지원)는 이 툴만 혼자 다른 모양이 되므로 안 쓴다. 20개를 한꺼번에 옮길 때 재고.
 
-- 2026-10-10 이번 세션: 6c 결정 5(둥근 모서리)를 `/tdd`로 구현하고 6c 전체를 커밋했다. 6d는 손대지 않았다.
-- 결정 5 구현: `src/core/expand-elements.ts` → `makeBaseElement()`의 `roundness` 기본값을 `null`로. 테스트 `cornersAreSavedAsTheCanvasDrawsThem`(`scripts/check-export.mjs`). 같은 변환을 `src/core/share-url.ts`도 쓰므로 공유 링크도 각진 모서리가 된다 — 캔버스와 같아지는 의도된 결과.
-- 착수 전에 사용자에게 물을 후보(내 판단, 미결):
-  - 티켓은 CLI `screenshot` 결과에 상태를 동봉하라고 한다. MCP 쪽(`get_canvas_screenshot`·`export_to_image`, `src/core/mcp-tools.ts`)에도 넣는지 티켓에 없다.
-  - 기록을 둘 곳 — "세션 메모리"가 캔버스 서버 프로세스인지 CLI·MCP 쪽인지 티켓에 없다. `screenshot`·`session list`·`session_list`가 모두 읽어야 하므로 캔버스 서버가 유력하다(unverified).
-  - 49행 "파일 없음"은 기록된 경로를 `screenshot` 때 확인해야 한다. 16행 "디스크를 찾지 않는다"는 기록 때 얘기라 충돌은 아닌 것으로 읽힌다(확인 필요).
-- 사용자는 설명을 짧게, 예시(id 넣은 before/after)와 함께 받길 원한다.
+**D6. 테스트 경계**
+- 추천: `scripts/check-export.mjs`에 케이스를 더한다(6b·6c와 같은 방식: 실제 `dist`, 샌드박스 HOME, 가짜 탭). 브라우저 동기화는 `POST /api/elements/sync`로 흉내 낸다. 판정은 CLI `screenshot`·MCP `get_canvas_screenshot` 결과. 다른 안: 새 파일 `scripts/check-save-state.mjs`(+ `npm test`에 `test:save-state`).
+- **결정(2026-10-10 그릴): `check-export.mjs`에 더한다.** 행동만 검사한다 — 구현을 고장 내면 반드시 빨강이 나는 11케이스, 판정은 전부 CLI `screenshot`·`session list`·MCP `get_canvas_screenshot` 결과:
+  1. A·B → `export --frame A` → A `saved`+절대경로+시각, B `unsaved`
+  2. 1 뒤 A 요소 `update` → A `modified`
+  3. 1 뒤 파일 삭제 → A `missing`
+  4. 1 뒤 `POST /api/elements/sync`로 같은 요소 재전송(클릭만 한 상황) → A 여전히 `saved` (D1)
+  5. 1 뒤 `snapshot restore`로 A가 바뀜 → A `modified` (6d 결정 3)
+  6. frame 밖 화살표 1개 → `id: null, elements: 1, unsaved`; 전체 export 뒤 `saved` (6d 결정 2)
+  7. `snapshot save x` → `snapshot.name = x`, `changedSince: false`; 요소 고침 → `true`
+  8. `import f` → 복사본 frame `saved`, `path` = f 절대경로
+  9. export 파일·스냅샷 파일에 `savedAt`·`state` 문자열 없음
+  10. A `unsaved`·B `modified`·C `saved` → `session list` `unsaved: 1, modified: 1`; A 파일 삭제 → `unsaved: 2` (D3)
+  11. MCP `get_canvas_screenshot` 텍스트 블록 = 1과 같은 JSON
+  안 하는 것: 해시 함수 단위 테스트, `/api/save-state` 단독 호출, "필드가 존재한다"류.
 
-### Current Progress (git 기준, 2026-10-10 `repo_facts.sh`)
+**문서로 이미 정해진 것(묻지 않음):**
+- MCP `get_canvas_screenshot`에도 상태를 넣는다 — spec 245행, `SKILL.md` "## 10. Saving"이 이 툴 결과에서 옮겨 적게 한다.
+- import는 복사본 frame만 기록한다(54행). frame 밖 묶음은 전체 export 때만 기록한다(6d 결정 2).
+- `--out`·`filePath` 없는 export와 `data` import는 경로가 없으니 기록하지 않는다(2026-10-10 사용자 확인).
 
-- 브랜치 `main`, 작업 트리 깨끗(이 핸드오프 편집 전 기준). 마지막 커밋 `cd6cfd6`(6c 전체 + 결정 5 + ADR-0007·0008·CONTEXT.md 보정). `main`이 `origin/main`보다 1커밋 앞 — `cd6cfd6`만 push 안 됨.
-- 검증(커밋 전, 2026-10-10): `npm test` 전체 exit 0(export 18케이스), `tsc --noEmit`·`type-check:frontend` 통과.
-- 6d: 코드 미착수. 관련 진입점 — CLI `screenshot`은 `src/cli/commands/scene.ts` → `screenshot()`(지금 `{ success, file, format }` 출력), CLI `session list`는 `src/core/sessions.ts` → `formatSessionList()`, MCP `session_list`는 `src/core/mcp-session.ts` → `sessionList()`. 지우기 규칙은 `plugin/skills/archdraw/SKILL.md`.
+## 슬라이스 6d 계획 (2026-10-10 확정)
 
-### Decisions Made
+6a 스냅샷 디스크화(`5f83f74`) → 6b export(`97f9408`) → 6c import(`cd6cfd6`) → **6d1 → 6d2 → 마무리**. 나눈 기준은 "상태를 만든다 / 쓴다". 슬라이스마다 `/tdd` → `npm test` 전체 → 체크박스 → 끝 보고 → 사용자 확인 → 커밋. 커밋과 다음 슬라이스 착수는 사용자 승인 뒤에 한다.
 
-- 6c 결정 1~5와 2026-10-10 판단 4건은 "슬라이스 6c 결과"·"슬라이스 6c 결정" 절. 다시 논의하지 않는다.
-- 6d 결정 1~3은 "슬라이스 6d 결정" 절.
-- `/code-review`는 결정 5(한 줄 변경)에 돌리지 않았다. 6c 나머지는 2026-10-09에 리뷰됨.
+### 6d1 — 상태를 만든다
 
-### What Worked
+**What to build:** export·import·snapshot save가 성공하면 캔버스 서버가 그림별 저장 기록을 들고, 그 뒤 찍는 `screenshot`(CLI)·`get_canvas_screenshot`(MCP) 결과에 그림별 `drawings`와 캔버스 단위 `snapshot`이 D5 모양으로 붙는다. 사용자가 브라우저를 클릭만 해도 상태가 바뀌지 않는다.
 
-- `/tdd` 한 사이클: 케이스 하나 추가 → `node scripts/check-export.mjs <이름 일부>`로 빨강 확인 → 최소 수정 → 초록 → `npm test` 전체. 서버 코드를 바꿨으면 테스트 전에 `npm run build`.
-- 끝 보고 뒤 사용자가 "커밋만"이라 하면 커밋만 하고 멈췄다.
+**Blocked by:** 없음 (6a·6b·6c 커밋됨)
 
-### What Didn't Work
+- 체크박스 49~55
+- 테스트 D6의 1~9, 11
 
-- ⚠️ 질문형 말("커밋하고 6d 작업할까?")은 승인이 아니다. 계획과 메시지 초안을 보이고 "예"를 받았다. 이전 세션의 "다음" 오독과 같은 함정.
-- ⚠️ macOS `sed`는 `\b`를 모르고 `cat -A`도 없다.
-- ⚠️ `check-export.mjs`에 이름 필터를 주어도 끝 줄은 "all 18 cases passed"로 나온다(전체 수를 찍음). 필터 실행 결과는 `ok`/`FAIL` 줄로 본다.
+### 6d2 — 상태를 쓴다
 
-### Next Steps
+**What to build:** `session list`(CLI)·`session_list`(MCP) 결과에 캔버스 세션마다 미저장(파일 없음 포함)·저장 후 수정된 그림 수가 있다. `SKILL.md`·`references/saving.md`에 "저장됨이 아니면 1회 묻는다" 규칙이 지우기 전·세션 끝내기 전(붙지 않은 세션은 `session list` 수로) 두 곳에 있다.
 
-1. First Action → 6d 구현(`/tdd`) → `npm test` 전체 → 체크박스 49~57 → 끝 보고 → 사용자 확인 → 커밋.
-2. 06 마무리: 공통 체크박스(58행 `npm test`, 78행 R10 기록) 체크, Status 변경, `spec.md`의 진행 순서 줄(지금 "다음은 6c(결정 끝)"이라 낡음) 갱신.
+**Blocked by:** 6d1
+
+- 체크박스 56·57
+- 테스트 D6의 10
+
+### 06 마무리
+
+**Blocked by:** 6d2
+
+- 체크박스 58(`npm test`)·78(R10 기록)
+- Status 줄 갱신, `spec.md` 310행 진행 줄("6c import·6d 저장 상태 남음"이라 낡음) 갱신
+
+### 작업 메모
+
+- `/tdd` 한 사이클: 케이스 하나 추가 → `node scripts/check-export.mjs <이름 일부>`로 빨강 → 최소 수정 → 초록 → `npm test` 전체. 서버 코드를 바꿨으면 테스트 전에 `npm run build`.
+- 진입점: CLI `screenshot`은 `src/cli/commands/scene.ts` → `screenshot()`, MCP는 `src/core/mcp-dispatch.ts`의 `get_canvas_screenshot` case, CLI `session list`는 `src/core/sessions.ts` → `formatSessionList()`, MCP `session_list`는 `src/core/mcp-session.ts` → `sessionList()`. frame 소속은 `src/core/frames.ts`의 `frameMembers()`. `/health`는 `src/server.ts`.
+- `SKILL.md` "## 10. Saving"에는 세션 끝 1회 묻기와 저장 상태 한 줄이 이미 있다("unsaved or modified" → "not saved"로 고칠 것). 없는 것: 그림 지우기 전 1회 묻기, 붙지 않은 세션을 끝낼 때 `session list` 수로 묻기.
+- ⚠️ 사용자에게 묻는 것은 하나씩, 쉬운 말로, 예시 먼저, 선택지 둘에 추천 하나. 여러 개를 한 번에·코드 용어로·객관식 팝업으로 묻는 것은 거부됐다. 질문형 말("할까?")은 승인이 아니다 — 계획을 보이고 "예"를 받는다.
+- ⚠️ macOS `sed`는 `\b`를 모르고 `cat -A`도 없다. `check-export.mjs`에 이름 필터를 주어도 끝 줄은 전체 수를 찍는다 — 필터 결과는 `ok`/`FAIL` 줄로 본다.
 
 
 
