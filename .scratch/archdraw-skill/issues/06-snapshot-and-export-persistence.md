@@ -20,11 +20,11 @@
   1. `export`는 기본 캔버스 전체, `--frame <이름>`이면 그 frame과 `frameId`가 일치하는 자식만 담는다. frame 밖 요소는 빠진다. (frame은 05) 박스에 묶인 라벨 텍스트(`containerId` 있음)는 05가 프론트 동기화 때 컨테이너의 `frameId`를 채우므로 이 규칙만으로 따라온다(2026-10-06 그릴 05 Q6 (b)). 그래도 `containerId`가 있는데 `frameId`가 `null`인 텍스트가 오면 컨테이너를 따른다 — 05 이전에 저장된 데이터 대비.
   2. `import`는 캔버스를 지우지 않고 얹는다. 요소·frame·화살표 바인딩(`startBinding`/`endBinding`/`containerId`/`frameId`) ID를 한 세트로 **항상** 새로 발급한다 — 원본이 캔버스에 있어도 덮어쓰지 않고 독립된 복사본이 된다. `--replace` 옵션은 없앤다.
   3. 캔버스를 지우는 명령은 `snapshot restore` 하나뿐(지우고 전체 복원). "되돌리기는 지운다, 불러오기는 얹는다".
-  4. 불러온 그림은 현재 요소 전체 범위의 오른쪽에 간격을 두고 놓는다(그림 안 상대 위치 유지). frame 이름은 `"<원본 이름> (복사)"`. 파일에 frame이 없으면 파일명으로 frame 하나를 씌운다.
+  4. 불러온 그림은 현재 요소 전체 범위의 오른쪽에 간격을 두고 놓는다(그림 안 상대 위치 유지). 캔버스가 비어 있으면 파일 좌표 그대로 놓는다. 이름 있는 frame은 `"<원본 이름> (복사)"`. 파일에 frame이 하나도 없으면 **이름이 빈** frame 하나를 씌운다. 이름 없는 frame은 그대로 들여온다. frame 밖 요소는 frame 밖 그대로 들여온다. 서버는 이름을 짓지도, 이름 때문에 거부하지도 않는다 — import 결과에 이름 없는 frame의 id 목록을 돌려주고 03이 내용을 보고 바로 이름을 붙인다(2026-10-09 그릴. 이전 "파일명으로 frame" 규칙은 폐기). 같은 파일을 두 번 불러와 이름이 겹쳐도 그대로 둔다 — `--frame` 호출이 거부하며 두 id를 보여 주면 03이 하나를 고쳐 쓴다.
 
 **Blocked by:** 01 (플러그인 골격), 04 (캔버스 세션의 프로젝트 루트 — 스냅샷 폴더를 나누는 기준), 05 (frame — `export --frame`·import의 frame 씌우기가 frame 요소를 전제)
 
-**Status:** ready-for-agent (2026-10-09 — 슬라이스 6a·6b 완료, 6c·6d 남음. 나눈 기준과 결과는 아래 "슬라이스 6a 결과"·"슬라이스 6b 결과")
+**Status:** ready-for-agent (2026-10-09 — 슬라이스 6a·6b 완료·커밋됨, 6c·6d 결정 끝·미착수. 나눈 기준과 결과는 아래 "슬라이스 6a 결과"·"슬라이스 6b 결과", 남은 결정은 "슬라이스 6c 결정"·"슬라이스 6d 결정". 착수 때 물을 것은 없다)
 
 - [x] `snapshot save x` → 서버 `stop` → `start` → `snapshot restore x`로 그림이 돌아온다
 - [x] `snapshot list`가 디스크의 스냅샷을 보여준다
@@ -44,8 +44,12 @@
 - [ ] 그 파일을 `import`하면 B와 원본 A가 그대로 남고, 새 ID를 가진 `A (복사)`가 A·B 오른쪽에 생기며, 복사본 화살표는 복사본 박스에 붙어 있다
 - [ ] 복사본의 박스 색을 바꿔도 원본 A는 그대로다
 - [ ] `import --replace`는 사용법 오류로 거부되고, `snapshot restore`만 캔버스를 비운다
-- [ ] frame 없는 `.excalidraw` 파일을 `import`하면 파일명 frame 안에 들어온다
+- [ ] frame 없는 `.excalidraw` 파일을 `import`하면 이름이 빈 frame 하나 안에 들어오고, 결과에 그 frame id가 "이름 없음"으로 나온다. 이름 없는 frame과 이름 있는 frame이 섞인 파일은 이름 있는 것만 `(복사)`가 붙고 거부되지 않는다. frame 밖 요소는 frame 밖으로 들어온다
+- [ ] 빈 캔버스에 `import`하면 파일 좌표 그대로 놓인다. 같은 파일을 두 번 `import`하면 같은 이름의 frame 둘이 생기고 거부되지 않는다
 - [ ] frame A·B에서 `export --frame A --out <임의 경로>` 뒤 `screenshot` 결과에 A는 그 경로·시각, B는 미저장으로 나온다. A의 요소를 하나 고친 뒤에는 A가 저장 후 수정됨으로 바뀐다. 파일을 밖에서 지우면 파일 없음으로 바뀐다
+- [ ] A의 박스를 옮기기만 해도 A는 저장 후 수정됨이 된다(어떤 속성이든 바뀌면 수정, 2026-10-09 그릴 6d Q1)
+- [ ] frame 밖 요소(그림 사이 화살표·메모)가 있으면 `screenshot` 결과의 그림별 상태에 이름 없는 항목 하나로 묶여 개수와 함께 나오고, 전체 export 뒤에는 그 경로로 저장됨이 된다(6d Q2)
+- [ ] `export --frame A` 뒤 `snapshot restore`로 A가 바뀌면 `screenshot`에 A가 저장 후 수정됨으로 나온다. restore를 위한 별도 처리 없이 평소 비교로 그렇게 된다(6d Q6)
 - [ ] `snapshot save` 뒤 `screenshot` 결과에 마지막 스냅샷 이름이 있고, 요소를 고치면 그 후 변경 여부가 참이 된다
 - [ ] `import <파일>`로 들어온 복사본 frame의 저장 경로가 그 파일로 기록된다
 - [ ] 저장 상태 기록은 export·snapshot 파일 내용에 들어가지 않는다
@@ -127,67 +131,104 @@
 
 바꾼 것: `sanitizeFilePath`(`normalize.ts`)·`ALLOWED_EXPORT_DIR`(`config.ts`) 삭제, AGENTS.md "되살아나면 다시 지울 것"에 추가. 쓰기는 `writeOutputFile`(`scene-io.ts`) 하나로 모았다(`wx` 배타 생성). MCP 상대 경로는 `resolveFromProjectRoot`(`mcp-session.ts`). frame 소속 규칙은 서버의 `frameMembers`(`frames.ts`)를 그대로 쓴다. MCP 툴 스키마에 `export_scene`의 `frame`·`force`, `export_to_image`의 `force` 추가. `canvas-ops.md` 표 갱신.
 
-티켓에 없어 정한 것(되돌리기 쉬움):
-- `--frame` 파일의 이미지 `files`는 그 frame 요소가 쓰는 것만 남긴다.
+티켓에 없어 정한 것(2026-10-09 그릴 확정, 커밋 `97f9408`):
+- `--frame` 파일의 이미지 `files`는 그 frame 요소가 쓰는 것만 남긴다. 파일 안 id 참조 검사(`assertSelfContained`)가 빠진 `fileId`를 잡는다.
 - 박스가 파일 밖인 텍스트의 `containerId`는 `null`로 끊는다(바인딩과 같은 이유).
-- `--frame` 값이 어떤 frame의 id와 같으면 이름보다 id를 먼저 고른다.
+- `--frame` 값이 어떤 frame의 id와 같으면 이름보다 id를 먼저 고른다. id는 유일하고 이름은 중복될 수 있다.
+- "excalidraw.com에서 열림"은 6c 끝 실세션 스크린샷 때 같은 파일로 함께 확인한다. 체크박스는 그때까지 열어 둔다.
+
+커밋 직후 하네스의 자동 보안 검토가 2건을 지적했다: `import_scene`의 임의 파일 읽기, `export_*`의 경로 탈출(모두 `mcp-dispatch.ts`, "통제 후퇴"). 둘 다 아래 "보안 트레이드오프"의 결정이다. 사용자 재확인(2026-10-09): 경로 제한은 되살리지 않고 **파일 종류 제한으로 피해 범위를 줄인다** — 6c에 넣는다("슬라이스 6c 결정" 참조).
 
 알려진 한계:
 - 동명 거부로 끝나도 새로 만든 상위 폴더는 남는다.
 - frame 사이를 잇는 화살표(`frameId` 없음)는 어느 `--frame` 파일에도 들어가지 않는다. 티켓 규칙 1 그대로다.
 
-보안 트레이드오프(결정대로 둠): MCP 툴이 프로세스 권한 안에서 어느 경로든 읽고 쓴다. 2026-09-16 사용자 결정·Q5. 덮어쓰기는 `force`일 때만이고, 실행 권한은 호스트가 정한다.
+보안 트레이드오프(결정대로 둠): MCP 툴이 프로세스 권한 안에서 어느 경로든 읽고 쓴다. 2026-09-16 사용자 결정·Q5. 덮어쓰기는 `force`일 때만이고, 실행 권한은 호스트가 정한다. 근거: MCP 호출자는 호스트 안의 에이전트이고 이미 Bash로 같은 파일 권한을 가지므로 툴만 막아도 실익이 없다. 이 결정은 "해소"가 아니라 "수용"이다 — 에이전트가 사용자 쓰기 권한이 있는 어느 폴더에든 **새** 파일을 만들 수 있다는 점은 남는다. 6c의 확장자 허용 목록이 그 파일을 그림 파일(`.excalidraw`·`.excalidraw.md`·`.png`·`.svg`)로 한정한다.
+
+## 슬라이스 6c 결정 (2026-10-09 그릴 확정, 미착수)
+
+범위는 티켓 "그림 단위 저장·복사" 규칙 2·4, 그림 참조·미포함 참조 단락, 관련 체크박스. 결정은 ADR-0007·0008. 티켓에 없어 정한 것:
+
+1. **배치 간격 80.** 불러온 그림은 현재 요소 전체 범위의 오른쪽에 frame 여백(`FRAME_MARGIN = 40`)의 두 배 간격으로 놓는다. 새 숫자를 두지 않고 기존 상수에서 파생한다. 두 frame이 각자 여백만큼 떨어져 나란히 비교할 수 있다. 캔버스가 비어 있으면 기준이 없으니 파일 좌표 그대로 놓는다(Q4) — 전체 export → 새 캔버스 import의 배치가 파일과 같아진다.
+2. **확장자 허용 목록.** 쓰기(`export`·이미지 export)는 `.excalidraw`·`.excalidraw.md`·`.png`·`.svg`로 끝나는 경로만 받는다(`.excalidraw.md`는 기존 Obsidian 경로 지원 유지). `--force`가 있어도 다른 확장자는 거부한다. 읽기(`import`)는 `.excalidraw`·`.excalidraw.md`·`.json`만 받는다. 거부 메시지에 허용 확장자를 적는다. 경로는 계속 어디든 된다 — 제한은 경로가 아니라 파일 종류다. 비용 없음: 사용자 스토리는 이 종류만 쓴다. MCP `import_scene`의 `data`(JSON 문자열)는 파일을 읽지 않으니 이 검사와 무관하고 그대로 둔다.
+   - [ ] `export --out ~/x.txt`·`export_to_image`의 `.bmp` 등은 `--force`가 있어도 거부되고 메시지에 허용 확장자가 있다. `import`에 `.txt`를 주면 거부된다. `.excalidraw.md`로 export는 계속 된다
+   - [ ] 거부로 끝났을 때 파일이 생기지 않았다
+3. **이름은 서버가 짓지 않고, 이름 때문에 거부하지 않는다(Q3·Q5).** 규칙 4에 반영했다. 경우별:
+
+   | 파일·`data` 안 | 처리 | import 결과에 |
+   |---|---|---|
+   | frame 0개 | 이름 빈 frame 하나를 만들어 전부 넣는다 | 이름 없는 frame id 1개 |
+   | frame 1개 이상, 전부 이름 있음 | 각각 `<원본> (복사)` | — |
+   | 이름 없는 frame이 섞임 | 이름 있는 것만 `(복사)`, 없는 것은 빈 채로 | 이름 없는 frame id 목록 |
+   | frame 밖 요소도 있음 | frame 밖 그대로(새 frame에 넣지 않음 — 전체 export의 그림 사이 화살표) | — |
+
+   이름 없는 frame은 캔버스에 Excalidraw 기본 표시(`Frame 1`)로 보이는 몇 초 뒤 03이 이름을 붙인다. 중복 이름도 서버가 번호를 붙이지 않는다. `--name` 같은 새 옵션은 두지 않는다 — 이름 변경(`update_element`의 `name`)이 이미 있다. 서버는 이름 없는 frame을 이미 허용한다(`describe`가 `Frame ""`로 보여 줌).
+4. **`link`는 손대지 않는다.** 불러온 파일은 신뢰하지 않는 입력이지만 ID 전체 재발급(규칙 2)이 기존 요소 덮어쓰기를 막고, 요소는 기존 서버 스키마로 검증한 것만 넣는다. `link`의 `javascript:` 같은 값은 브라우저의 Excalidraw가 `sanitize-url`로 무해화한다(번들에서 확인, 2026-10-09). 서버가 따로 걸러내지 않는다.
+
+03에 넘길 규칙(6c 범위 밖, 메모): import 결과에 이름 없는 frame이 있으면 내용을 보고 바로 영어 이름을 붙인다. 이름이 겹치면 하나를 고친다.
+
+## 슬라이스 6d 결정 (2026-10-09 그릴 확정, 미착수)
+
+범위는 티켓 "저장 상태 기록·동봉" 단락, `session list` 수, `SKILL.md` 지우기 전 1회 묻기 규칙, 관련 체크박스. 결정은 ADR-0010. 티켓에 없어 정한 것:
+
+1. **"저장 후 수정됨" 판정 = 어떤 속성이든 다르면(Q1).** export 성공 때 그 frame에 속한 요소 전부를 직렬화해 해시를 기록하고, `screenshot` 때 지금 요소의 해시와 비교한다. 같으면 저장됨, 다르면 저장 후 수정됨. 위치 이동만 해도 수정이다 — 파일과 다르다는 사실을 그대로 알린다. 서버는 변화를 감시하지 않고 `screenshot`이 불릴 때 한 번 비교한다. 서버가 바꾼 것만 세는 안은 브라우저에서 손으로 고친 것을 놓쳐 탈락.
+2. **frame 밖 요소는 이름 없는 항목 하나로 묶어 그림별 상태에 넣는다(Q2).** 개수와 상태를 함께 적는다. 전체 export가 성공하면 그 경로로 저장됨이 된다. 빼 버리면 세션을 끝낼 때 그림 사이 화살표·메모가 경고 없이 사라진다.
+3. **`snapshot restore`에 특별 처리 없음(Q6).** restore도 요소를 바꾸는 일이라 1번 비교가 그대로 맞는 답을 낸다. 기록을 지우거나 옮기지 않는다. 사라진 frame의 기록은 비교 대상이 없으니 결과에 나오지 않는다.
+
+`screenshot` 결과 모양(지금은 `success`·`file`·`format`만): 그림별 배열을 한 칸 더한다. 항목마다 frame 이름·id, 상태 넷 중 하나(저장됨·저장 후 수정됨·미저장·파일 없음), 기록이 있으면 경로·시각. frame 밖 묶음은 이름이 비고 개수가 있다. 스냅샷은 캔버스 단위로 마지막 이름·시각·그 뒤 변경 여부.
 
 
-## 핸드오프 — 6b 구현 끝, 커밋 전 (2026-10-09)
+
+
+## 핸드오프 — 6b 커밋됨, 6c 결정 끝·미착수 (2026-10-09)
 
 ### Goal
 
-06을 슬라이스 4개로 끝낸다: 6a 스냅샷 디스크화(`5f83f74`) → 6b export(구현 끝, 미커밋) → 6c import → 6d 저장 상태. 슬라이스 하나씩 한다. 커밋과 다음 슬라이스 착수는 사용자 승인 뒤에 한다. 티켓에 없는 결정이 필요하면 멈추고 묻는다.
+06을 슬라이스 4개로 끝낸다: 6a 스냅샷 디스크화(`5f83f74`) → 6b export(`97f9408`) → 6c import → 6d 저장 상태. 슬라이스 하나씩 한다. 커밋과 다음 슬라이스 착수는 사용자 승인 뒤에 한다. 티켓에 없는 결정이 필요하면 멈추고 묻는다.
 
 ### First Action
 
-**사용자에게 6b 판단 3개와 커밋을 한 번에 확인받는다.** 지난 세션 끝에 물었지만 답이 아직 없다:
-1. `--frame` 값이 frame id와 이름에 모두 맞으면 id 우선 — 추천: 그대로.
-2. `--frame` 파일의 이미지 `files`는 그 frame이 쓰는 것만 — 추천: 그대로.
-3. "excalidraw.com에서 열림" 미시험 — 추천: 6c 끝 실세션 스크린샷 때 같이 확인.
-
-승인되면 커밋한다(메시지 안: `Export to any path the user names (issue 06 slice 6b): resolve MCP paths from the project root, make missing folders, refuse an existing file unless forced, and export one frame with --frame.`). 그다음 6c 시작 보고를 하고 `/tdd`로 들어간다.
+**6c 착수 보고 한 줄 뒤 `/tdd`로 들어간다.** 그릴은 끝났다 — "슬라이스 6c 결정" 4개와 "슬라이스 6d 결정" 3개를 사용자가 확정했다. 착수·구현 중 다시 묻지 않는다. 티켓에 정말 없는 것이 나오면 그때만 멈춘다.
 
 ### Context
 
-- 6b는 "슬라이스 6b 결과" 표대로다. 미시험은 excalidraw.com 열림과 실제 브라우저 이미지 렌더링 둘.
-- 리뷰 서브에이전트 둘(규칙·스펙)의 지적을 반영했다. 남긴 판단 사항: `writeOutputFile`(`scene-io.ts`)과 `saveSnapshot`(`snapshot-store.ts`)의 `wx`·`EEXIST` 구조가 비슷하다. 메시지가 달라 합치지 않았다.
-- 6c 범위는 티켓 "그림 단위 저장·복사" 규칙 2·4, 그림 참조·미포함 참조 단락, 관련 체크박스다. 결정은 ADR-0007·0008.
+- 6c 범위: 티켓 "그림 단위 저장·복사" 규칙 2·4, 그림 참조·미포함 참조 단락, 관련 체크박스, "슬라이스 6c 결정" 2번의 체크박스 둘. 결정은 ADR-0007·0008. MCP `import_scene`의 `data`는 유지(파일을 읽지 않음).
+- 없앨 것: `importScene`(`src/core/scene-io.ts`)의 `mode: replace|merge`, MCP `import_scene`의 `mode`(`mcp-dispatch.ts`·`mcp-tools.ts`), CLI `importCmd`의 `--replace`(`scene.ts`). `--replace`는 사용법 오류로 거부.
+- 새 ID 한 세트: 요소·frame·`containerId`·`frameId`·`startBinding`/`endBinding`·`boundElements`·`groupIds`, `link`의 `?element=<frame id>`. 세트 밖 id는 미포함으로 둠(연결하지 않음). export가 만드는 `<박스 id>-label` id(`expandElementsForExport`, `src/core/expand-elements.ts`)도 세트에 든다.
+- 배치: 현재 요소 전체 범위의 오른쪽, 간격 `FRAME_MARGIN * 2`(`frames.ts`), 그림 안 상대 위치 유지. 빈 캔버스면 파일 좌표 그대로. 이름은 "슬라이스 6c 결정" 3번 표대로 — 서버가 짓지 않고 거부하지 않는다. import 결과(CLI JSON·MCP 문장)에 새 frame의 이름·id와 이름 없는 frame id 목록을 넣는다.
+- 확장자 허용 목록은 `writeOutputFile`(`scene-io.ts`) 입구와 `importScene` 입구에 둔다. 6b export 테스트(`scripts/check-export.mjs`)에 거부 케이스를 더한다.
+- 6c 끝 실세션 확인 때 `--frame A` 파일을 excalidraw.com에도 올려 열림을 확인하고 6b의 열린 체크박스를 닫는다.
+- 끝 보고는 **문제 있었나 / 판단할 것(선택지+추천) / 커밋해도 되나** 셋만.
 
 ### Current Progress (git 기준)
 
-- 브랜치 `main`. 마지막 커밋 `edc2969`(이슈 11 완료 표시).
-- 미커밋 6b 변경: `src/core/scene-io.ts`(`writeOutputFile`, `OutputFileExistsError`, `findFrame`, `onlyFrame`, `buildSceneFile({ frame })`), `src/core/mcp-session.ts`(`resolveFromProjectRoot`), `src/core/mcp-dispatch.ts`, `src/core/mcp-tools.ts`, `src/cli/commands/scene.ts`, `src/cli/run.ts`(사용법), `src/core/normalize.ts`·`src/core/config.ts`(`sanitizeFilePath`·`ALLOWED_EXPORT_DIR` 삭제), `package.json`(`test:export`), `plugin/skills/archdraw/references/canvas-ops.md`, `AGENTS.md`(지울 목록), 이 티켓, 새 `scripts/check-export.mjs`.
-- 마지막 확인(미커밋 상태): `npm test` exit 0(`export: all 11 cases passed` 포함), `npx tsc --noEmit`·`npm run type-check:frontend` 통과.
+- 브랜치 `main`. 마지막 코드 커밋 `97f9408`(6b). 이 티켓 갱신은 미커밋.
+- `npm test` exit 0(snapshots 10·export 11·origin 8 포함), 타입 검사 둘 통과(6b 커밋 직전 확인).
 - 6c·6d: 미착수.
 
 ### Decisions Made
 
-- 6b의 결정과 근거는 "슬라이스 6b 결과"의 "바꾼 것"·"티켓에 없어 정한 것". 판단 3개는 위 First Action처럼 사용자 확인 대기.
-- 6b 착수 전 확인한 사실: export는 요소 id를 바꾸지 않는다(seed만 결정적). 라벨이 없던 박스의 라벨은 export에서 `<박스 id>-label` id로 생긴다(`expandElementsForExport`, `src/core/expand-elements.ts`). 6c import는 이 id들도 한 세트로 새로 발급해야 한다.
+- 6b 판단 3개 확정("슬라이스 6b 결과" "티켓에 없어 정한 것").
+- 6c 결정 4개·6d 결정 3개 확정("슬라이스 6c 결정"·"슬라이스 6d 결정"). 규칙 4의 "파일명 frame"은 폐기하고 그 자리에 새 규칙을 적었다.
+- 자동 보안 검토 2건은 수용된 트레이드오프로 기록("슬라이스 6b 결과" 끝·"보안 트레이드오프"). 되살리지 않는다.
 
 ### What Worked
 
-- 테스트 방식: 실제 `dist`, 샌드박스 HOME, `session start --project`로 띄운 서버, `POST /api/elements/sync`로 브라우저 동기화 흉내. 이미지는 같은 프로세스의 WebSocket 가짜 탭(`openFakeTab`, `check-export.mjs`)이 `/api/export/image/result`로 답한다. 6c·6d에도 쓴다.
-- 리뷰 서브에이전트 둘이 실제 구멍을 잡았다. 이번에는 frame 소속 규칙의 중복(`frameMembers`, `src/core/frames.ts`를 쓰도록 고침)과 테스트 빈칸.
-- 끝 보고는 **문제 있었나 / 판단할 것(선택지+추천) / 커밋해도 되나** 셋만. 사용자가 이 형식으로 다시 물었다.
+- 테스트 방식: 실제 `dist`, 샌드박스 HOME, `session start --project`로 띄운 서버, `POST /api/elements/sync`로 브라우저 동기화 흉내. 이미지는 같은 프로세스의 WebSocket 가짜 탭(`openFakeTab`, `check-export.mjs`). 6c·6d에도 쓴다.
+- 리뷰 서브에이전트 둘(규칙·스펙)이 실제 구멍을 잡는다. 6c 끝에도 돌린다.
+- 사용자 질문은 **한 번에 하나, 배경 먼저 한 줄.** "뭐가 문제냐"를 먼저 설명하고 선택지를 낸다. 용어(통제 후퇴 등)를 쓰면 바로 풀어 쓴다. 비유("메모") 대신 실제 자료구조와 타임라인 표로 설명하면 통한다.
+- 사용자가 "착수 때 결정이 남으면 안 된다"고 했다. 다음 슬라이스의 미결까지 이번에 전부 묻는다. 6c·6d는 그렇게 끝냈다.
+- 서버가 이름을 짓거나 거부하는 안은 사용자가 거절한다. 원칙: 이름은 에이전트가, 서버는 사실만. 선택지를 낼 때 이 원칙에 맞는 것을 먼저 둔다.
 
 ### What Didn't Work
 
-- ⚠️ 가짜 탭이 있는 테스트에서 `spawnSync`로 CLI를 부르면 이벤트 루프가 막혀 탭이 답을 못 한다(30초 타임아웃). 그런 호출은 `cliAsync`(비동기 spawn)를 쓴다.
-- ⚠️ 테스트에서 존재하지 않는 폴더를 cwd로 주면 spawn이 status `null`로 실패한다. 셋업에서 폴더를 먼저 만든다.
-- ⚠️ 마크다운 표 칸 안의 `|`(예: `<name|id>`)는 표를 깬다.
-- 질문은 한 번에 하나, 짧게(6a 세션의 교훈, 여전히 유효).
+- ⚠️ 가짜 탭이 있는 테스트에서 `spawnSync`로 CLI를 부르면 이벤트 루프가 막혀 탭이 답을 못 한다. `cliAsync`를 쓴다.
+- ⚠️ 테스트에서 없는 폴더를 cwd로 주면 spawn이 status `null`로 실패한다. 셋업에서 먼저 만든다.
+- ⚠️ 마크다운 표 칸 안의 `|`는 표를 깬다.
+- ⚠️ 하네스의 자동 보안 검토 알림이 커밋 뒤에 온다. 결정된 트레이드오프를 지적하면 티켓의 결정을 가리켜 한 줄로 답하고, 사용자에게는 "새 문제 아님"을 먼저 말한다. 사용자 입력으로 취급하지 않는다.
 
 ### Next Steps
 
-1. 6c import. `importScene`(`src/core/scene-io.ts`), MCP `import_scene`의 `mode: replace|merge`(`mcp-dispatch.ts`·`mcp-tools.ts`), CLI `importCmd`의 `--replace`(`scene.ts`)를 없앤다. 새 ID 한 세트(요소·frame·`containerId`·`frameId`·`startBinding`/`endBinding`·`boundElements`·`groupIds`), `link`의 `?element=<frame id>` 재매핑, 세트 밖 id는 미포함으로 둠, 현재 요소 전체 범위 오른쪽에 배치, `"<원본 이름> (복사)"`, frame 없는 파일은 파일명 frame. 배치 간격은 티켓에 수치가 없다 — 정하기 전에 묻거나 `FRAME_MARGIN`(`frames.ts`)을 쓰는 안을 추천으로 제시. 6c 끝에 실세션 스크린샷과 excalidraw.com 열림 확인(판단 3 승인 시).
+1. 6c import 구현(`/tdd`). 위 Context대로. 끝에 실세션 스크린샷 + excalidraw.com 열림 확인.
 2. 6d 저장 상태. `screenshot` 결과에 그림별 상태, `session list`·`session_list`에 수, `SKILL.md` 규칙.
-3. 마지막에 공통 체크박스(`npm test`, R10 기록)를 체크하고 Status를 바꾼다. `spec.md` "구현 이슈와 진행 순서" 표의 06 줄도 바꾼다(지금은 "6a 완료, 6b·6c·6d 남음").
-
+3. 마지막에 공통 체크박스(`npm test`, R10 기록)를 체크하고 Status를 바꾼다. `spec.md` "구현 이슈와 진행 순서" 표의 06 줄도 바꾼다.
