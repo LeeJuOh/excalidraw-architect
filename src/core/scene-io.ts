@@ -1,4 +1,5 @@
 import fs from 'fs';
+import path from 'path';
 import { generateId, ServerElement } from '../types.js';
 import {
   getElements,
@@ -7,9 +8,65 @@ import {
   clearCanvas,
   batchCreateElementsOnCanvas
 } from './canvas-client.js';
-import { sanitizeFilePath } from './normalize.js';
 import { isObsidianExcalidrawMd, extractSceneJsonFromObsidianMd } from './obsidian-md.js';
 import { expandElementsForExport } from './expand-elements.js';
+import { frameMembers } from './frames.js';
+
+function createdAt(file: string): string {
+  try { return fs.statSync(file).mtime.toISOString(); } catch { return 'unknown'; }
+}
+
+export class OutputFileExistsError extends Error {
+  constructor(file: string) {
+    super(
+      `File already exists (created ${createdAt(file)}) at ${file}. ` +
+      'Overwrite only with --force (CLI) or force: true (MCP).'
+    );
+  }
+}
+
+export function writeOutputFile(file: string, data: string | Buffer, force: boolean): void {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  try {
+    fs.writeFileSync(file, data, { flag: force ? 'w' : 'wx' });
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'EEXIST') throw new OutputFileExistsError(file);
+    throw error;
+  }
+}
+
+function findFrame(elements: Record<string, any>[], nameOrId: string): Record<string, any> {
+  const frames = elements.filter(el => el.type === 'frame');
+  const byId = frames.find(el => el.id === nameOrId);
+  if (byId) return byId;
+  const named = frames.filter(el => el.name === nameOrId);
+  if (named.length === 1) return named[0]!;
+  if (named.length > 1) {
+    throw new Error(
+      `${named.length} frames are named "${nameOrId}" (ids ${named.map(el => el.id).join(', ')}). Pass one of the ids instead.`
+    );
+  }
+  const known = frames.map(el => `"${el.name ?? ''}" (${el.id})`).join(', ') || 'none';
+  throw new Error(`No frame named "${nameOrId}" or with that id. Frames on the canvas: ${known}.`);
+}
+
+// Bindings to elements left out are cut so the file opens on its own.
+function onlyFrame(elements: Record<string, any>[], frameId: string): Record<string, any>[] {
+  const store = new Map(elements.map(el => [el.id, el as ServerElement]));
+  const kept = new Set([frameId, ...frameMembers(frameId, store).map(el => el.id)]);
+  const inFile = (binding: any) => (binding && kept.has(binding.elementId) ? binding : null);
+  return elements.filter(el => kept.has(el.id)).map(el => {
+    const copy = { ...el };
+    if ('startBinding' in copy) copy.startBinding = inFile(copy.startBinding);
+    if ('endBinding' in copy) copy.endBinding = inFile(copy.endBinding);
+    if (copy.containerId && !kept.has(copy.containerId)) copy.containerId = null;
+    if (Array.isArray(copy.boundElements)) {
+      const bound = copy.boundElements.filter((b: any) => kept.has(b?.id));
+      copy.boundElements = bound.length > 0 ? bound : null;
+    }
+    return copy;
+  });
+}
 
 export interface ExportedScene {
   scene: Record<string, any>;
@@ -21,15 +78,22 @@ export interface ExportedScene {
 // Excalidraw elements (bound text pairs, arrow bindings) so the file renders
 // fully on excalidraw.com and in the Obsidian Excalidraw plugin — with
 // deterministic ids/seeds so re-exporting an unchanged scene is byte-stable.
-export async function buildSceneFile(): Promise<ExportedScene> {
+export async function buildSceneFile(options: { frame?: string } = {}): Promise<ExportedScene> {
   const sceneElements = await getElements();
-  const exportElements = expandElementsForExport(sceneElements, { deterministic: true });
+  const expanded = expandElementsForExport(sceneElements, { deterministic: true });
+  const exportElements = options.frame
+    ? onlyFrame(expanded, findFrame(expanded, options.frame).id)
+    : expanded;
 
   // Fetch files for image elements
   let sceneFiles: Record<string, any> = {};
   try {
     sceneFiles = await getFiles();
   } catch { /* files endpoint may not exist */ }
+  if (options.frame) {
+    const fileIds = new Set(exportElements.map(el => el.fileId).filter(Boolean));
+    sceneFiles = Object.fromEntries(Object.entries(sceneFiles).filter(([id]) => fileIds.has(id)));
+  }
 
   const excalidrawScene: Record<string, any> = {
     type: 'excalidraw',
@@ -61,8 +125,7 @@ export async function importScene(options: {
 }): Promise<ImportResult> {
   let raw: string;
   if (options.filePath) {
-    const safeImportPath = sanitizeFilePath(options.filePath);
-    raw = fs.readFileSync(safeImportPath, 'utf-8');
+    raw = fs.readFileSync(options.filePath, 'utf-8');
   } else if (options.data) {
     raw = options.data;
   } else {

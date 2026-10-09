@@ -10,7 +10,7 @@ import {
   exportImage,
   sendMermaid
 } from '../../core/canvas-client.js';
-import { buildSceneFile, importScene } from '../../core/scene-io.js';
+import { buildSceneFile, importScene, writeOutputFile } from '../../core/scene-io.js';
 import { wrapSceneAsObsidianMd } from '../../core/obsidian-md.js';
 import { describeScene } from '../../core/describe.js';
 import { exportToExcalidrawUrl } from '../../core/share-url.js';
@@ -31,7 +31,8 @@ export async function screenshot(argv: string[]): Promise<void> {
   const { flags } = parseArgs(argv, {
     out: { takesValue: true },
     format: { takesValue: true },
-    'no-background': { takesValue: false }
+    'no-background': { takesValue: false },
+    force: { takesValue: false }
   });
 
   const format = (flags.format as string | undefined) ?? 'png';
@@ -53,18 +54,20 @@ export async function screenshot(argv: string[]): Promise<void> {
   }
 
   const resolved = path.resolve(outPath);
-  if (format === 'svg') {
-    fs.writeFileSync(resolved, result.data, 'utf-8');
-  } else {
-    fs.writeFileSync(resolved, Buffer.from(result.data, 'base64'));
-  }
+  writeOutputFile(
+    resolved,
+    format === 'svg' ? result.data : Buffer.from(result.data, 'base64'),
+    Boolean(flags.force)
+  );
   printJson({ success: true, file: resolved, format });
 }
 
 export async function exportCmd(argv: string[]): Promise<void> {
   const { flags } = parseArgs(argv, {
     out: { takesValue: true },
-    format: { takesValue: true }
+    format: { takesValue: true },
+    frame: { takesValue: true },
+    force: { takesValue: false }
   });
 
   const outPath = typeof flags.out === 'string' ? flags.out : undefined;
@@ -76,14 +79,14 @@ export async function exportCmd(argv: string[]): Promise<void> {
     throw new CliUsageError('--format must be json or obsidian');
   }
 
-  const { scene, elementCount } = await buildSceneFile();
+  const { scene, elementCount } = await buildSceneFile({ frame: flags.frame as string | undefined });
   const output = format === 'obsidian'
     ? wrapSceneAsObsidianMd(scene)
     : JSON.stringify(scene, null, 2);
 
   if (outPath) {
     const resolved = path.resolve(outPath);
-    fs.writeFileSync(resolved, output, 'utf-8');
+    writeOutputFile(resolved, output, Boolean(flags.force));
     printJson({ success: true, file: resolved, elements: elementCount, format });
     return;
   }
@@ -96,9 +99,6 @@ export async function importCmd(argv: string[]): Promise<void> {
 
 
   const mode = flags.replace ? 'replace' as const : 'merge' as const;
-  // Read the file here rather than via importScene's filePath: that path is
-  // sandboxed to EXCALIDRAW_EXPORT_DIR for the MCP server, but a user-invoked
-  // CLI should import from wherever it is pointed.
   const data = await readTextFileOrStdin(positionals[0]);
   if (!data.trim()) {
     throw new CliUsageError('No scene provided (pass a .excalidraw / .excalidraw.md file or pipe JSON to stdin)');

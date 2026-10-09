@@ -38,9 +38,9 @@ canvas session.
 | Group / ungroup | `group_elements`, `ungroup_elements` | `arrange group`, `arrange ungroup` |
 | Lock / unlock | `lock_elements`, `unlock_elements` | `arrange lock`, `arrange unlock` |
 | Duplicate | `duplicate_elements` | `arrange duplicate` |
-| Export the scene | `export_scene` | `export` |
+| Export the scene, or one drawing (overwrite only when the user asks) | `export_scene` (`frame`, `force: true`) | `export --out <path> [--frame <name-or-id>] [--force]` |
 | Import a scene file | `import_scene` | `import` |
-| Export an image | `export_to_image` | `screenshot --out f.png`, `screenshot --format svg` |
+| Export an image (overwrite only when the user asks) | `export_to_image` (`force: true`) | `screenshot --out f.png [--force]`, `screenshot --format svg` |
 | Share link | `export_to_excalidraw_url` | `share` |
 | Save a snapshot (overwrite only when the user asks) | `snapshot_scene` (`force: true`) | `snapshot save <name> [--force]` |
 | Restore a snapshot | `restore_snapshot` | `snapshot restore <name>` |

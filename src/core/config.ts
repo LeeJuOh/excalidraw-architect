@@ -4,6 +4,3 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 export const ENABLE_CANVAS_SYNC = process.env.ENABLE_CANVAS_SYNC !== 'false'; // Default to true
-
-// Safe file path validation base directory (see sanitizeFilePath)
-export const ALLOWED_EXPORT_DIR = process.env.EXCALIDRAW_EXPORT_DIR || process.cwd();

@@ -1,6 +1,5 @@
 import type { CallToolResult } from '@modelcontextprotocol/server';
 import { z } from 'zod';
-import fs from 'fs';
 import logger from '../utils/logger.js';
 import {
   EXCALIDRAW_ELEMENT_TYPES,
@@ -24,7 +23,7 @@ import {
   sendMermaid,
   ApiResponse
 } from './canvas-client.js';
-import { sanitizeFilePath, prepareElement, prepareElementUpdate } from './normalize.js';
+import { prepareElement, prepareElementUpdate } from './normalize.js';
 import {
   alignElements,
   distributeElements,
@@ -33,12 +32,12 @@ import {
   ungroupElements,
   duplicateElements
 } from './geometry.js';
-import { buildSceneFile, importScene } from './scene-io.js';
+import { buildSceneFile, importScene, writeOutputFile } from './scene-io.js';
 import { wrapSceneAsObsidianMd } from './obsidian-md.js';
 import { describeScene } from './describe.js';
 import { exportToExcalidrawUrl } from './share-url.js';
 import { sceneState, toolNeedsCanvasBeforeDispatch } from './canvas-state.js';
-import { isSessionTool, callSessionTool, requireAttachedCanvas } from './mcp-session.js';
+import { isSessionTool, callSessionTool, requireAttachedCanvas, resolveFromProjectRoot } from './mcp-session.js';
 
 // Points schema: accept both {x, y} objects and [x, y] tuples
 const PointObjectSchema = z.object({ x: z.number(), y: z.number() });
@@ -474,24 +473,26 @@ export async function callExcalidrawTool(
       }
       case 'export_scene': {
         const params = z.object({
-          filePath: z.string().optional()
+          filePath: z.string().optional(),
+          frame: z.string().optional(),
+          force: z.boolean().optional()
         }).parse(args || {});
 
         logger.info('Exporting scene via MCP');
 
-        const { scene, elementCount } = await buildSceneFile();
+        const { scene, elementCount } = await buildSceneFile({ frame: params.frame });
 
         if (params.filePath) {
-          const safePath = sanitizeFilePath(params.filePath);
+          const file = resolveFromProjectRoot(params.filePath);
           const asObsidianMd = params.filePath.endsWith('.md');
           const output = asObsidianMd
             ? wrapSceneAsObsidianMd(scene)
             : JSON.stringify(scene, null, 2);
-          fs.writeFileSync(safePath, output, 'utf-8');
+          writeOutputFile(file, output, params.force ?? false);
           return {
             content: [{
               type: 'text',
-              text: `Scene exported to ${safePath} (${elementCount} elements${asObsidianMd ? ', Obsidian .excalidraw.md format' : ''})`
+              text: `Scene exported to ${file} (${elementCount} elements${asObsidianMd ? ', Obsidian .excalidraw.md format' : ''})`
             }]
           };
         }
@@ -512,7 +513,10 @@ export async function callExcalidrawTool(
 
         logger.info('Importing scene via MCP', { mode: params.mode });
 
-        const result = await importScene(params);
+        const result = await importScene({
+          ...params,
+          filePath: params.filePath ? resolveFromProjectRoot(params.filePath) : undefined
+        });
 
         return {
           content: [{
@@ -525,7 +529,8 @@ export async function callExcalidrawTool(
         const params = z.object({
           format: z.enum(['png', 'svg']),
           filePath: z.string().optional(),
-          background: z.boolean().optional()
+          background: z.boolean().optional(),
+          force: z.boolean().optional()
         }).parse(args);
 
         logger.info('Exporting to image via MCP', { format: params.format });
@@ -533,16 +538,16 @@ export async function callExcalidrawTool(
         const result = await exportImage(params.format, params.background ?? true);
 
         if (params.filePath) {
-          const safeImagePath = sanitizeFilePath(params.filePath);
-          if (params.format === 'svg') {
-            fs.writeFileSync(safeImagePath, result.data, 'utf-8');
-          } else {
-            fs.writeFileSync(safeImagePath, Buffer.from(result.data, 'base64'));
-          }
+          const file = resolveFromProjectRoot(params.filePath);
+          writeOutputFile(
+            file,
+            params.format === 'svg' ? result.data : Buffer.from(result.data, 'base64'),
+            params.force ?? false
+          );
           return {
             content: [{
               type: 'text',
-              text: `Image exported to ${safeImagePath} (format: ${params.format})`
+              text: `Image exported to ${file} (format: ${params.format})`
             }]
           };
         }

@@ -24,22 +24,22 @@
 
 **Blocked by:** 01 (플러그인 골격), 04 (캔버스 세션의 프로젝트 루트 — 스냅샷 폴더를 나누는 기준), 05 (frame — `export --frame`·import의 frame 씌우기가 frame 요소를 전제)
 
-**Status:** ready-for-agent (2026-10-09 — 슬라이스 6a 완료, 6b·6c·6d 남음. 나눈 기준과 결과는 맨 아래 "슬라이스 6a 결과")
+**Status:** ready-for-agent (2026-10-09 — 슬라이스 6a·6b 완료, 6c·6d 남음. 나눈 기준과 결과는 아래 "슬라이스 6a 결과"·"슬라이스 6b 결과")
 
 - [x] `snapshot save x` → 서버 `stop` → `start` → `snapshot restore x`로 그림이 돌아온다
 - [x] `snapshot list`가 디스크의 스냅샷을 보여준다
-- [ ] CLI·MCP 모두 실행 환경에서 쓰기가 허용된 사용자 지정 경로에 export한다. `docs/architecture/` 밖이라는 이유로 거부하지 않는다(프로젝트 내 다른 폴더 및 프로젝트 밖 지정 경로 확인)
-- [ ] export 성공 결과에 실제 저장한 전체 경로가 포함되어 03이 사용자에게 안내할 수 있다
+- [x] CLI·MCP 모두 실행 환경에서 쓰기가 허용된 사용자 지정 경로에 export한다. `docs/architecture/` 밖이라는 이유로 거부하지 않는다(프로젝트 내 다른 폴더 및 프로젝트 밖 지정 경로 확인)
+- [x] export 성공 결과에 실제 저장한 전체 경로가 포함되어 03이 사용자에게 안내할 수 있다
 - [x] 데이터 폴더가 없으면 첫 사용 때 만들어진다
 - [x] 레포 둘에서 각각 `snapshot save x`하면 서로 다른 폴더에 생기고, 각자의 `snapshot list`엔 자기 것만 보인다
 - [x] 같은 레포에서 세션 둘을 열면 한쪽이 찍은 스냅샷이 다른 쪽 `snapshot list`에 보이고 restore된다
-- [ ] 같은 이름으로 `snapshot save`·`export`하면 거부되며 메시지에 만든 시각이 있고, `--force`면 덮어쓴다
-- [ ] 이미지 export(MCP `export_to_image`, CLI `screenshot`)도 같은 파일이 있으면 거부하고 `--force`로만 덮어쓴다(2026-10-09 그릴 Q9)
-- [ ] `export_to_image`·`import_scene`의 경로도 cwd 밖이라는 이유로 거부하지 않는다(2026-10-09 그릴 Q5)
-- [ ] MCP에 상대 경로를 주면 세션의 프로젝트 루트 기준으로 풀린다. CLI는 cwd 기준. 절대 경로는 그대로(2026-10-09 그릴 Q6)
-- [ ] 지정 경로의 상위 폴더가 없으면 만들고 저장한다(2026-10-09 그릴 Q8)
-- [ ] frame A·B가 있는 캔버스에서 `export --frame A`가 A의 요소만 담은 파일을 만들고, B는 파일에 없다
-- [ ] `--frame`은 frame 이름 또는 id를 받는다. 같은 이름의 frame이 둘이면 거부하고 두 id를 보여 준다(2026-10-09 그릴 Q7)
+- [x] 같은 이름으로 `snapshot save`·`export`하면 거부되며 메시지에 만든 시각이 있고, `--force`면 덮어쓴다
+- [x] 이미지 export(MCP `export_to_image`, CLI `screenshot`)도 같은 파일이 있으면 거부하고 `--force`로만 덮어쓴다(2026-10-09 그릴 Q9)
+- [x] `export_to_image`·`import_scene`의 경로도 cwd 밖이라는 이유로 거부하지 않는다(2026-10-09 그릴 Q5)
+- [x] MCP에 상대 경로를 주면 세션의 프로젝트 루트 기준으로 풀린다. CLI는 cwd 기준. 절대 경로는 그대로(2026-10-09 그릴 Q6)
+- [x] 지정 경로의 상위 폴더가 없으면 만들고 저장한다(2026-10-09 그릴 Q8)
+- [x] frame A·B가 있는 캔버스에서 `export --frame A`가 A의 요소만 담은 파일을 만들고, B는 파일에 없다
+- [x] `--frame`은 frame 이름 또는 id를 받는다. 같은 이름의 frame이 둘이면 거부하고 두 id를 보여 준다(2026-10-09 그릴 Q7)
 - [ ] `--frame A`로 뺀 파일에서 A 밖 요소에 붙은 화살표 바인딩은 끊겨 있고, 파일이 excalidraw.com에서 열린다. `link`의 미포함 참조는 그대로 남는다
 - [ ] 그 파일을 `import`하면 B와 원본 A가 그대로 남고, 새 ID를 가진 `A (복사)`가 A·B 오른쪽에 생기며, 복사본 화살표는 복사본 박스에 붙어 있다
 - [ ] 복사본의 박스 색을 바꿔도 원본 A는 그대로다
@@ -104,64 +104,90 @@
 
 남은 위험: 스크린샷(`exportToBlob`)에서 화살표 라벨이 선과 겹쳐 그려진다. 스냅샷 없이 새로 그린 캔버스도 같아 6a와 무관하다. 브라우저 화면에서는 정상이다.
 
+## 슬라이스 6b 결과 (2026-10-09)
 
-## 핸드오프 — 6a 커밋됨, 11 뒤 6b 착수 (2026-10-09)
+테스트: `scripts/check-export.mjs` 11케이스(`npm run test:export`, `npm test`에 포함). 실제 `dist`, 샌드박스 HOME, MCP 프로세스 cwd는 프로젝트 밖. 이미지는 같은 프로세스의 WebSocket 가짜 탭이 고정 바이트로 답한다.
+
+| 인수 | 결과 | 근거 |
+|---|---|---|
+| CLI·MCP가 지정 경로에 export, 프로젝트 안 다른 폴더·프로젝트 밖 모두 | 통과 | CLI: 프로젝트 밖 절대 경로, 프로젝트 `src/notes/`(cwd 기준). MCP: 프로젝트 `design/flows/`, 프로젝트 밖 절대 경로 |
+| 성공 결과에 전체 경로 | 통과 | CLI `file`, MCP 결과 문장 |
+| export 동명 거부·만든 시각·`--force` | 통과 | CLI·MCP. 거부 뒤 기존 파일 내용 그대로. 시각 = mtime |
+| 이미지 동명 거부·`--force` | 통과 | CLI `screenshot`(png), MCP `export_to_image`(svg). 실제 브라우저 렌더링은 미시험(가짜 탭) |
+| `export_to_image`·`import_scene` cwd 밖 허용 | 통과 | MCP cwd 밖의 프로젝트 경로·절대 경로 |
+| 상대 경로: MCP는 프로젝트 루트, CLI는 cwd, 절대는 그대로 | 통과 | 위 케이스들 |
+| 상위 폴더 생성 | 통과 | `.excalidraw`·png·svg |
+| `export --frame A`는 A만 | 통과 | A 요소·라벨 있음, B 요소·라벨 없음. frame id로도 됨. MCP `frame`도 같음 |
+| 같은 이름 frame 둘 → 거부, 두 id 표시 | 통과 | CLI·MCP. 없는 이름은 캔버스의 frame 목록과 함께 거부 |
+| A 밖 바인딩 끊김, `link` 유지 | 통과 | `endBinding: null`, `link: ?element=fb`. 파일 안 모든 id 참조가 파일 안에 있음(`assertSelfContained`) |
+| 파일이 excalidraw.com에서 열림 | **미시험** | 위 데이터 검사만. 실제로 열어 보지 않았다 → 체크박스 열어 둠 |
+| `frameId` 없는 라벨은 박스를 따름 | 통과 | 동기화 데이터(`containerId`만 있는 텍스트) |
+| "확인 못 함" 점선·표시 유지(export) | 통과 | 전체·frame export 모두. import 쪽은 6c → 체크박스 열어 둠 |
+| 기존 `npm test` | 통과 | 전체 exit 0, `tsc --noEmit`·`type-check:frontend` 통과 |
+
+바꾼 것: `sanitizeFilePath`(`normalize.ts`)·`ALLOWED_EXPORT_DIR`(`config.ts`) 삭제, AGENTS.md "되살아나면 다시 지울 것"에 추가. 쓰기는 `writeOutputFile`(`scene-io.ts`) 하나로 모았다(`wx` 배타 생성). MCP 상대 경로는 `resolveFromProjectRoot`(`mcp-session.ts`). frame 소속 규칙은 서버의 `frameMembers`(`frames.ts`)를 그대로 쓴다. MCP 툴 스키마에 `export_scene`의 `frame`·`force`, `export_to_image`의 `force` 추가. `canvas-ops.md` 표 갱신.
+
+티켓에 없어 정한 것(되돌리기 쉬움):
+- `--frame` 파일의 이미지 `files`는 그 frame 요소가 쓰는 것만 남긴다.
+- 박스가 파일 밖인 텍스트의 `containerId`는 `null`로 끊는다(바인딩과 같은 이유).
+- `--frame` 값이 어떤 frame의 id와 같으면 이름보다 id를 먼저 고른다.
+
+알려진 한계:
+- 동명 거부로 끝나도 새로 만든 상위 폴더는 남는다.
+- frame 사이를 잇는 화살표(`frameId` 없음)는 어느 `--frame` 파일에도 들어가지 않는다. 티켓 규칙 1 그대로다.
+
+보안 트레이드오프(결정대로 둠): MCP 툴이 프로세스 권한 안에서 어느 경로든 읽고 쓴다. 2026-09-16 사용자 결정·Q5. 덮어쓰기는 `force`일 때만이고, 실행 권한은 호스트가 정한다.
+
+
+## 핸드오프 — 6b 구현 끝, 커밋 전 (2026-10-09)
 
 ### Goal
 
-06을 슬라이스 4개로 끝낸다: 6a 스냅샷 디스크화(끝, `5f83f74`) → 6b export → 6c import → 6d 저장 상태. 슬라이스 하나씩 하고, 커밋과 다음 슬라이스 착수는 사용자 승인 뒤에 한다. 티켓에 없는 결정이 필요하면 멈추고 묻는다.
+06을 슬라이스 4개로 끝낸다: 6a 스냅샷 디스크화(`5f83f74`) → 6b export(구현 끝, 미커밋) → 6c import → 6d 저장 상태. 슬라이스 하나씩 한다. 커밋과 다음 슬라이스 착수는 사용자 승인 뒤에 한다. 티켓에 없는 결정이 필요하면 멈추고 묻는다.
 
 ### First Action
 
-**06이 아니라 [11](11-canvas-server-accepts-only-its-own-origin.md)을 먼저 구현한다**(사용자 결정 2026-10-09, 순서는 `spec.md` "구현 이슈와 진행 순서" 8번). 11은 작다. 규칙과 첫 할 일은 11 본문과 그 핸드오프에 있다(2026-10-09 착수 전 검수로 `Host` 검사·vite 프록시 규칙이 추가됐다). 11이 끝나면(리뷰·커밋 포함) 6b.
+**사용자에게 6b 판단 3개와 커밋을 한 번에 확인받는다.** 지난 세션 끝에 물었지만 답이 아직 없다:
+1. `--frame` 값이 frame id와 이름에 모두 맞으면 id 우선 — 추천: 그대로.
+2. `--frame` 파일의 이미지 `files`는 그 frame이 쓰는 것만 — 추천: 그대로.
+3. "excalidraw.com에서 열림" 미시험 — 추천: 6c 끝 실세션 스크린샷 때 같이 확인.
+
+승인되면 커밋한다(메시지 안: `Export to any path the user names (issue 06 slice 6b): resolve MCP paths from the project root, make missing folders, refuse an existing file unless forced, and export one frame with --frame.`). 그다음 6c 시작 보고를 하고 `/tdd`로 들어간다.
 
 ### Context
 
-- 이 세션은 6a 커밋 전 판단 3개(mtime, 깨진 파일, 폴더명)를 그릴로 정하고 반영해 커밋했다. 그다음 6b 질문 Q5~Q9를 그릴로 끝냈다. 6b는 더 물을 것이 없다.
-- 6a 커밋 직후 보안 검토가 "모든 origin 허용"을 짚었다. 사용자와 업스트림 README·ADR-0003을 보고 "로컬 전용이라 열어 둘 이유 없음"으로 합의해 11을 열었다. 원격 지원과의 관계는 11 본문을 따른다(원격 때는 허용 주소 설정·ADR-0003 재결정·인증이 필요하다).
-- 6b 합의는 아래 "슬라이스 6b 합의". 6c·6d 범위는 "슬라이스 6a 결과"의 "나눈 기준". 인수 항목은 티켓 본문 체크박스다.
-
-### 슬라이스 6b 합의 (2026-10-09 그릴 Q5~Q9)
-
-- 경로 제한 폐기는 `export_scene`·`export_to_image`·`import_scene` 셋 다. `sanitizeFilePath`(`src/core/normalize.ts`)의 cwd 밖 거부와 `ALLOWED_EXPORT_DIR`(`src/core/config.ts`)을 없앤다. 실행 환경의 쓰기 권한은 그대로 따른다.
-- MCP 상대 경로는 세션의 프로젝트 루트 기준(ADR-0003에 적음). CLI는 cwd 기준. 절대 경로는 그대로.
-- `--frame <이름|id>`. 같은 이름 frame이 둘이면 거부하고 두 id를 보여 준다.
-- 상위 폴더가 없으면 만든다.
-- 동명 거부·`--force`는 `.excalidraw`와 이미지(MCP `export_to_image`, CLI `screenshot`) 모두. "만든 시각"은 파일 mtime(6a와 같음).
-- 성공 결과에 실제 저장한 전체 경로.
-- 티켓에 없어 정한 것: `--frame`으로 뺀 파일에서 frame 밖 요소에 붙은 화살표 바인딩은 끊는다. 안 끊으면 excalidraw.com에서 안 열릴 수 있다. `link`의 미포함 참조는 티켓대로 남긴다.
-- 확인함: `buildSceneFile`(`src/core/scene-io.ts`)의 export는 요소 id를 바꾸지 않는다(seed만 결정적). 그림 참조는 export에서 안전하다.
+- 6b는 "슬라이스 6b 결과" 표대로다. 미시험은 excalidraw.com 열림과 실제 브라우저 이미지 렌더링 둘.
+- 리뷰 서브에이전트 둘(규칙·스펙)의 지적을 반영했다. 남긴 판단 사항: `writeOutputFile`(`scene-io.ts`)과 `saveSnapshot`(`snapshot-store.ts`)의 `wx`·`EEXIST` 구조가 비슷하다. 메시지가 달라 합치지 않았다.
+- 6c 범위는 티켓 "그림 단위 저장·복사" 규칙 2·4, 그림 참조·미포함 참조 단락, 관련 체크박스다. 결정은 ADR-0007·0008.
 
 ### Current Progress (git 기준)
 
-- 브랜치 `main`, 작업 트리 깨끗.
-- `5f83f74` 6a 코드·테스트(`scripts/check-snapshots.mjs` 10케이스, `src/core/snapshot-store.ts`)와 ADR-0009의 폴더명·mtime 줄. `23a79a4` 티켓 06·11, `spec.md`, `CONTEXT.md`(스냅샷·복원 용어), ADR-0003의 MCP 상대 경로 줄. 이 핸드오프 자체는 그다음 커밋.
-- 마지막 확인(5f83f74 시점): `npm test` exit 0, `npx tsc --noEmit`·`npm run type-check:frontend` 통과.
-- 6b·6c·6d·11: 미착수.
+- 브랜치 `main`. 마지막 커밋 `edc2969`(이슈 11 완료 표시).
+- 미커밋 6b 변경: `src/core/scene-io.ts`(`writeOutputFile`, `OutputFileExistsError`, `findFrame`, `onlyFrame`, `buildSceneFile({ frame })`), `src/core/mcp-session.ts`(`resolveFromProjectRoot`), `src/core/mcp-dispatch.ts`, `src/core/mcp-tools.ts`, `src/cli/commands/scene.ts`, `src/cli/run.ts`(사용법), `src/core/normalize.ts`·`src/core/config.ts`(`sanitizeFilePath`·`ALLOWED_EXPORT_DIR` 삭제), `package.json`(`test:export`), `plugin/skills/archdraw/references/canvas-ops.md`, `AGENTS.md`(지울 목록), 이 티켓, 새 `scripts/check-export.mjs`.
+- 마지막 확인(미커밋 상태): `npm test` exit 0(`export: all 11 cases passed` 포함), `npx tsc --noEmit`·`npm run type-check:frontend` 통과.
+- 6c·6d: 미착수.
 
 ### Decisions Made
 
-- 6a 판단 3개의 답과 근거는 위 "슬라이스 6a 결과"의 "티켓에 없어 정한 것". 1번 "서버 요소 원본 저장"은 내가 정한 게 아니라 업스트림 방식 그대로임을 확인했다(스냅샷=원본, export=변환).
-- 11을 06 안에 넣지 않고 별도 티켓으로 뺐다. 6b 커밋에 보안 변경이 섞이면 추적이 어렵다.
-- ADR에 적은 것: 폴더명·mtime(ADR-0009), MCP 상대 경로 기준(ADR-0003). 안 적은 것: 깨진 파일 표시, 중복 frame 거부, 폴더 생성, 이미지 동명 거부, 11 — 되돌리기 쉽다.
+- 6b의 결정과 근거는 "슬라이스 6b 결과"의 "바꾼 것"·"티켓에 없어 정한 것". 판단 3개는 위 First Action처럼 사용자 확인 대기.
+- 6b 착수 전 확인한 사실: export는 요소 id를 바꾸지 않는다(seed만 결정적). 라벨이 없던 박스의 라벨은 export에서 `<박스 id>-label` id로 생긴다(`expandElementsForExport`, `src/core/expand-elements.ts`). 6c import는 이 id들도 한 세트로 새로 발급해야 한다.
 
 ### What Worked
 
-- 그릴은 **한 번에 질문 하나**, 선택지 (a)/(b)와 추천안. 사용자가 "왜?"를 물으면 표나 예시로 답했다. 질문 넷을 한 번에 던졌더니 바로 거부당했다.
-- 끝 보고는 **문제 있었나 / 판단할 것 / 커밋해도 되나** 셋만. 효과 있었다.
-- 코드 리뷰 서브에이전트 둘(규칙·스펙)이 실제 구멍을 잡았다: 깨진 파일 처리에서 두 번째 `statSync`가 또 throw할 수 있음, 같은 폴더명·다른 경로 테스트 없음, 없는 이름 restore 테스트 없음. 셋 다 고쳤다.
-- 6a 테스트 방식(실제 `dist`, 샌드박스 HOME, `session start --project`로 띄운 서버, `POST /api/elements/sync`로 동기화 흉내)은 6b·11에도 그대로 쓴다.
+- 테스트 방식: 실제 `dist`, 샌드박스 HOME, `session start --project`로 띄운 서버, `POST /api/elements/sync`로 브라우저 동기화 흉내. 이미지는 같은 프로세스의 WebSocket 가짜 탭(`openFakeTab`, `check-export.mjs`)이 `/api/export/image/result`로 답한다. 6c·6d에도 쓴다.
+- 리뷰 서브에이전트 둘이 실제 구멍을 잡았다. 이번에는 frame 소속 규칙의 중복(`frameMembers`, `src/core/frames.ts`를 쓰도록 고침)과 테스트 빈칸.
+- 끝 보고는 **문제 있었나 / 판단할 것(선택지+추천) / 커밋해도 되나** 셋만. 사용자가 이 형식으로 다시 물었다.
 
 ### What Didn't Work
 
-- ⚠️ 질문을 여러 개 묶거나 길게 쓰면 사용자가 "다시"라고 한다. 하나씩, 짧게.
-- ⚠️ "내가 정한 것"에 업스트림이 이미 정한 것을 섞어 말했다. 내가 새로 정한 것만 그렇게 부른다.
-- 보안 알림 설명이 세 번 왕복했다. "우리 페이지가 아니라 **남의 페이지**가 보내는 요청" 한 문장으로 먼저 말했어야 했다.
+- ⚠️ 가짜 탭이 있는 테스트에서 `spawnSync`로 CLI를 부르면 이벤트 루프가 막혀 탭이 답을 못 한다(30초 타임아웃). 그런 호출은 `cliAsync`(비동기 spawn)를 쓴다.
+- ⚠️ 테스트에서 존재하지 않는 폴더를 cwd로 주면 spawn이 status `null`로 실패한다. 셋업에서 폴더를 먼저 만든다.
+- ⚠️ 마크다운 표 칸 안의 `|`(예: `<name|id>`)는 표를 깬다.
+- 질문은 한 번에 하나, 짧게(6a 세션의 교훈, 여전히 유효).
 
 ### Next Steps
 
-1. 11 구현·리뷰·커밋. 끝나면 AGENTS.md "업스트림 머지 때 되살아나면 다시 지울 것"에 `cors()` 추가.
-2. 6b export. CLI `exportCmd`·`screenshot`(`src/cli/commands/scene.ts`), MCP `export_scene`·`export_to_image`·`import_scene`(`src/core/mcp-dispatch.ts`). 위 합의대로. 테스트는 `scripts/check-snapshots.mjs` 방식의 새 `check-export.mjs`.
-3. 6c import. `importScene`(`src/core/scene-io.ts`)과 MCP `import_scene`의 `mode: replace|merge`를 없앤다. 새 ID 한 세트, 참조 재매핑, 미포함 참조, 오른쪽 배치, `(복사)` 이름, 파일명 frame.
-4. 6d 저장 상태. screenshot 결과에 동봉, `session list`·`session_list`에 수, `SKILL.md` 규칙.
-5. 마지막에 티켓 공통 체크박스(`npm test`, R10 기록)를 체크하고 Status를 바꾼다. `spec.md` 표의 06 상태도.
+1. 6c import. `importScene`(`src/core/scene-io.ts`), MCP `import_scene`의 `mode: replace|merge`(`mcp-dispatch.ts`·`mcp-tools.ts`), CLI `importCmd`의 `--replace`(`scene.ts`)를 없앤다. 새 ID 한 세트(요소·frame·`containerId`·`frameId`·`startBinding`/`endBinding`·`boundElements`·`groupIds`), `link`의 `?element=<frame id>` 재매핑, 세트 밖 id는 미포함으로 둠, 현재 요소 전체 범위 오른쪽에 배치, `"<원본 이름> (복사)"`, frame 없는 파일은 파일명 frame. 배치 간격은 티켓에 수치가 없다 — 정하기 전에 묻거나 `FRAME_MARGIN`(`frames.ts`)을 쓰는 안을 추천으로 제시. 6c 끝에 실세션 스크린샷과 excalidraw.com 열림 확인(판단 3 승인 시).
+2. 6d 저장 상태. `screenshot` 결과에 그림별 상태, `session list`·`session_list`에 수, `SKILL.md` 규칙.
+3. 마지막에 공통 체크박스(`npm test`, R10 기록)를 체크하고 Status를 바꾼다. `spec.md` "구현 이슈와 진행 순서" 표의 06 줄도 바꾼다(지금은 "6a 완료, 6b·6c·6d 남음").
+

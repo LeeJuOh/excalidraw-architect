@@ -93,6 +93,11 @@ export function requireAttachedCanvas(): void {
   );
 }
 
+export function resolveFromProjectRoot(filePath: string): string {
+  requireAttachedCanvas();
+  return path.resolve(attachment!.session.projectRoot, filePath);
+}
+
 function describeSession(session: LiveSession): string {
   return `canvas session ${session.key} at ${session.url} (project root ${session.projectRoot})`;
 }

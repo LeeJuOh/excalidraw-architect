@@ -350,13 +350,21 @@ export const tools: Tool[] = [
   },
   {
     name: 'export_scene',
-    description: 'Export the current canvas to .excalidraw JSON format. Optionally write to a file; a path ending in .md is written in the Obsidian Excalidraw plugin format (.excalidraw.md).',
+    description: 'Export the whole canvas, or one frame, to .excalidraw JSON format. Optionally write to a file; a path ending in .md is written in the Obsidian Excalidraw plugin format (.excalidraw.md). Missing folders are made. A file that already exists is refused (with when it was made) unless force is true. Returns the full path written.',
     inputSchema: {
       type: 'object',
       properties: {
         filePath: {
           type: 'string',
-          description: 'Optional file path to write the scene to (.excalidraw for raw JSON, .excalidraw.md for the Obsidian Excalidraw plugin format)'
+          description: 'Optional file path to write the scene to (.excalidraw for raw JSON, .excalidraw.md for the Obsidian Excalidraw plugin format). A relative path is resolved from the project root.'
+        },
+        frame: {
+          type: 'string',
+          description: 'Export only this frame (name or id) and its elements. Bindings to elements outside it are cut; links stay.'
+        },
+        force: {
+          type: 'boolean',
+          description: 'Overwrite a file that already exists'
         }
       }
     }
@@ -369,7 +377,7 @@ export const tools: Tool[] = [
       properties: {
         filePath: {
           type: 'string',
-          description: 'Path to a .excalidraw JSON or Obsidian .excalidraw.md file'
+          description: 'Path to a .excalidraw JSON or Obsidian .excalidraw.md file. A relative path is resolved from the project root.'
         },
         data: {
           type: 'string',
@@ -386,7 +394,7 @@ export const tools: Tool[] = [
   },
   {
     name: 'export_to_image',
-    description: 'Export the current canvas to PNG or SVG image. Requires the canvas frontend to be open in a browser.',
+    description: 'Export the current canvas to PNG or SVG image. Requires the canvas frontend to be open in a browser. A file that already exists is refused (with when it was made) unless force is true.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -397,11 +405,15 @@ export const tools: Tool[] = [
         },
         filePath: {
           type: 'string',
-          description: 'Optional file path to save the image'
+          description: 'Optional file path to save the image. A relative path is resolved from the project root. Missing folders are made.'
         },
         background: {
           type: 'boolean',
           description: 'Include background in export (default: true)'
+        },
+        force: {
+          type: 'boolean',
+          description: 'Overwrite a file that already exists'
         }
       },
       required: ['format']
