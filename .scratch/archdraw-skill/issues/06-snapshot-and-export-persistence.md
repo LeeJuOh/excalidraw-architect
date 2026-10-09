@@ -215,60 +215,55 @@
 
 `screenshot` 결과 모양(지금은 `success`·`file`·`format`만): 그림별 배열을 한 칸 더한다. 항목마다 frame 이름·id, 상태 넷 중 하나(저장됨·저장 후 수정됨·미저장·파일 없음), 기록이 있으면 경로·시각. frame 밖 묶음은 이름이 비고 개수가 있다. 스냅샷은 캔버스 단위로 마지막 이름·시각·그 뒤 변경 여부.
 
+## 핸드오프 — 6c 커밋됨, 6d 착수 전 (2026-10-10)
 
-
-
-## 핸드오프 — 6c 판단 끝, 둥근 모서리 한 건 남음, 커밋 전 (2026-10-10)
-
-> 같은 내용의 짧은 세션 핸드오프: `docs/handoff/2026-10-10-issue-06-slice-6c.md`. 둘 중 이 절이 상세다.
+> 같은 내용의 짧은 세션 핸드오프: `docs/handoff/2026-10-10-issue-06-slice-6d.md`. 둘 중 이 절이 상세다.
 
 ### Goal
 
-06을 슬라이스 4개로 끝낸다: 6a 스냅샷 디스크화(`5f83f74`) → 6b export(`97f9408`) → 6c import(구현 끝, 커밋 전) → 6d 저장 상태. 슬라이스 하나씩 한다. 커밋과 다음 슬라이스 착수는 사용자 승인 뒤에 한다. 티켓에 없는 결정이 필요하면 **멈추고 묻는다.** 코드를 바꾸기 전에도 묻는다.
+06을 슬라이스 4개로 끝낸다: 6a 스냅샷 디스크화(`5f83f74`) → 6b export(`97f9408`) → 6c import(`cd6cfd6`) → **6d 저장 상태(남음)**. 슬라이스 하나씩 한다. 커밋과 다음 슬라이스 착수는 사용자 승인 뒤에 한다. 티켓에 없는 결정이 필요하면 **멈추고 묻는다.**
 
 ### First Action
 
-**사용자에게 "6c 결정 5(둥근 모서리) 구현을 시작한다"고 한 줄 알리고 승인을 받은 뒤 `/tdd`로 시작한다.** 순서: `scripts/check-export.mjs`에 케이스 하나 추가 → `node scripts/check-export.mjs <케이스 이름 일부>`로 **빨강 확인** → `src/core/expand-elements.ts`의 `makeBaseElement`에서 `roundness` 기본값(`{ type: 3 }`)을 `null`로 → 초록 → `npm test` 전체 → 티켓 체크박스("6c 결정" 5번 아래) 체크 → 사용자 확인 → 6c 커밋(영어 1~2문장, 트레일러 없음). 테스트 내용은 "6c 결정" 5번 체크박스 그대로: `roundness` 없는 박스는 파일에 `null`·복사본도 각짐, 명시한 `roundness`는 유지.
+**사용자에게 "6d를 시작한다"고 알리고 "예"를 받은 뒤 시작 보고를 한다.** 로드맵 `6a ✅ → 6b ✅ → 6c ✅ → 6d ▶`, 완료 조건은 49~57행 체크박스. 그다음 "슬라이스 6d 결정" 절과 ADR-0010(`docs/adr/0010-server-reports-save-state-skill-never-asks.md`)을 읽고 **티켓에 없는 결정을 훑어 코드 전에 묻는다.** 그 뒤 테스트 경계(seam)를 제안해 확인받고 `/tdd`로 시작한다.
 
 ### Context
 
-- 2026-10-10 세션은 코드 없이 **판단 4건 그릴**만 했다. 결과는 "슬라이스 6c 결과" → "사용자 판단 결과". 요약: ① 미포함 참조는 같은 캔버스 원본으로 간다 — 그대로 ② 묻지 않고 정한 넷(위쪽 맞춤, `index` 비움, `start`/`end` 재매핑, MCP `.strict()`) — 전부 유지, "티켓에 없어 정한 것"으로 옮김 ③ 테스트 이름 필터 — 유지 ④ 둥근 모서리 — **06에서 고친다**(사용자가 "원본대로 저장돼야 한다"로 추천을 뒤집음).
-- 판단에 따라 바뀐 문서: 티켓 15행·규칙 2·규칙 4, `docs/adr/0007`(위 선 맞춤), `docs/adr/0008`(미포함 참조가 같은 id 원본으로 감), `CONTEXT.md` "미포함 참조". 코드는 **안 바뀌었다.**
-- 사용자는 설명을 짧고 예시로 받길 원한다. 이번 세션에서 `index`·`start`/`end`·`.strict()`를 각각 두세 번 되물었다. 용어가 나오면 먼저 "그게 무엇인지" 한 줄과 구체 예시(id 값 넣은 before/after)를 적는다.
-- 6d 범위·결정은 "슬라이스 6d 결정" 절. 코드 미착수. 6c 커밋 뒤 승인받고 시작.
+- 2026-10-10 이번 세션: 6c 결정 5(둥근 모서리)를 `/tdd`로 구현하고 6c 전체를 커밋했다. 6d는 손대지 않았다.
+- 결정 5 구현: `src/core/expand-elements.ts` → `makeBaseElement()`의 `roundness` 기본값을 `null`로. 테스트 `cornersAreSavedAsTheCanvasDrawsThem`(`scripts/check-export.mjs`). 같은 변환을 `src/core/share-url.ts`도 쓰므로 공유 링크도 각진 모서리가 된다 — 캔버스와 같아지는 의도된 결과.
+- 착수 전에 사용자에게 물을 후보(내 판단, 미결):
+  - 티켓은 CLI `screenshot` 결과에 상태를 동봉하라고 한다. MCP 쪽(`get_canvas_screenshot`·`export_to_image`, `src/core/mcp-tools.ts`)에도 넣는지 티켓에 없다.
+  - 기록을 둘 곳 — "세션 메모리"가 캔버스 서버 프로세스인지 CLI·MCP 쪽인지 티켓에 없다. `screenshot`·`session list`·`session_list`가 모두 읽어야 하므로 캔버스 서버가 유력하다(unverified).
+  - 49행 "파일 없음"은 기록된 경로를 `screenshot` 때 확인해야 한다. 16행 "디스크를 찾지 않는다"는 기록 때 얘기라 충돌은 아닌 것으로 읽힌다(확인 필요).
+- 사용자는 설명을 짧게, 예시(id 넣은 before/after)와 함께 받길 원한다.
 
 ### Current Progress (git 기준, 2026-10-10 `repo_facts.sh`)
 
-- 브랜치 `main`. 마지막 커밋 `b091daa`. **6c는 전부 커밋 안 됨.**
-- 작업 트리 변경 13개: 이 티켓, `CONTEXT.md`, `docs/adr/0007-canvas-never-cleared-import-copies.md`, `docs/adr/0008-frame-is-the-drawing-unit.md`, `docs/handoff/`(옛 2026-10-09 파일은 지우고 2026-10-10 파일로 바꿈), `plugin/skills/archdraw/references/canvas-ops.md`, `scripts/check-export.mjs`, `src/cli/commands/scene.ts`, `src/cli/run.ts`, `src/core/frames.ts`, `src/core/mcp-dispatch.ts`, `src/core/mcp-tools.ts`, `src/core/scene-io.ts`.
-- 6c 구현(2026-10-09, 상세는 "슬라이스 6c 결과" "바꾼 것"): `scene-io.ts`의 `assertFileType`(`WRITABLE_TYPES`·`READABLE_TYPES`), `importScene` → `withNewIds` → `nameCopies` → `placeBeside`; CLI `import --replace` 삭제; MCP `import_scene` `mode` 삭제·`.strict()`. 테스트는 `check-export.mjs` 6c 케이스 6개.
-- 검증(2026-10-09): 전체 `npm test` exit 0, `tsc --noEmit`·`type-check:frontend` 통과. 2026-10-10에는 테스트를 돌리지 않았다. **커밋 전에 `npm test` 전체를 돌린다.**
-- 6c 결정 5(둥근 모서리): **미착수.** 체크박스 열려 있음.
+- 브랜치 `main`, 작업 트리 깨끗(이 핸드오프 편집 전 기준). 마지막 커밋 `cd6cfd6`(6c 전체 + 결정 5 + ADR-0007·0008·CONTEXT.md 보정). `main`이 `origin/main`보다 1커밋 앞 — `cd6cfd6`만 push 안 됨.
+- 검증(커밋 전, 2026-10-10): `npm test` 전체 exit 0(export 18케이스), `tsc --noEmit`·`type-check:frontend` 통과.
+- 6d: 코드 미착수. 관련 진입점 — CLI `screenshot`은 `src/cli/commands/scene.ts` → `screenshot()`(지금 `{ success, file, format }` 출력), CLI `session list`는 `src/core/sessions.ts` → `formatSessionList()`, MCP `session_list`는 `src/core/mcp-session.ts` → `sessionList()`. 지우기 규칙은 `plugin/skills/archdraw/SKILL.md`.
 
 ### Decisions Made
 
-- 2026-10-10 판단 4건 — 위 Context. 근거는 티켓 "사용자 판단 결과"와 "티켓에 없어 정한 것".
-- 6c 결정 1~4는 그대로 구현돼 있다("슬라이스 6c 결정").
-- 리뷰 서브에이전트 지적 중 반영 안 한 것(판단 문제로 둠): `Record<string, any>` 대신 `ServerElement`, `importScene` 인자 유니온 타입, `importCmd` stdin 분기 중복, MCP 결과에 이름 없는 frame id 두 번 출력.
-- ADR 새로 쓰지 않음: 둥근 모서리·`index`·`start`/`end`·`.strict()`는 ADR 조건(되돌리기 어려움·맥락 없이 놀라움·진짜 트레이드오프)에 들지 않는다.
+- 6c 결정 1~5와 2026-10-10 판단 4건은 "슬라이스 6c 결과"·"슬라이스 6c 결정" 절. 다시 논의하지 않는다.
+- 6d 결정 1~3은 "슬라이스 6d 결정" 절.
+- `/code-review`는 결정 5(한 줄 변경)에 돌리지 않았다. 6c 나머지는 2026-10-09에 리뷰됨.
 
 ### What Worked
 
-- 그릴을 **한 번에 한 질문**, 배경 한 줄 → 선택지 → 추천 순으로. 사용자가 되물으면 코드·패키지 타입 정의를 열어 사실로 답했다(`index: FractionalIndex | null`, `restoreElements`가 업스트림 호출인 것, 이슈 1-1과의 차이).
-- 사용자 반박을 받아 추천을 바꾼 것(Q4). "06 범위 밖"이라던 것이 스토리 17(나란히 비교) 때문에 범위 안이었다.
-- 6b·6c 테스트 방식(실제 `dist`, 샌드박스 HOME, 서버 `GET /api/elements` 전후 비교, 코드를 일부러 깨서 빨강 확인), excalidraw.com 열림은 탭에서 `DragEvent('drop')`에 `File` 실어 확인.
+- `/tdd` 한 사이클: 케이스 하나 추가 → `node scripts/check-export.mjs <이름 일부>`로 빨강 확인 → 최소 수정 → 초록 → `npm test` 전체. 서버 코드를 바꿨으면 테스트 전에 `npm run build`.
+- 끝 보고 뒤 사용자가 "커밋만"이라 하면 커밋만 하고 멈췄다.
 
 ### What Didn't Work
 
-- ⚠️ **2026-10-10: 사용자가 "다음"이라 했을 때 승인으로 읽고 Q4 테스트 코드를 넣었다.** 사용자가 바로 "누가 바로 고치래?"로 멈췄고 되돌렸다. "다음"은 다음 질문이다. 코드는 "시작할까?"에 "예"를 받은 뒤에만.
-- ⚠️ 2026-10-09: 멈춤 조건 위반(묻지 않고 정한 넷). "작고 되돌리기 쉬우니"는 예외가 아니다.
-- ⚠️ macOS(BSD) `sed`는 `\b`를 모른다. 치환 뒤 `grep -c`로 확인.
-- ⚠️ TDD를 넓게 짜면 빨강 없이 통과한다. 사이클마다 테스트 하나, 최소 구현 하나.
-- 실세션 브라우저에서 `shift+1`(화면 맞춤)이 안 먹었다. 전체 화면은 CLI `screenshot`으로.
-- 6a·6b의 ⚠️ 그대로: 가짜 탭 테스트는 `cliAsync`, 없는 cwd는 먼저 만든다, 표 칸 안 `|` 금지, 커밋 뒤 자동 보안 검토 알림은 결정된 트레이드오프면 한 줄로 답한다.
+- ⚠️ 질문형 말("커밋하고 6d 작업할까?")은 승인이 아니다. 계획과 메시지 초안을 보이고 "예"를 받았다. 이전 세션의 "다음" 오독과 같은 함정.
+- ⚠️ macOS `sed`는 `\b`를 모르고 `cat -A`도 없다.
+- ⚠️ `check-export.mjs`에 이름 필터를 주어도 끝 줄은 "all 18 cases passed"로 나온다(전체 수를 찍음). 필터 실행 결과는 `ok`/`FAIL` 줄로 본다.
 
 ### Next Steps
 
-1. First Action(둥근 모서리) → `npm test` 전체 → 사용자 확인 → 6c 커밋. 커밋에 2026-10-10의 ADR-0007·0008·CONTEXT.md 보정과 핸드오프 교체도 함께 들어간다.
-2. 6d 저장 상태(`/tdd`): `screenshot` 결과에 그림별 상태, `session list`·`session_list`에 수, `SKILL.md` 지우기 전 1회 묻기 규칙. 결정은 "슬라이스 6d 결정". 착수 전에 티켓에 없는 결정이 있는지 훑고, 있으면 코드 전에 묻는다.
-3. 마지막에 공통 체크박스(`npm test`, R10 기록)를 체크하고 Status를 바꾼다. `spec.md` "구현 이슈와 진행 순서" 표의 06 줄도 바꾼다.
+1. First Action → 6d 구현(`/tdd`) → `npm test` 전체 → 체크박스 49~57 → 끝 보고 → 사용자 확인 → 커밋.
+2. 06 마무리: 공통 체크박스(58행 `npm test`, 78행 R10 기록) 체크, Status 변경, `spec.md`의 진행 순서 줄(지금 "다음은 6c(결정 끝)"이라 낡음) 갱신.
+
+
+
