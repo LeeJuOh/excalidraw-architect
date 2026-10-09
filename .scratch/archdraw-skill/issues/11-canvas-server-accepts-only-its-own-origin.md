@@ -9,26 +9,26 @@
   2. **`Origin`(누가 보냈나):** 헤더가 **없으면** 통과(CLI·MCP·curl은 브라우저가 아니라 헤더가 없다). **이 서버 자신**이면 통과. 그 외는 거부한다(`Origin: null` 포함).
 - "`Origin` 없음"이 곧 "브라우저 아님"은 아니다. 브라우저도 교차 출처 GET·HEAD에는 `Origin`을 빼기도 해서 그 요청은 통과한다. 이건 받아들인다 — GET은 상태를 바꾸지 않고, 공격 페이지는 그 응답을 읽지 못한다. GET·HEAD가 아닌 요청과 WebSocket에는 브라우저가 항상 `Origin`을 붙인다.
 - "이 서버 자신" = `http://<호스트>:<이 서버의 포트>`. 호스트는 `localhost`·`127.0.0.1`·`[::1]`과 실제 bind 호스트. 포트는 서버가 `listen` 뒤 OS에서 받은 값이다. 세션마다 포트가 달라도 각 서버는 자기 포트만 허용한다. 다른 캔버스 세션의 페이지도 거부 대상이다.
-- `npm run dev`의 vite 프록시는 `Origin`이 **vite 자기 페이지**(`http://<localhost|127.0.0.1|[::1]>:<vite 포트>`)일 때만 그 헤더를 떼고 넘긴다(헤더 없음 → 통과). 다른 `Origin`은 그대로 넘겨 서버가 거부하게 한다. 무조건 떼면 외부 사이트가 vite를 거쳐 보낸 요청도 "헤더 없음"으로 통과한다. 프록시가 넘기는 모든 경로에 같은 규칙. 프론트 코드는 바꾸지 않는다 — 페이지가 자기를 준 서버를 같은 origin으로 부른다.
+- vite 개발 서버의 프록시는 지운다(ADR-0003 2026-10-09 추가). 캔버스 서버가 3000에 없어 이미 닿지 않던 길이다. `npm run dev`는 프론트를 다시 빌드하는 watch로 바꾼다. 프론트 코드는 바꾸지 않는다 — 페이지가 자기를 준 서버를 같은 origin으로 부른다.
 - 허용 주소를 바꾸는 환경변수나 플래그는 두지 않는다(ADR-0003의 방향: 캔버스 서버를 띄우고 붙는 방법은 하나).
 - 원격 지원은 지금 규칙과 충돌한다 — 터널의 공개 주소는 `Host`·`Origin` 허용 목록에 없다. 원격을 지원할 때는 서버에 터널 주소를 알려 주는 설정을 추가해 허용 주소를 넓힌다. 그때 위의 "플래그 없음"과 ADR-0003을 다시 결정한다. 인증은 따로 필요하다.
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** resolved (2026-10-09 — 인수 10개 통과. `scripts/check-origin.mjs` 8개, `npm test`, Chrome 실세션. `npm run test:canvas`는 chromium 미설치로 못 돌림)
 
-**테스트 경계(합의됨):** 실제 `dist` 빌드로 띄운 캔버스 서버에 Node `fetch`·`ws`로 헤더를 바꿔 가며 요청한다. R10과 같다. vite 프록시 항목만 실세션으로 확인한다.
+**테스트 경계(합의됨):** 실제 `dist` 빌드로 띄운 캔버스 서버에 Node `fetch`·`ws`로 헤더를 바꿔 가며 요청한다. R10과 같다. 브라우저 동기화 항목만 실세션으로 확인한다.
 
-- [ ] `Origin: https://evil.example`로 `POST /api/snapshots`를 보내면 403이고 스냅샷 파일이 생기지 않는다. `GET /api/snapshots`·`GET /api/elements`도 403이다
-- [ ] `Origin: https://evil.example`로 WebSocket을 열면 핸드셰이크가 거부된다
-- [ ] `Origin: null`로 보낸 `POST /api/snapshots`는 403이다
-- [ ] `Origin` 없이 보낸 같은 요청들은 전과 같이 성공한다(CLI·MCP 경로)
-- [ ] `Origin: http://localhost:<이 서버 포트>`·`http://127.0.0.1:<포트>`·`http://[::1]:<포트>`·`http://<bind 호스트>:<포트>`는 통과한다
-- [ ] 다른 포트의 `localhost`를 `Origin`으로 보내면 HTTP는 403, WebSocket은 핸드셰이크가 거부된다(다른 캔버스 세션)
-- [ ] `Origin` 없이 `Host: evil.example:<포트>`로 보낸 `GET /api/elements`는 403이다(DNS 리바인딩)
-- [ ] 실세션: 브라우저로 캔버스를 열어 그리고 Sync to Backend하면 전과 같이 동기화되고 WebSocket 방송이 온다
-- [ ] 실세션(`npm run dev`): vite 페이지에서 동기화가 전과 같이 된다. `Origin: https://evil.example`로 vite 포트의 `/api/snapshots`에 POST하면 403이다
-- [ ] 기존 `npm test`(`check-sessions`·`check-snapshots`의 MCP·CLI 경로 포함) 통과
+- [x] `Origin: https://evil.example`로 `POST /api/snapshots`를 보내면 403이고 스냅샷 파일이 생기지 않는다. `GET /api/snapshots`·`GET /api/elements`도 403이다
+- [x] `Origin: https://evil.example`로 WebSocket을 열면 핸드셰이크가 거부된다
+- [x] `Origin: null`로 보낸 `POST /api/snapshots`는 403이다
+- [x] `Origin` 없이 보낸 같은 요청들은 전과 같이 성공한다(CLI·MCP 경로)
+- [x] `Origin: http://localhost:<이 서버 포트>`·`http://127.0.0.1:<포트>`·`http://[::1]:<포트>`·`http://<bind 호스트>:<포트>`는 통과한다
+- [x] 다른 포트의 `localhost`를 `Origin`으로 보내면 HTTP는 403, WebSocket은 핸드셰이크가 거부된다(다른 캔버스 세션)
+- [x] `Origin` 없이 `Host: evil.example:<포트>`로 보낸 `GET /api/elements`는 403이다(DNS 리바인딩)
+- [x] 실세션: 브라우저로 캔버스를 열어 그리고 Sync to Backend하면 전과 같이 동기화되고 WebSocket 방송이 온다
+- [x] `vite.config.js`에 프록시가 없고, `npm run dev`는 `dist/frontend`를 다시 빌드한다
+- [x] 기존 `npm test`(`check-sessions`·`check-snapshots`의 MCP·CLI 경로 포함) 통과
 
 ## 핸드오프 — 착수 전 검수 끝, 구현 대기 (2026-10-09)
 
@@ -56,7 +56,7 @@
 
 - `Host` 검사 추가(DNS 리바인딩). 리바인딩된 같은 출처 GET에는 `Origin`이 없어서 `Origin` 검사만으로는 응답까지 읽힌다.
 - 교차 출처 no-cors GET·HEAD가 `Origin` 없이 통과하는 것은 받아들인다. 상태를 바꾸지 않고, 공격 페이지는 응답을 못 읽는다.
-- vite 프록시는 자기 페이지 `Origin`만 뗀다. 무조건 떼면 외부 사이트 요청이 vite를 거쳐 "헤더 없음"으로 통과한다. (First Action에서 프록시 삭제가 선택되면 이 줄은 바뀐다.)
+- ~~vite 프록시는 자기 페이지 `Origin`만 뗀다.~~ → 2026-10-09 First Action 답: 프록시를 지운다. ADR-0003 목록에 추가.
 - 원격은 나중에 "서버에 터널 주소를 알려 주는 설정 + ADR-0003 재결정 + 인증". 지금은 하지 않는다.
 - 새 ADR과 `CONTEXT.md` 변경은 없다. 되돌리기 쉽고, 새 말은 구현 용어뿐이다.
 
@@ -87,3 +87,5 @@
 ## Comments
 
 - 2026-10-09 착수 전 Codex 검수(FAIL, P1 2건)와 그릴링으로 고침: `Host` 검사 추가(DNS 리바인딩), vite 프록시는 자기 페이지 `Origin`만 뗌, 원격 지원 문단을 "허용 주소를 넓히는 설정 + ADR-0003 재결정 + 인증"으로 바꿈, 테스트에 WS 출처 명시·`[::1]`·bind 호스트·`Origin: null`·다른 세션 WS·`Host` 거부·vite 경유 거부 추가.
+- 2026-10-09 First Action 확인: vite 프록시는 3000 고정이라 세션 서버(포트 0)에 닿지 않고 WS 설정도 없다. 사용자 결정으로 프록시를 지우고 `npm run dev`를 `vite build --watch`로 바꿨다. ADR-0003 "남기지 않는다" 목록과 AGENTS.md Gotchas에 추가. 본문 vite 줄과 체크박스를 고쳤다.
+- 2026-10-09 구현 결과: `src/server.ts`의 `cors()`를 검사 미들웨어로 바꾸고 `ws`의 `verifyClient`에도 같은 검사를 걸었다. `cors`·`@types/cors` 패키지를 지웠다. 테스트는 `fetch` 대신 `node:http`를 쓴다 — `fetch`는 `Host`를 바꿀 수 없다. 테스트가 없는 경계: `Host` 파싱 변형(대괄호 IPv6, 포트 없음, 대문자, `Host` 없음), bind 호스트 `::`. 알려진 한계: `Origin`을 문자열로 비교해서 `PORT=80`이면 브라우저가 포트를 빼므로 자기 페이지가 거부된다. 세션은 포트 0이라 해당 없음.

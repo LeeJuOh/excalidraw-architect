@@ -1,5 +1,4 @@
 import express, { Request, Response, NextFunction } from 'express';
-import cors from 'cors';
 import { WebSocketServer } from 'ws';
 import { createServer, IncomingMessage } from 'http';
 import net from 'net';
@@ -62,10 +61,29 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = createServer(app);
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({
+  server,
+  verifyClient: (info, accept) => accept(isOwnRequest(info.req), 403)
+});
+
+function ownHosts(): string[] {
+  return ['localhost', '127.0.0.1', '[::1]', formatHostForUrl(HOST).toLowerCase()];
+}
+
+function isOwnRequest(req: IncomingMessage): boolean {
+  const hostPart = req.headers.host?.toLowerCase().match(/^(\[[^\]]*\]|[^:]*)(?::\d+)?$/)?.[1];
+  if (!hostPart || !ownHosts().includes(hostPart)) return false;
+  const origin = req.headers.origin;
+  if (origin === undefined) return true;
+  const port = (server.address() as net.AddressInfo).port;
+  return ownHosts().some(host => origin === `http://${host}:${port}`);
+}
 
 // Middleware
-app.use(cors());
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (isOwnRequest(req)) return next();
+  res.status(403).json({ success: false, error: 'Forbidden: the canvas server accepts only its own page' });
+});
 app.use(express.json({ limit: '10mb' }));
 
 // Serve static files from the build directory. `index: false` leaves `/` to the
