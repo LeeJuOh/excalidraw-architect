@@ -21,7 +21,9 @@ import {
   saveSnapshot,
   getSnapshot,
   sendMermaid,
-  ApiResponse
+  ApiResponse,
+  recordSave,
+  getSaveState
 } from './canvas-client.js';
 import { prepareElement, prepareElementUpdate } from './normalize.js';
 import {
@@ -480,7 +482,7 @@ export async function callExcalidrawTool(
 
         logger.info('Exporting scene via MCP');
 
-        const { scene, elementCount } = await buildSceneFile({ frame: params.frame });
+        const { scene, elementCount, frameIds, canvasElements } = await buildSceneFile({ frame: params.frame });
 
         if (params.filePath) {
           const file = resolveFromProjectRoot(params.filePath);
@@ -489,6 +491,7 @@ export async function callExcalidrawTool(
             ? wrapSceneAsObsidianMd(scene)
             : JSON.stringify(scene, null, 2);
           writeOutputFile(file, output, params.force ?? false);
+          await recordSave(file, frameIds, canvasElements);
           return {
             content: [{
               type: 'text',
@@ -647,6 +650,10 @@ export async function callExcalidrawTool(
             {
               type: 'text',
               text: 'Canvas screenshot captured. This is what the diagram currently looks like.'
+            },
+            {
+              type: 'text',
+              text: JSON.stringify(await getSaveState() ?? { error: 'Save state unavailable' })
             }
           ]
         };

@@ -472,7 +472,7 @@ export const tools: Tool[] = [
   },
   {
     name: 'get_canvas_screenshot',
-    description: 'Take a screenshot of the current canvas and return it as an image. Requires the canvas frontend to be open in a browser. Use this to visually verify what the diagram looks like.',
+    description: 'Take a screenshot of the current canvas and return it as an image. Requires the canvas frontend to be open in a browser. Use this to visually verify what the diagram looks like. The last text block is the save state as JSON: `drawings` (per frame id, name, state saved | modified | unsaved | missing, path and savedAt when saved; loose elements as one entry with id null and an element count) and `snapshot` (name, savedAt, changedSince, or null).',
     inputSchema: {
       type: 'object',
       properties: {

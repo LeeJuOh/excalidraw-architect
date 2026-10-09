@@ -8,7 +8,9 @@ import {
   getElements,
   clearCanvas,
   exportImage,
-  sendMermaid
+  sendMermaid,
+  recordSave,
+  getSaveState
 } from '../../core/canvas-client.js';
 import { buildSceneFile, importScene, writeOutputFile } from '../../core/scene-io.js';
 import { wrapSceneAsObsidianMd } from '../../core/obsidian-md.js';
@@ -59,7 +61,7 @@ export async function screenshot(argv: string[]): Promise<void> {
     format === 'svg' ? result.data : Buffer.from(result.data, 'base64'),
     Boolean(flags.force)
   );
-  printJson({ success: true, file: resolved, format });
+  printJson({ success: true, file: resolved, format, ...(await getSaveState() ?? {}) });
 }
 
 export async function exportCmd(argv: string[]): Promise<void> {
@@ -79,7 +81,7 @@ export async function exportCmd(argv: string[]): Promise<void> {
     throw new CliUsageError('--format must be json or obsidian');
   }
 
-  const { scene, elementCount } = await buildSceneFile({ frame: flags.frame as string | undefined });
+  const { scene, elementCount, frameIds, canvasElements } = await buildSceneFile({ frame: flags.frame as string | undefined });
   const output = format === 'obsidian'
     ? wrapSceneAsObsidianMd(scene)
     : JSON.stringify(scene, null, 2);
@@ -87,6 +89,7 @@ export async function exportCmd(argv: string[]): Promise<void> {
   if (outPath) {
     const resolved = path.resolve(outPath);
     writeOutputFile(resolved, output, Boolean(flags.force));
+    await recordSave(resolved, frameIds, canvasElements);
     printJson({ success: true, file: resolved, elements: elementCount, format });
     return;
   }

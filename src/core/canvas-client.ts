@@ -2,6 +2,7 @@ import logger from '../utils/logger.js';
 import { ServerElement } from '../types.js';
 import { ENABLE_CANVAS_SYNC } from './config.js';
 import { CANVAS_SERVICE_NAME, CanvasHealth } from './sessions.js';
+import type { SaveState } from './save-state.js';
 
 // The canvas session every request goes to. The CLI sets it from --session,
 // the MCP process from session_start / session_attach. There is no default.
@@ -277,6 +278,28 @@ export async function getSnapshot(name: string): Promise<{ name: string; element
     `/api/snapshots/${encodeURIComponent(name)}`
   );
   return data.snapshot;
+}
+
+export async function recordSave(path: string, frameIds?: string[], elements?: ServerElement[]): Promise<void> {
+  try {
+    await requestJson('/api/save-state', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path, frameIds, elements })
+    });
+  } catch (error) {
+    logger.warn(`Could not record the save of ${path}; it will show as unsaved: ${(error as Error).message}`);
+  }
+}
+
+export async function getSaveState(): Promise<SaveState | null> {
+  try {
+    const { drawings, snapshot } = await requestJson<SaveState>('/api/save-state');
+    return { drawings, snapshot };
+  } catch (error) {
+    logger.warn(`Could not read the save state: ${(error as Error).message}`);
+    return null;
+  }
 }
 
 export async function sendMermaid(mermaidDiagram: string, config?: Record<string, unknown>): Promise<ApiResponse> {

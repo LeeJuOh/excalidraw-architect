@@ -5,7 +5,8 @@ import {
   getElements,
   getFiles,
   postFiles,
-  batchCreateElementsOnCanvas
+  batchCreateElementsOnCanvas,
+  recordSave
 } from './canvas-client.js';
 import { isObsidianExcalidrawMd, extractSceneJsonFromObsidianMd } from './obsidian-md.js';
 import { expandElementsForExport } from './expand-elements.js';
@@ -80,6 +81,9 @@ function onlyFrame(elements: Record<string, any>[], frameId: string): Record<str
 export interface ExportedScene {
   scene: Record<string, any>;
   elementCount: number;
+  // Absent for the whole canvas.
+  frameIds?: string[];
+  canvasElements: ServerElement[];
 }
 
 // Build a .excalidraw scene JSON from the current canvas state.
@@ -90,9 +94,8 @@ export interface ExportedScene {
 export async function buildSceneFile(options: { frame?: string } = {}): Promise<ExportedScene> {
   const sceneElements = await getElements();
   const expanded = expandElementsForExport(sceneElements, { deterministic: true });
-  const exportElements = options.frame
-    ? onlyFrame(expanded, findFrame(expanded, options.frame).id)
-    : expanded;
+  const frameId = options.frame ? findFrame(expanded, options.frame).id : undefined;
+  const exportElements = frameId ? onlyFrame(expanded, frameId) : expanded;
 
   // Fetch files for image elements
   let sceneFiles: Record<string, any> = {};
@@ -116,7 +119,7 @@ export async function buildSceneFile(options: { frame?: string } = {}): Promise<
     ...(Object.keys(sceneFiles).length > 0 ? { files: sceneFiles } : {})
   };
 
-  return { scene: excalidrawScene, elementCount: exportElements.length };
+  return { scene: excalidrawScene, elementCount: exportElements.length, frameIds: frameId ? [frameId] : undefined, canvasElements: sceneElements };
 }
 
 const COPY_SUFFIX = ' (복사)';
@@ -253,6 +256,7 @@ export async function importScene(options: {
   }
 
   const frames = elementsToCreate.filter(el => el.type === 'frame');
+  if (options.filePath) await recordSave(options.filePath, frames.map(frame => frame.id));
   return {
     count: elementsToCreate.length,
     fileCount: importedFileCount,

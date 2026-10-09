@@ -9,6 +9,7 @@
 import assert from 'node:assert/strict';
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import http from 'node:http';
 import os from 'node:os';
 import path, { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -47,9 +48,9 @@ function cliOk(args, cwd) {
 }
 
 // For calls a fake tab in this process must answer while they run.
-function cliAsync(args) {
+function cliAsync(args, env = baseEnv) {
   return new Promise(resolve => {
-    const child = spawn(process.execPath, [binPath, ...args], { cwd: elsewhere, env: baseEnv });
+    const child = spawn(process.execPath, [binPath, ...args], { cwd: elsewhere, env });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', chunk => { stdout += chunk; });
@@ -625,7 +626,243 @@ async function cornersAreSavedAsTheCanvasDrawsThem() {
   assert.deepEqual(boxes[1].roundness, { type: 3 }, 'the rounded copy is rounded');
 }
 
+// --- save state (slice 6d) -----------------------------------------------
+
+async function screenshotOf(key) {
+  const tab = await openFakeTab(key);
+  try {
+    const out = join(sandbox, 'shots', `${Date.now()}-${Math.random()}.png`);
+    const result = await cliAsync(['screenshot', '--out', out, '--session', key]);
+    assert.equal(result.status, 0, result.stderr);
+    return result.json;
+  } finally {
+    tab.close();
+  }
+}
+
+const drawingOf = (shot, id) => shot.drawings.find(d => d.id === id);
+const ISO_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+
+async function frameExportMarksOnlyThatDrawingSaved() {
+  const key = start();
+  addAll(key, scene);
+  const file = join(outside, 'state', 'a.excalidraw');
+  onCanvas(key, ['export', '--frame', 'Order flow', '--out', file]);
+
+  const shot = await screenshotOf(key);
+  const a = drawingOf(shot, 'fa');
+  assert.equal(a.name, 'Order flow');
+  assert.equal(a.state, 'saved');
+  assert.equal(a.path, file, 'the full path the export returned');
+  assert.match(a.savedAt, ISO_TIME);
+  assert.deepEqual(drawingOf(shot, 'fb'), { id: 'fb', name: 'Order internals', state: 'unsaved' });
+}
+
+function exportA(key) {
+  addAll(key, scene);
+  const file = join(outside, 'state', `a-${Date.now()}-${Math.random()}.excalidraw`);
+  onCanvas(key, ['export', '--frame', 'Order flow', '--out', file]);
+  return file;
+}
+
+async function changingAnElementOfASavedDrawingMarksItModified() {
+  const key = start();
+  exportA(key);
+  onCanvas(key, ['update', 'a1', '--set', '{"x":60}']);
+  assert.equal(drawingOf(await screenshotOf(key), 'fa').state, 'modified', 'moving a box is a change');
+}
+
+async function deletingTheSavedFileMarksTheDrawingMissing() {
+  const key = start();
+  const file = exportA(key);
+  fs.rmSync(file);
+  const a = drawingOf(await screenshotOf(key), 'fa');
+  assert.equal(a.state, 'missing');
+  assert.equal(a.path, file, 'the recorded path is still shown');
+}
+
+async function resyncUnchanged(key) {
+  const elements = await canvasElements(key);
+  const response = await fetch(`http://127.0.0.1:${portOf(key)}/api/elements/sync`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ elements, timestamp: new Date().toISOString() })
+  });
+  assert.equal(response.status, 200);
+}
+
+async function aBrowserResyncWithoutChangesKeepsTheDrawingSaved() {
+  const key = start();
+  exportA(key);
+  await resyncUnchanged(key);
+  assert.equal(drawingOf(await screenshotOf(key), 'fa').state, 'saved', 'sync stamps are not changes');
+}
+
+async function aRestoreThatChangesASavedDrawingMarksItModified() {
+  const key = start();
+  addAll(key, scene);
+  const name = `before-${Date.now()}`;
+  onCanvas(key, ['snapshot', 'save', name]);
+  onCanvas(key, ['update', 'a1', '--set', '{"x":60}']);
+  onCanvas(key, ['export', '--frame', 'Order flow', '--out', join(outside, 'state', `restore-${Date.now()}.excalidraw`)]);
+  onCanvas(key, ['snapshot', 'restore', name]);
+  assert.equal(drawingOf(await screenshotOf(key), 'fa').state, 'modified');
+}
+
+async function looseElementsAreOneUnnamedEntrySavedByAWholeExport() {
+  const key = start();
+  addAll(key, [...scene, { id: 'between', type: 'arrow', x: 600, y: 150, startElementId: 'a2', endElementId: 'b1' }]);
+  const loose = shot => shot.drawings.find(d => d.id === null);
+  assert.deepEqual(loose(await screenshotOf(key)), { id: null, name: null, elements: 1, state: 'unsaved' });
+
+  const file = join(outside, 'state', `whole-${Date.now()}.excalidraw`);
+  onCanvas(key, ['export', '--out', file]);
+  const shot = await screenshotOf(key);
+  assert.equal(loose(shot).state, 'saved');
+  assert.equal(loose(shot).path, file);
+  assert.equal(loose(shot).elements, 1);
+  for (const id of ['fa', 'fb']) assert.equal(drawingOf(shot, id).state, 'saved', `a whole export saves ${id} too`);
+}
+
+async function theLastSnapshotAndWhetherTheCanvasChangedSince() {
+  const key = start();
+  addAll(key, scene);
+  assert.equal((await screenshotOf(key)).snapshot, null, 'no snapshot yet');
+
+  const name = `state-${Date.now()}`;
+  onCanvas(key, ['snapshot', 'save', name]);
+  const saved = (await screenshotOf(key)).snapshot;
+  assert.equal(saved.name, name);
+  assert.match(saved.savedAt, ISO_TIME);
+  assert.equal(saved.changedSince, false);
+
+  onCanvas(key, ['update', 'b1', '--set', '{"x":860}']);
+  assert.equal((await screenshotOf(key)).snapshot.changedSince, true);
+}
+
+async function anImportedCopyIsSavedAtTheFileItCameFrom() {
+  const key = start();
+  const file = exportA(key);
+  const imported = onCanvas(key, ['import', path.relative(outside, file)], outside);
+  const copy = drawingOf(await screenshotOf(key), imported.frames[0].id);
+  assert.equal(copy.state, 'saved');
+  assert.equal(copy.path, file, 'the full path, not the relative argument');
+}
+
+async function saveStateStaysOutOfSavedFiles() {
+  const key = start();
+  const frameFile = exportA(key);
+  const whole = join(outside, 'state', `whole-${Date.now()}.excalidraw`);
+  onCanvas(key, ['export', '--out', whole]);
+  onCanvas(key, ['snapshot', 'save', `clean-${Date.now()}`]);
+  const snapshot = onCanvas(key, ['snapshot', 'save', `clean2-${Date.now()}`]);
+  for (const file of [frameFile, whole, snapshot.path]) {
+    const text = fs.readFileSync(file, 'utf-8');
+    assert.ok(!text.includes('"savedAt"') && !text.includes('"state"') && !text.includes('"changedSince"'), `${file} has no save state`);
+  }
+}
+
+async function mcpScreenshotCarriesTheSameSaveState() {
+  const mcp = await new McpClient().init();
+  try {
+    const key = await mcp.start();
+    addAll(key, scene);
+    await mcp.callOk('export_scene', { filePath: 'design/a.excalidraw', frame: 'Order flow' });
+    const tab = await openFakeTab(key);
+    let blocks;
+    try {
+      blocks = (await mcp.request('tools/call', { name: 'get_canvas_screenshot', arguments: {} })).result.content;
+    } finally {
+      tab.close();
+    }
+    assert.equal(blocks[0].type, 'image');
+    const fromMcp = JSON.parse(blocks.at(-1).text);
+    const { drawings, snapshot } = await screenshotOf(key);
+    assert.deepEqual(fromMcp, { drawings, snapshot });
+    assert.equal(drawingOf(fromMcp, 'fa').state, 'saved');
+    assert.equal(drawingOf(fromMcp, 'fa').path, join(repo, 'design', 'a.excalidraw'), 'an MCP export records its full path');
+  } finally {
+    await mcp.kill();
+  }
+}
+
+// A canvas reached through its own session record, so the CLI talks to it like
+// any other canvas. `onSaveState` sees save-state requests first and returns
+// true when it answered them itself.
+async function proxiedCanvas(realKey, onSaveState) {
+  const upstream = `http://127.0.0.1:${portOf(realKey)}`;
+  const key = `px${Date.now().toString(36).slice(-4)}`;
+  const server = http.createServer(async (req, res) => {
+    if (req.url.startsWith('/api/save-state') && await onSaveState(req, res, upstream)) return;
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    const body = chunks.length ? Buffer.concat(chunks) : undefined;
+    const answer = await fetch(upstream + req.url, { method: req.method, headers: { 'content-type': req.headers['content-type'] ?? '' }, body });
+    let text = await answer.text();
+    if (req.url === '/health') text = JSON.stringify({ ...JSON.parse(text), session: key });
+    res.writeHead(answer.status, { 'Content-Type': answer.headers.get('content-type') ?? 'application/json' }).end(text);
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const record = { key, port: server.address().port, projectRoot: repo, pid: process.pid, startedAt: new Date().toISOString() };
+  fs.writeFileSync(join(sessionsDir, `${key}.json`), JSON.stringify(record));
+  return { key, close: () => { server.close(); fs.rmSync(join(sessionsDir, `${key}.json`), { force: true }); } };
+}
+
+const canvasWithoutSaveState = realKey => proxiedCanvas(realKey, async (req, res) => {
+  res.writeHead(404, { 'Content-Type': 'text/html' }).end('Cannot POST /api/save-state');
+  return true;
+});
+
+async function aFailedSaveRecordOnlyWarnsAndLeavesTheDrawingUnsaved() {
+  const key = start();
+  addAll(key, scene);
+  const old = await canvasWithoutSaveState(key);
+  try {
+    const file = join(outside, 'state', `old-${Date.now()}.excalidraw`);
+    const result = await cliAsync(['export', '--frame', 'Order flow', '--out', file, '--session', old.key], { ...baseEnv, LOG_LEVEL: 'warn' });
+    assert.equal(result.status, 0, `the export still succeeds: ${result.stderr}`);
+    assert.equal(result.json.file, file);
+    assert.ok(fs.existsSync(file), 'the file was written');
+    assert.match(result.stderr, /Could not record the save/, 'one warning on stderr');
+    assert.equal(drawingOf(await screenshotOf(key), 'fa').state, 'unsaved', 'no record means unsaved');
+  } finally {
+    old.close();
+  }
+}
+
+async function anEditBetweenWritingAndRecordingLeavesTheDrawingModified() {
+  const key = start();
+  addAll(key, scene);
+  const racing = await proxiedCanvas(key, async (req, res, upstream) => {
+    if (req.method === 'POST') {
+      await fetch(`${upstream}/api/elements/a1`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ x: 999 }) });
+    }
+    return false;
+  });
+  try {
+    const file = join(outside, 'state', `race-${Date.now()}.excalidraw`);
+    const result = await cliAsync(['export', '--frame', 'Order flow', '--out', file, '--session', racing.key]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.notEqual(byId(JSON.parse(fs.readFileSync(file, 'utf-8')).elements, 'a1').x, 999, 'the file has the box where it was read');
+    assert.equal(drawingOf(await screenshotOf(key), 'fa').state, 'modified', 'the canvas differs from the file');
+  } finally {
+    racing.close();
+  }
+}
+
 const cases = [
+  anEditBetweenWritingAndRecordingLeavesTheDrawingModified,
+  aFailedSaveRecordOnlyWarnsAndLeavesTheDrawingUnsaved,
+  frameExportMarksOnlyThatDrawingSaved,
+  mcpScreenshotCarriesTheSameSaveState,
+  saveStateStaysOutOfSavedFiles,
+  anImportedCopyIsSavedAtTheFileItCameFrom,
+  theLastSnapshotAndWhetherTheCanvasChangedSince,
+  looseElementsAreOneUnnamedEntrySavedByAWholeExport,
+  changingAnElementOfASavedDrawingMarksItModified,
+  deletingTheSavedFileMarksTheDrawingMissing,
+  aBrowserResyncWithoutChangesKeepsTheDrawingSaved,
+  aRestoreThatChangesASavedDrawingMarksItModified,
   cliExportsToAPathOutsideTheProjectAndMakesItsFolders,
   cliRefusesAnExistingFileUntilForced,
   cliResolvesARelativePathFromItsCwd,

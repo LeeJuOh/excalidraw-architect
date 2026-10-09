@@ -52,6 +52,7 @@ import {
   frameMembers,
   moveFrameMembers
 } from './core/frames.js';
+import { recordSave, recordSnapshot, saveStateReport } from './core/save-state.js';
 
 // Load environment variables
 dotenv.config();
@@ -1378,6 +1379,22 @@ app.post('/api/viewport/result', (req: Request, res: Response) => {
   }
 });
 
+app.post('/api/save-state', (req: Request, res: Response) => {
+  const { path: savedPath, frameIds, elements: savedElements } = req.body ?? {};
+  if (typeof savedPath !== 'string' || !path.isAbsolute(savedPath)) {
+    return res.status(400).json({ success: false, error: 'An absolute path is required' });
+  }
+  const saved = Array.isArray(savedElements)
+    ? new Map<string, ServerElement>(savedElements.map((el: ServerElement) => [el.id, el]))
+    : elements;
+  recordSave(saved, savedPath, Array.isArray(frameIds) ? frameIds : undefined);
+  res.json({ success: true });
+});
+
+app.get('/api/save-state', (req: Request, res: Response) => {
+  res.json({ success: true, ...saveStateReport(elements) });
+});
+
 function snapshotError(res: Response, error: unknown, action: string) {
   if (error instanceof SnapshotExistsError) {
     return res.status(409).json({ success: false, error: error.message, existing: error.existing });
@@ -1396,6 +1413,7 @@ app.post('/api/snapshots', (req: Request, res: Response) => {
   }
   try {
     const saved = saveSnapshot(PROJECT_ROOT!, name, Array.from(elements.values()), force === true);
+    recordSnapshot(elements, saved.name, saved.createdAt);
     logger.info(`Snapshot saved: "${name}" with ${saved.elementCount} elements at ${saved.path}`);
     res.json({ success: true, ...saved });
   } catch (error) {

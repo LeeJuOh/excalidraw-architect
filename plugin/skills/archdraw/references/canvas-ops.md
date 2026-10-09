@@ -13,11 +13,12 @@ before drawing. On the CLI fallback there is no resource to read:
 ## Tools and their CLI equivalents
 
 Same canvas, same semantics; only the transport differs. MCP results land in
-your context and a screenshot comes back as an image. The CLI prints JSON on
-stdout (`describe` prints plain text) and a screenshot as a file path you then
-read. Every CLI command that touches a canvas also takes `--session <key>`;
-the MCP tools take no key, because the MCP process stays attached to one
-canvas session.
+your context and a screenshot comes back as an image followed by the save
+state as JSON (`drawings`, `snapshot`). The CLI prints JSON on stdout
+(`describe` prints plain text) and a screenshot as a file path you then read,
+with the same `drawings` and `snapshot` beside it. Every CLI command that
+touches a canvas also takes `--session <key>`; the MCP tools take no key,
+because the MCP process stays attached to one canvas session.
 
 | What you want | MCP tool | CLI |
 |---|---|---|
