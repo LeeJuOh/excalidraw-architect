@@ -34,7 +34,13 @@
 - [x] 레포 둘에서 각각 `snapshot save x`하면 서로 다른 폴더에 생기고, 각자의 `snapshot list`엔 자기 것만 보인다
 - [x] 같은 레포에서 세션 둘을 열면 한쪽이 찍은 스냅샷이 다른 쪽 `snapshot list`에 보이고 restore된다
 - [ ] 같은 이름으로 `snapshot save`·`export`하면 거부되며 메시지에 만든 시각이 있고, `--force`면 덮어쓴다
+- [ ] 이미지 export(MCP `export_to_image`, CLI `screenshot`)도 같은 파일이 있으면 거부하고 `--force`로만 덮어쓴다(2026-10-09 그릴 Q9)
+- [ ] `export_to_image`·`import_scene`의 경로도 cwd 밖이라는 이유로 거부하지 않는다(2026-10-09 그릴 Q5)
+- [ ] MCP에 상대 경로를 주면 세션의 프로젝트 루트 기준으로 풀린다. CLI는 cwd 기준. 절대 경로는 그대로(2026-10-09 그릴 Q6)
+- [ ] 지정 경로의 상위 폴더가 없으면 만들고 저장한다(2026-10-09 그릴 Q8)
 - [ ] frame A·B가 있는 캔버스에서 `export --frame A`가 A의 요소만 담은 파일을 만들고, B는 파일에 없다
+- [ ] `--frame`은 frame 이름 또는 id를 받는다. 같은 이름의 frame이 둘이면 거부하고 두 id를 보여 준다(2026-10-09 그릴 Q7)
+- [ ] `--frame A`로 뺀 파일에서 A 밖 요소에 붙은 화살표 바인딩은 끊겨 있고, 파일이 excalidraw.com에서 열린다. `link`의 미포함 참조는 그대로 남는다
 - [ ] 그 파일을 `import`하면 B와 원본 A가 그대로 남고, 새 ID를 가진 `A (복사)`가 A·B 오른쪽에 생기며, 복사본 화살표는 복사본 박스에 붙어 있다
 - [ ] 복사본의 박스 색을 바꿔도 원본 A는 그대로다
 - [ ] `import --replace`는 사용법 오류로 거부되고, `snapshot restore`만 캔버스를 비운다
@@ -107,7 +113,18 @@
 
 ### First Action
 
-6b 착수 전 사용자에게 하나만 묻는다: `export_to_image`와 `import_scene`의 `filePath`도 `sanitizeFilePath`(cwd 밖 거부)를 쓴다. 티켓은 export 경로만 말한다. (a) 셋 다 푼다 — 추천. (b) export(`.excalidraw`)만 푼다. 답을 받고 6b를 시작한다.
+6b 착수. 범위는 아래 "슬라이스 6b 합의"다. 질문은 다 끝났으니 묻지 않고 시작한다.
+
+### 슬라이스 6b 합의 (2026-10-09 그릴 Q5~Q9)
+
+- 경로 제한 폐기는 `export_scene`·`export_to_image`·`import_scene` 셋 다. cwd 밖 거부를 없앤다. 실행 환경의 쓰기 권한은 그대로 따른다.
+- MCP 상대 경로는 세션의 프로젝트 루트 기준. CLI는 cwd 기준. 절대 경로는 그대로.
+- `--frame <이름|id>`. 같은 이름 frame이 둘이면 거부하고 두 id를 보여 준다.
+- 상위 폴더가 없으면 만든다.
+- 동명 거부·`--force`는 `.excalidraw`와 이미지 모두. "만든 시각"은 파일 mtime(6a와 같음).
+- 성공 결과에 실제 저장한 전체 경로.
+- 티켓에 없어 정한 것: `--frame`으로 뺀 파일에서 frame 밖 요소에 붙은 화살표 바인딩은 끊는다. 안 끊으면 excalidraw.com에서 안 열릴 수 있다. `link`의 미포함 참조는 티켓대로 남긴다.
+- 확인함: export는 요소 id를 바꾸지 않는다(seed만 결정적). 그림 참조는 export에서 안전하다.
 
 ### Context
 

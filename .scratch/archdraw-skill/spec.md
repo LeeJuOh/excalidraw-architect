@@ -294,7 +294,7 @@ yctimlin 캔버스 위에서 동작하는 **판단 전용 스킬.** 다섯 가�
 5. ~~09 사후 검수 결함 2·3 그릴~~ — 완료(2026-10-05). 한 뜻은 한 곳에만 적는다: `docs/canvas-guide.md`의 본문에서 요약과 겹치는 값과 규칙을 지웠고, 요약에 `strokeStyle: "dashed"`를 적었다. 09를 닫았다
 6. ~~04 착수 전 질문 Q1~Q6 그릴~~ — 완료(2026-10-05). 에이전트가 항상 명시한다: MCP는 `session_start`에, CLI는 `--project`와 `--session`에. 업스트림의 "머신당 서버 하나" 코드는 지운다. 답은 이슈 04와 ADR-0003에 있다
 7. ~~04 구현~~ — 완료(2026-10-05). ~~05의 착수 전 결정 6개 + 확인 2개~~ — 완료(2026-10-07 그릴, 답은 [05](issues/05-frame-element.md) 본문). 05 완료(2026-10-08, 슬라이스 A·B·C)
-8. 06 구현(03 슬라이스 B의 저장 인수가 06을 기다린다)
+8. 06 구현(03 슬라이스 B의 저장 인수가 06을 기다린다). 6a 완료(2026-10-09). 6b 전에 11 구현(작음, 6a의 디스크 쓰기로 드러난 열린 origin)
 9. 03 슬라이스 B(캔버스로 확인하는 인수). 07·08·10 구현
 10. 02 도그푸딩
 
@@ -307,7 +307,8 @@ yctimlin 캔버스 위에서 동작하는 **판단 전용 스킬.** 다섯 가�
 | [03 판단 스킬 본문](issues/03-archdraw-skill-body.md) | 라우팅·줌 레벨·캔버스 우선 규칙 | 슬라이스 A·C 완료, B는 04·05 뒤 |
 | [04 캔버스 세션](issues/04-session-per-canvas.md) | 캔버스 세션 분리와 재개 | 완료(2026-10-05). 호스트 두 곳의 실측은 02에서 |
 | [05 frame](issues/05-frame-element.md) | 그림 구분과 글꼴 기본값 | 완료(2026-10-08). 슬라이스 A frame, B 그림 참조 링크, C 글꼴 기본값과 결함 2개(메모지 글자색, 첫 표시 글자 잘림). 착수 전(2026-10-07 그릴로 착수 전 결정 8개를 다 정했다: `frameId` 거부, 빈 frame 거부, 링크 클릭 이동은 프론트 `onLinkOpen`, frame 이동은 자식 동반, 자식 범위 추정, 라벨 `frameId` 채움, mermaid 범위 밖, 글자 크기 기본값. 그 전: 글꼴 7-9 정렬 2026-10-04, 04 완료, frame 삭제·자동 확장·Nunito·frame 밖 묶음 2026-10-05) |
-| [06 저장](issues/06-snapshot-and-export-persistence.md) | 스냅샷·export·재로드 | 착수 가능(05 완료) |
+| [06 저장](issues/06-snapshot-and-export-persistence.md) | 스냅샷·export·재로드 | 진행 중. 6a 스냅샷 디스크화 완료(2026-10-09), 6b export·6c import·6d 저장 상태 남음. 6b 합의 끝(Q5~Q9) |
+| [11 자기 origin만](issues/11-canvas-server-accepts-only-its-own-origin.md) | 캔버스 서버가 다른 사이트의 브라우저 요청을 거부 | 착수 가능. 6b 전에 한다 |
 | [07 근거 검사](issues/07-evidence-check.md) | 근거 확인과 점선 처리 | 착수 가능(04 완료) |
 | [08 기록 스킬](issues/08-dogfooding-report-skill.md) | 도그푸딩 이슈를 에이전트가 대신 씀 | 착수 가능 |
 | [10 MCP 직접 등록](issues/10-mcp-only-gets-archdraw-judgement.md) | MCP만 등록해도 판단을 prompt·resource로 받음 | 착수 가능(03 슬라이스 C 완료) |
