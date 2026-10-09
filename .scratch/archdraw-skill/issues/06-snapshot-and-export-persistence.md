@@ -303,5 +303,33 @@
 - ⚠️ 사용자에게 묻는 것은 하나씩, 쉬운 말로, 예시 먼저, 선택지 둘에 추천 하나. 여러 개를 한 번에·코드 용어로·객관식 팝업으로 묻는 것은 거부됐다. 질문형 말("할까?")은 승인이 아니다 — 계획을 보이고 "예"를 받는다.
 - ⚠️ macOS `sed`는 `\b`를 모르고 `cat -A`도 없다. `check-export.mjs`에 이름 필터를 주어도 끝 줄은 전체 수를 찍는다 — 필터 결과는 `ok`/`FAIL` 줄로 본다.
 
+## 핸드오프 — 6d1 착수 (2026-10-10)
+
+### Goal
+
+06을 끝낸다. 남은 것은 **6d1 → 6d2 → 06 마무리**("슬라이스 6d 계획" 절). 결정은 전부 끝났다 — 코드 전에 사용자에게 물을 것이 없다.
+
+### First Action
+
+**6d1을 `/tdd`로 시작한다.** 첫 케이스는 D6의 1번: frame A·B가 있는 캔버스에서 `export --frame A --out <절대경로>` 뒤 CLI `screenshot` JSON의 `drawings`에 A가 `saved`+그 경로+시각, B가 `unsaved`로 나온다. `scripts/check-export.mjs`에 케이스를 더하고 `node scripts/check-export.mjs <케이스 이름 일부>`로 빨강을 본 뒤 최소 구현한다. 서버 코드를 바꿨으면 테스트 전에 `npm run build`.
+
+### Context
+
+- 이번 세션은 D1~D6을 하나씩 사용자와 정하고 문서에 반영한 뒤 커밋했다(`fb81215`). 코드는 손대지 않았다.
+- 6d1 구현 형태는 D2·D5가 정한다: 캔버스 서버에 `POST /api/save-state`(클라이언트가 파일 쓴 뒤 그림 id·절대경로를 알림, 서버가 그 순간 frame 소속 요소를 D1 규칙으로 해시)와 `GET /api/save-state`(`drawings`·`snapshot` 계산). `snapshot save`는 서버 안에서 바로 기록. CLI `screenshot`·MCP `get_canvas_screenshot`이 GET 결과를 붙인다. 진입점은 "작업 메모".
+- 6d2는 `/health`에 수를 넣어 `session list`·`session_list`가 보이게 하고, `SKILL.md`·`references/saving.md`에 "저장됨 아니면 1회 묻기" 두 곳을 적는다.
+
+### Current Progress (git, 2026-10-10)
+
+- 브랜치 `main`, 작업 트리 깨끗. `origin/main`보다 앞섬 — push 안 함(지시 없음).
+- 커밋됨: 6a `5f83f74` · 6b `97f9408` · 6c `cd6cfd6` · D1~D6 결정과 6d 계획 `fb81215`(티켓 06·`spec.md`·`CONTEXT.md`·ADR-0010, `docs/handoff/` 삭제).
+- 6d1·6d2 코드: 미착수.
+
+### Next Steps
+
+1. 6d1: D6 테스트 1~9·11 → 체크박스 49~55 → 끝 보고 → 사용자 확인 → 커밋.
+2. 6d2: 테스트 10 → 체크박스 56·57 → `SKILL.md`·`saving.md` → 사용자 확인 → 커밋.
+3. 06 마무리: 체크박스 58·78, Status, `spec.md` 진행 줄 → 커밋.
+
 
 
