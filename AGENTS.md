@@ -8,7 +8,7 @@ AI 에이전트와 개발할 때 개발자는 코드를 직접 보지 않고 에
 
 이를 위해 yctimlin의 양방향 Excalidraw 캔버스를 기반으로, Excalidraw 스킬의 시각적 설명 방식과 archify의 설계 판단 원칙을 참고한다. 여기에 **백엔드 실무 질문에 맞는 그림 종류·줌 레벨·필수요소를 선택하는 `archdraw` 판단 스킬**을 더한다. 구조를 논의할 때는 구조를, 실패 처리를 논의할 때는 흐름과 상태를 함께 보도록 한다.
 
-> yctimlin `mcp_excalidraw`(MIT) 포크 — `git remote upstream`. 서버 코드는 업스트림 것이고 내장 스킬만 `archdraw`로 바꾼 Claude Code / Codex 플러그인.
+> yctimlin `mcp_excalidraw`(MIT) 포크 — `git remote upstream`. 서버도 고쳐 쓰고 내장 스킬은 `archdraw`로 바꾼 Claude Code / Codex 플러그인. 업스트림과 달라진 결정은 `docs/adr/`.
 
 ## 이 파일
 
@@ -18,9 +18,10 @@ AI 에이전트와 개발할 때 개발자는 코드를 직접 보지 않고 에
 
 | 언제 | 무엇 | 어디 |
 |---|---|---|
-| 구현 착수 전 | 스펙(PRD)과 구현 순서 표, 이슈 티켓 | `.scratch/<feature-slug>/` — slug는 기능명. 현재 `archdraw-skill/spec.md`, `issues/` |
+| 구현 착수 전 | 스펙(PRD)과 구현 순서 표, 이슈 티켓 | `.scratch/<feature-slug>/` — slug는 기능명 |
 | 이슈 파일을 만들거나 `Status:`를 바꿀 때 | 티켓 파일 규약, 라벨 문자열 5종 | `docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md` |
 | 코드 탐색 전 | 용어 사전과 결정 기록 읽는 순서 | `docs/agents/domain.md` → `CONTEXT.md`, `docs/adr/` |
+| 업스트림을 머지한 뒤 | 되살아나면 다시 지울 파일·설정 목록 | `docs/agents/upstream-merge.md` |
 
 ## 지식 소스 — 심링크 3종 (읽기 전용)
 
@@ -38,9 +39,8 @@ sibling 레포 소유라 읽기만 한다. git에는 심링크째로 들어가 G
 ## Gotchas
 
 - 파일 생성·수정은 Write/Edit 도구로, Bash 한 호출에는 셸 구성 하나만. 히어독·`node -e`·반복문은 셸 파서가 분석하지 못해 호출마다 승인을 묻는다 — 여러 줄 스크립트는 `scripts/`에 커밋해 이름으로 부른다.
-- 업스트림 머지 때 되살아나면 다시 지울 것: `.gitignore`의 `docs/` 무시 줄, `read_diagram_guide` 툴과 `design-guide.ts`(ADR-0006), `docker.yml`·`Dockerfile*`·`docker-compose.yml`·`.dockerignore`(PRD 7-5d), CLI `start`·`stop`·`status`와 `--url`·`EXPRESS_SERVER_URL`·`EXCALIDRAW_NO_AUTOSTART`·`src/core/pidfile.ts`·`src/core/spawn.ts`·MCP 연결 직후 캔버스 자동 시작·`npm run canvas`·`production` 스크립트·`vite.config.js`의 `server.proxy`(ADR-0003), `src/server.ts`의 `cors()`(이슈 11), `sanitizeFilePath`·`ALLOWED_EXPORT_DIR`·`EXCALIDRAW_EXPORT_DIR`(ADR-0009).
 - 플러그인에 들어갈 파일은 `plugin/` 아래에 둔다 — 호스트는 카탈로그가 가리키는 그 폴더만 복사한다(ADR-0011).
-- 매니페스트 6개와 스킬 shim은 **생성물이다.** `package.json`을 고치고 `npm run manifests`로 재생성한다. `npm test`·CI가 드리프트와 shim 실행 권한을 검사한다.
+- 매니페스트와 스킬 shim은 **생성물이다.** `package.json`을 고치고 `npm run manifests`로 재생성한다. `npm test`·CI가 드리프트와 shim 실행 권한을 검사한다.
 - `gh`는 기본 레포를 `upstream`(yctimlin)으로 잡는다. 새 클론마다 `gh repo set-default LeeJuOh/excalidraw-architect`. 이슈·라벨 작업 전 `gh repo view`로 확인.
 - 서버 코드 변경 확인은 `npm run build` 후 `ARCHDRAW_BIN=<레포>/dist/bin.js`를 둔 셸에서 호스트(claude/codex)를 시작한다. 비어 있으면 shim이 npm 게시본을 `npx`로 띄워 방금 고친 코드가 돌지 않는다. 스킬 텍스트만 고칠 땐 불필요.
 - npm 게시본은 shim(`plugin/skills/archdraw/scripts/archdraw`)으로 검증한다. 레포 안에서 맨 `npx excalidraw-architect`는 같은 이름의 로컬 패키지로 잡혀 `command not found`가 난다(ADR-0011).
