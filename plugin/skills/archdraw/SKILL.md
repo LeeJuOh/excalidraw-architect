@@ -252,9 +252,19 @@ path, file name and snapshot name are chosen, and what to report.
 copy the per-diagram save state that came back with `get_canvas_screenshot`
 into one line of chat — saved path / modified since save / file missing /
 unsaved, plus the last snapshot. Do not count or remember it yourself: the
-value comes from the server. Do not ask whether to save. When the user says
-they are done, and some diagram is unsaved or modified since its save, ask
-once whether to save, then call `session_end` (`session end`).
+value comes from the server. Do not ask whether to save.
+
+**Ask once, only right before a diagram would be lost.** "Not saved" means any
+state other than saved: unsaved, modified since save, or file missing.
+
+- The user asks to delete a diagram: if it is not saved, ask once whether to
+  save it first. If it is saved, delete it without asking.
+- The user says they are done: if some diagram is not saved, ask once whether
+  to save, then call `session_end` (`session end`).
+- The user asks to end a canvas session you are not attached to: you cannot
+  see its screenshot, so read `unsaved` and `modified` for that key in
+  `session_list` (`session list`). If either is above 0, or is `null` (the
+  server cannot count), ask once before ending it.
 
 `session_end` with a key ends a canvas session other than yours. Do that only
 when the user asks for that session — another conversation may be drawing on

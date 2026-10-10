@@ -786,6 +786,36 @@ async function mcpScreenshotCarriesTheSameSaveState() {
   }
 }
 
+async function sessionListCountsDrawingsThatAreNotSaved() {
+  const key = start();
+  addAll(key, [
+    ...scene,
+    { id: 'fc', type: 'frame', name: 'Billing', x: 1400, y: 0, width: 400, height: 300 },
+    { id: 'c1', type: 'rectangle', x: 1440, y: 40, width: 200, height: 60, frameId: 'fc', text: 'Invoice' }
+  ]);
+  onCanvas(key, ['export', '--frame', 'Order internals', '--out', join(outside, 'state', `b-${Date.now()}.excalidraw`)]);
+  onCanvas(key, ['update', 'b1', '--set', '{"x":860}']);
+  const fileC = join(outside, 'state', `c-${Date.now()}.excalidraw`);
+  onCanvas(key, ['export', '--frame', 'Billing', '--out', fileC]);
+
+  const counts = () => {
+    const { unsaved, modified } = cliOk(['session', 'list']).find(s => s.session === key);
+    return { unsaved, modified };
+  };
+  assert.deepEqual(counts(), { unsaved: 1, modified: 1 });
+
+  fs.rmSync(fileC);
+  assert.deepEqual(counts(), { unsaved: 2, modified: 1 }, 'a missing file counts as unsaved');
+
+  const mcp = await new McpClient().init();
+  try {
+    const listed = JSON.parse(await mcp.callOk('session_list')).find(s => s.key === key);
+    assert.deepEqual({ unsaved: listed.unsaved, modified: listed.modified }, { unsaved: 2, modified: 1 });
+  } finally {
+    await mcp.kill();
+  }
+}
+
 // A canvas reached through its own session record, so the CLI talks to it like
 // any other canvas. `onSaveState` sees save-state requests first and returns
 // true when it answered them itself.
@@ -851,6 +881,7 @@ async function anEditBetweenWritingAndRecordingLeavesTheDrawingModified() {
 }
 
 const cases = [
+  sessionListCountsDrawingsThatAreNotSaved,
   anEditBetweenWritingAndRecordingLeavesTheDrawingModified,
   aFailedSaveRecordOnlyWarnsAndLeavesTheDrawingUnsaved,
   frameExportMarksOnlyThatDrawingSaved,

@@ -1466,12 +1466,15 @@ app.get('/', (req: Request, res: Response) => {
 // Health check endpoint. `service` + `session` are the identity callers check
 // before they send this server anything.
 app.get('/health', (req: Request, res: Response) => {
+  const { drawings } = saveStateReport(elements);
   res.json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     elements_count: elements.size,
     websocket_clients: clients.size,
     agent_clients: agentSockets.size,
+    unsaved_drawings: drawings.filter(d => d.state === 'unsaved' || d.state === 'missing').length,
+    modified_drawings: drawings.filter(d => d.state === 'modified').length,
     service: CANVAS_SERVICE_NAME,
     session: sessionRecord?.key,
     projectRoot: sessionRecord?.projectRoot,

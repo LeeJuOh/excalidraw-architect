@@ -159,6 +159,8 @@ async function sessionList(): Promise<CallToolResult> {
       projectRoot: s.projectRoot,
       browserTabs: s.browserTabs,
       agents: s.agents,
+      unsaved: s.unsaved,
+      modified: s.modified,
       attachedHere: s.key === attachedKey
     })),
     null,

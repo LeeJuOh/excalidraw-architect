@@ -27,7 +27,7 @@ export const tools: Tool[] = [
   },
   {
     name: 'session_list',
-    description: 'List the live canvas sessions on this machine: key, URL, project root, open browser tabs, attached agents.',
+    description: 'List the live canvas sessions on this machine: key, URL, project root, open browser tabs, attached agents, and how many drawings are unsaved (file missing included) or modified since their save.',
     inputSchema: {
       type: 'object',
       properties: {}

@@ -22,6 +22,8 @@ export interface LiveSession extends SessionRecord {
   url: string;
   browserTabs: number;
   agents: number;
+  unsaved: number | null;
+  modified: number | null;
 }
 
 // What the canvas server sends its spawner over IPC once it is listening.
@@ -36,6 +38,8 @@ export interface CanvasHealth {
   elements_count: number;
   websocket_clients: number;
   agent_clients?: number;
+  unsaved_drawings?: number;
+  modified_drawings?: number;
   service?: string;
   session?: string;
   projectRoot?: string;
@@ -144,7 +148,9 @@ export async function listLiveSessions(): Promise<LiveSession[]> {
         ...record,
         url: sessionUrl(record.port),
         browserTabs: probe.health.websocket_clients,
-        agents: probe.health.agent_clients ?? 0
+        agents: probe.health.agent_clients ?? 0,
+        unsaved: probe.health.unsaved_drawings ?? null,
+        modified: probe.health.modified_drawings ?? null
       });
     }
   }
@@ -207,7 +213,7 @@ export async function startCanvasSession(projectRoot: string, timeoutMs = 15000)
 
   if (child.connected) child.disconnect();
   child.unref();
-  return { ...record, url: sessionUrl(record.port), browserTabs: 0, agents: 0 };
+  return { ...record, url: sessionUrl(record.port), browserTabs: 0, agents: 0, unsaved: 0, modified: 0 };
 }
 
 export function unknownSessionError(key: string, live: LiveSession[]): Error {

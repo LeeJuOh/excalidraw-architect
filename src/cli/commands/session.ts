@@ -43,7 +43,9 @@ export async function session(argv: string[]): Promise<void> {
         url: s.url,
         projectRoot: s.projectRoot,
         browserTabs: s.browserTabs,
-        agents: s.agents
+        agents: s.agents,
+        unsaved: s.unsaved,
+        modified: s.modified
       })));
       return;
     }
