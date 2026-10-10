@@ -24,7 +24,7 @@
 
 **Blocked by:** 01 (플러그인 골격), 04 (캔버스 세션의 프로젝트 루트 — 스냅샷 폴더를 나누는 기준), 05 (frame — `export --frame`·import의 frame 씌우기가 frame 요소를 전제)
 
-**Status:** ready-for-agent (2026-10-10 — 6a·6b·6c·6d1 커밋됨, 6d2 구현됨·커밋 대기, 마무리 미착수)
+**Status:** resolved (2026-10-10 — 6a~6d2·마무리·마무리 2 끝. 03 슬라이스 B·02 도그푸딩과의 공동 확인만 남음)
 
 - [x] `snapshot save x` → 서버 `stop` → `start` → `snapshot restore x`로 그림이 돌아온다
 - [x] `snapshot list`가 디스크의 스냅샷을 보여준다
@@ -55,7 +55,7 @@
 - [x] 저장 상태 기록은 export·snapshot 파일 내용에 들어가지 않는다
 - [x] `session list`·`session_list`의 결과에 캔버스 세션마다 미저장 그림(파일 없음 포함, D3)과 저장 후 수정된 그림의 수가 있다. 붙지 않은 캔버스 세션을 키로 끝내기 전에 에이전트가 이 수를 보고 1회 묻는다(2026-10-05, 04 Q6 · ADR-0010)
 - [x] 사용자가 그림을 지우라고 했을 때 그 그림이 저장됨이 아니면(미저장·저장 후 수정됨·파일 없음, D3) 에이전트가 지우기 전에 1회 묻고, 저장된 그림은 묻지 않고 지운다. `SKILL.md`에 이 규칙이 있다. 서버는 묻지 않고 frame과 자식을 같이 지운다(05) (2026-10-05 05 검수 · ADR-0010)
-- [ ] 기존 `npm test` 통과
+- [x] 기존 `npm test` 통과
 
 - [x] frame A·B·C가 있는 캔버스를 기본 export하면 파일 하나에 세 그림과 배치가 모두 남는다. 새 빈 캔버스로 import하면 그림 사이 상대 배치가 유지된다
 
@@ -65,6 +65,7 @@
 - [x] snapshot save 후 서버를 재시작해 restore하면 그림 사이 참조가 유지된다. 스냅샷에는 시간 경과에 따른 자동 만료가 없다
 - [x] 03이 정한 `YYYY-MM-DD_HHmmssZ_<영어 이름>` 스냅샷이 UTC 생성 시각과 일치하는 이름으로 저장되고, 직접 지정한 이름은 그대로 저장된다. 성공 결과에는 실제 이름·전체 경로가 있고 같은 초·이름의 충돌은 거부된다
 - [x] "확인 못 함" 필수요소가 있는 그림의 export·import 및 snapshot save·restore가 성공하며 점선과 해당 표시가 유지된다
+- [x] 캔버스 탭이 하나이고 그 탭이 멈춘 상태("Sync is paused")에서 screenshot을 요청하면, 30초 timeout 대신 바로 "export is paused" 오류를 받는다. 탭 둘 중 하나만 멈췄으면 정상 탭의 이미지를 받는다("06 마무리 2")
 
 
 ## 검증 방법과 결과 기록 (R10)
@@ -75,7 +76,7 @@
 - 전체/그림별 저장 범위, 원본 보존, 새 ID·바인딩·그림 참조, 복사본 독립성, 상대 배치, frame 이름, 미확인 필수요소의 점선·표시는 전후 요소 데이터와 파일 내용으로 비교한다. ID가 바뀌는 import는 새 ID 간 연결과 상대 좌표로 판정한다.
 - 디스크 보관은 서버 종료·재시작 후 목록과 복원 결과로 확인한다. TTL 없음은 저장소 구현에 자동 만료 경로가 없는지도 확인한다.
 - 복원·복사 후 frame·화살표·점선·표시는 스크린샷으로 확인해 데이터 검사와 별도 결과로 남긴다. 03과의 저장 후 내부 탐색은 03 구현이 준비된 뒤 공동 확인한다.
-- [ ] 위 인수 기준의 데이터 검사 결과와 스크린샷 확인 결과, 기존 테스트 결과가 기록됐다. 미실행 항목을 통과로 표시하지 않았다.
+- [x] 위 인수 기준의 데이터 검사 결과와 스크린샷 확인 결과, 기존 테스트 결과가 기록됐다. 미실행 항목을 통과로 표시하지 않았다. (슬라이스 결과 표 6a~6d2 + "06 마무리 결과" + "06 마무리 2 결과". 미시험으로 남긴 것: 6d2 "모델이 실제로 묻는지")
 
 ## 슬라이스 6a 결과 (2026-10-09)
 
@@ -321,7 +322,7 @@
 | 11. MCP 텍스트 블록 = CLI와 같은 JSON, MCP export도 기록 | 통과 | `mcpScreenshotCarriesTheSameSaveState`. 빨강 먼저 확인 |
 | 결정 1: 기록 실패(옛 서버 404) → export 성공·파일 있음·stderr 경고 1줄·`unsaved` | 통과 | `aFailedSaveRecordOnlyWarnsAndLeavesTheDrawingUnsaved`. `/api/save-state`만 404인 프록시. 빌드 산출물에서 `recordSave`가 다시 던지게 바꾸면 빨강임을 확인 |
 | 결정 5: export가 읽은 뒤 기록 전에 바뀐 요소 → `modified`, 파일은 읽은 값 | 통과 | `anEditBetweenWritingAndRecordingLeavesTheDrawingModified`. 기록 요청 직전에 `a1`을 옮기는 프록시. 수정 전 빨강(`saved`) 확인 |
-| 실브라우저에서 첫 동기화 뒤 거짓 `modified` 1회(D1 감수 사항) | **미시험** | 가짜 탭만 씀. 6d2·마무리 실세션 때 확인 |
+| 실브라우저에서 첫 동기화 뒤 거짓 `modified` 1회(D1 감수 사항) | 통과(2026-10-10 마무리, 수정 뒤) | 첫 동기화(형식 변환) 1회는 예상대로. 마무리 실세션에서 `screenshot`마다 바인딩 화살표가 0.5px씩 움직여 거짓 `modified`가 반복되는 문제를 찾아 고쳤다 — "06 마무리 결과" |
 | 기존 `npm test`, 타입 검사 둘 | 통과 | exit 0 |
 
 바꾼 것: `src/server.ts`에 저장 기록(메모리 `Map`, frame id 키, frame 밖 묶음은 `null` 키)·`POST /api/save-state`(절대경로만, `frameIds` 없으면 캔버스 전체)·`GET /api/save-state`, `POST /api/snapshots`가 마지막 스냅샷 기록. 해시는 기록 칸 8개를 뺀 요소를 키 정렬·id 정렬해 sha256. `canvas-client.ts`에 `recordSave`·`getSaveState`. `buildSceneFile`이 `frameIds`를 돌려줌. CLI `export`·MCP `export_scene`은 파일을 쓴 뒤, `importScene`은 파일 경로가 있을 때 기록. CLI `screenshot` JSON과 MCP `get_canvas_screenshot` 세 번째 텍스트 블록에 `drawings`·`snapshot`. `mcp-tools.ts` 설명, `canvas-ops.md` 한 문장.
@@ -360,44 +361,59 @@ ADR·용어: ADR-0010 Consequences의 옛 서버 문장 뒤에 `null` → 1회 �
 
 리뷰(`/code-review`) 판단 사항, 손대지 않음: `unsaved`·`modified` 쌍이 health·`LiveSession`·CLI·MCP를 따로 지나감(한 객체로 묶을지), `modified`가 boolean처럼 읽힘(이름은 D6 문구 그대로라 유지), `/health`가 부를 때마다 캔버스 전체 해시·파일 존재 확인을 함(`session list` 1.5초 타임아웃 안).
 
-## 핸드오프 — 06 마무리를 시작한다 (2026-10-10)
 
-### Goal
+## 06 마무리 결과 (2026-10-10)
 
-06을 끝낸다. 남은 것: **6d2 커밋 → 06 마무리**("슬라이스 6d 계획" 절의 "06 마무리").
+마무리의 실브라우저 확인에서 `screenshot`마다 바인딩 화살표가 0.5px씩 움직여 저장한 그림이 거짓 `modified`가 되는 문제를 찾았다. 원인을 찾아 고치고 playwright 케이스로 지킨다.
 
-### First Action
+**원인(실측, playwright로 재현):** 동기화만 3회는 화살표 그대로. 페이지 reload → 동기화는 매번 0.5px 이동. `screenshot` 요청이 서버에서 찍기 전에 `initial_elements`를 재방송해 브라우저가 전체 장면을 다시 적재하므로(업스트림 `src/server.ts`의 "stale 클라이언트 동기화용" 코드), screenshot 한 번이 reload 한 번과 같았다. 적재 경로(`prepareServerScene`, 업스트림 PR #110)가 바인딩 화살표를 매번 다시 계산한다. export 함수(`exportToSvg`·`exportToBlob`)는 무관하다 — 요소 복사본을 넘겨도 그대로였다(기각, 되돌림).
 
-사용자에게 6d2 커밋 승인을 받는다(아직 "예"를 못 받았다). 승인되면 작업 트리 9개 파일을 이 메시지로 커밋한다: `Implement issue 06 slice 6d2: session list and session_list report how many drawings are unsaved or modified per canvas session, and the skill asks once before deleting or ending a session with drawings that are not saved. Replace the ticket handoff: 06 wrap-up is next.` push는 지시 있을 때만.
+**수정:** `src/server.ts` export 경로에서 찍기 전 재방송과 0.8초 대기를 뺐다. 찍기 요청만 바로 보낸다. 프론트 변경 없음. 근거: 서버가 요소를 바꾸면 모든 탭에 바로 보내며, 탭이 처음 붙을 때와 재연결 때 전체 장면을 받으므로 찍기 전 재적재가 필요 없다. 저장 상태 JSON은 서버 메모리만 읽어 영향 없음. `docs/agents/upstream-merge.md`(되살아나면 지울 것) 항목, ADR-0010 Consequences 1줄, ADR-0003 "남기지 않는다" 단락 항목으로 반영.
 
-### Context
+| 인수 | 결과 | 근거 |
+|---|---|---|
+| 저장 기록된 그림이 screenshot 3회 뒤에도 `saved`이고 바인딩 화살표 `x`·`y`·`width`·`height`·`points` 그대로 | 통과 | `tests/browser/scene-reload.spec.mjs` "repeated screenshots leave a bound arrow and its saved state exactly as they were". 수정 전 빨강(`saved`→`modified`, `x` 240.5→241, `width` 99→98) 확인, 수정 뒤 초록. 저장 상태 검사는 `/code-review` 지적으로 보강 |
+| playwright 전체(`npm run test:canvas`) | 통과 | 18개(새 케이스 포함). 로컬 chromium은 `npx playwright install chromium`으로 받음 |
+| `npm test` 전체 | 통과 | exit 0(export 31·origin 8 포함), 타입 검사 둘 |
+| 실브라우저 Chrome으로 재현 반복 | 미시험 | playwright chromium이 같은 경로(초기 적재 → screenshot → 전체 동기화)를 실제 브라우저로 돈다. 손으로 다시 하지 않았다 |
 
-- 6d2 결과·근거·확정 결정(그릴 Q1~Q4)은 위 "슬라이스 6d2 결과" 절. 다시 묻지 않는다.
-- 마무리에 남은 미시험 둘:
-  - 6d1 결과 표 "실브라우저에서 첫 동기화 뒤 거짓 `modified` 1회(D1 감수 사항)". 가짜 탭으로만 시험했다.
-  - 6d2 결과 표 "모델이 실제로 묻는지". `SKILL.md` 규칙 글만 있다.
-- 마무리 체크리스트: 체크박스 58(`npm test`)·78(R10 기록), Status 줄, `.scratch/archdraw-skill/spec.md` 진행 줄 둘 — "8. 06 구현 … 다음은 6c(결정 끝)"과 표의 "[06 저장] … 6d 저장 상태 남음" 줄. 둘 다 낡았다.
+**기각한 안:** 프론트 전체 적재를 멱등하게 고치기(B). F5 reload 뒤 거짓 `modified` 1회까지 없어지지만 05 PR #110 경로를 파야 해 06 밖. 후속 이슈 후보.
 
-### Current Progress (git, `repo_facts.sh`로 확인)
+**알려진 한계(업스트림 설계, 06에서 손대지 않음):**
+- 사용자가 F5로 새로고침하면 바인딩 화살표가 0.5px 움직여 그 뒤 클릭 때 거짓 `modified`가 1회 난다. D1의 "첫 동기화 1회"와 같은 급.
+- 같은 세션을 탭 둘에서 열면 손 편집이 다른 탭에 가지 않는다(서버는 `elements_synced`로 개수만 보내고 프론트는 무시). 그 탭을 클릭하면 옛 그림이 서버를 덮는다. 재방송은 screenshot 순간에만 이를 덮던 땜질이었고 덮어쓰기는 막지 못했다. 재방송이 없으니 새로고침하지 않은 탭이 screenshot에 옛 그림을 낼 수 있다(서버가 가장 큰 이미지를 고름). 새로고침하면 풀린다. 탭 수는 제한하지 않는다(ADR-0003, "06 마무리 2 결정" Q9).
+- 첫 적재가 실패해 멈춘 탭("Sync is paused")은 전에는 screenshot의 재방송으로 저절로 살아났다. 이제 탭은 "export is paused" 오류를 보내고 사용자가 **Retry loading**을 누르거나 새로고침해야 한다. 화면에 경고가 보이는 상태라 받아들인다. 다만 서버가 그 오류를 버리고 다른 탭을 기다려 에이전트는 30초 뒤 timeout만 받았다 — "06 마무리 2"에서 고쳤다.
+- screenshot은 첫 결과 뒤 3초를 더 기다려 제일 큰 이미지를 고른다(업스트림 다중 탭용). 탭 하나에서는 3초 낭비다.
 
-- 브랜치 `main`. 마지막 커밋 `309a189`(6d1 핸드오프). 6d1 구현은 `22a7ecf`.
-- **6d2는 구현·테스트 끝, 커밋 안 됨.** 미커밋 9개: 티켓, ADR-0010, `plugin/skills/archdraw/SKILL.md`, `scripts/check-export.mjs`, `src/cli/commands/session.ts`, `src/core/mcp-session.ts`, `src/core/mcp-tools.ts`, `src/core/sessions.ts`, `src/server.ts`.
-- 이 세션에서 `npm test` 전체 exit 0(export 31케이스), `tsc --noEmit`·`type-check:frontend` 통과. 그 뒤 바뀐 것은 문서(티켓·ADR)뿐이다.
+**후속 이슈 후보(메모만):** ① 멈춘 탭이 찍기 요청을 받으면 `loadExistingElements()`를 한 번 돌리고 찍기(프론트 10줄, 멈춘 탭에만 재적재). ② 손 편집을 다른 탭에 밀기 + 두 탭이 동시에 올릴 때의 충돌 규칙(서버+프론트, 02에서 탭 둘이 필요한지 본 뒤). screenshot의 옛 그림만 막는 작은 안: 서버가 "가장 큰 이미지" 대신 마지막으로 sync한 탭의 이미지를 고른다(그 탭은 서버와 같은 그림). 재방송을 되살리는 안은 0.5px 문제가 돌아와 기각. ③ 전체 적재 멱등화(B). ④ screenshot 3초 대기 제거.
 
-### What Worked
+남은 미시험: 6d2 "모델이 실제로 묻는지"(문서 규칙만). 03 슬라이스 B·02 도그푸딩에서 본다.
 
-- 그릴을 질문 하나씩, 예시 먼저("어제 띄운 서버가 오늘도 떠 있다 → 0이면 묻지 않고 끝내 그림 2개가 사라진다"), 선택지 둘 + 추천 하나로 하니 매번 한 번에 정해졌다.
-- `/code-review` 두 서브에이전트(Standards·Spec)가 티켓 문구 모순(D6 10 "A 파일 삭제")과 계획 문구와 다른 점(`saving.md`)을 찾았다.
+## 06 마무리 2 결정 (2026-10-10 그릴)
 
-### What Didn't Work
+재방송 제거가 드러낸 부작용 둘과 ADR-0003의 가정을 정했다.
 
-- ⚠️ 끝 보고에 "확인 필요"를 코드 용어로 압축해 적었더니 사용자가 "먼소리야"로 되물었다. 처음부터 상황 예시로 설명한다.
-- ⚠️ 티켓에 없는 값(`null`)을 정하고 끝 보고에서야 물었다. 멈춤 조건상 정하기 전에 묻는 것이 맞다.
+- **Q7 — 멈춘 탭 screenshot: 06에서 고친다.** 흐름: 에이전트 → 서버 `export_image_request` → 멈춘 탭이 "export is paused" 오류를 서버에 보냄 → 서버는 "다른 탭이 성공할 수 있다"(업스트림)며 오류를 로그에만 남기고 기다림 → 탭이 하나면 30초 뒤 "timed out". 에이전트는 원인을 모르고 다시 찍거나 서버 문제로 오판한다. 규칙: 요청을 보낸 탭이 **모두** 오류로 답하면 서버가 기다리지 않고 그 오류를 바로 돌려준다. 한 탭이라도 아직 답하지 않았으면 지금처럼 기다린다(탭 둘 중 하나만 멈추면 정상 탭 이미지). 멈춘 탭 자체는 여전히 사용자가 새로고침한다. 처음엔 "드물다"며 후속 ①로 미루자고 했다가 뒤집었다 — 06의 변경이 드러냈고 작다.
+- **Q9 — 탭 둘의 옛 그림: 06에서 고치지 않는다.** 탭 A의 손 편집은 탭 B에 가지 않는다(서버는 개수만 알리고 프론트는 무시. 업스트림도 같음). 재방송이 없으니 screenshot 때 B가 옛 그림을 낼 수 있다. B를 새로고침하면 풀린다. 근본 해결은 후속 후보 ②.
+- **ADR-0003 — "브라우저 탭 하나"는 이유 없는 가정이었다.** 09-11부터 제목에 있었으나 본문에 근거가 없고 서버도 막지 않는다. 마무리 때 재방송 제거의 근거로 "탭 하나로 쓴다"를 적은 것은 순환이었다. 제목에서 빼고 "탭 수는 제한하지 않는다"로 고쳤다. ADR-0010의 같은 근거도 고쳤다. 새 ADR은 없다 — 여러 탭 동기화 방식을 정할 때 쓴다.
 
-### Next Steps
+### 06 마무리 2 — 할 일
 
-1. First Action(6d2 커밋).
-2. 실브라우저 확인: `npm run build` 뒤 CLI로 세션 시작 → 요소 추가 → `export --frame` → 브라우저에서 캔버스를 한 번 클릭 → `screenshot`의 그 그림 상태. 거짓 `modified`가 몇 번 나는지 6d1 결과 표에 적는다. 서버 코드 변경 확인 절차는 AGENTS.md Gotchas(`ARCHDRAW_BIN`).
-3. 체크박스 58·78, Status, `spec.md` 진행 줄 둘 → `/code-review` → 끝 보고 → 사용자 확인 → 커밋.
-4. 선택(손대지 않음): 위 리뷰 판단 사항, 6d1의 클라이언트·서버 `recordSave` 이름 겹침, "loose elements"를 용어 "frame 밖 요소"에 맞추기.
+1. `/tdd`: playwright 케이스 먼저 — 첫 적재를 실패시켜 멈춘 탭 하나에서 screenshot 요청 → 30초 전에 "export is paused"를 담은 실패 응답. 옛 서버로 빨강 확인.
+2. 서버: export 요청 때 보낸 탭 수를 기억하고, 오류 응답을 세어 모두 오류면 바로 거절한다.
+3. `npm test` 전체 + `npm run test:canvas` 전체.
+4. 위 인수 체크박스, ADR-0010 마지막 "남는 것"의 멈춘 탭 문장 정리. → ADR 기준(되돌리기 어려움·놀라움·트레이드오프)에 맞지 않고 기존 문장이 여전히 참이라 고치지 않음(2026-10-10).
+5. 결과 보고 → 사용자 확인 → 06 커밋(재방송 제거분과 함께).
 
+## 06 마무리 2 결과 (2026-10-10)
+
+**수정:** `src/server.ts`만. `broadcast()`가 실제로 보낸 탭 수를 돌려주고, `PendingExport`가 그 수(`sentTabs`)와 오류 수(`errors`)를 든다. 오류 응답이 보낸 탭 수에 이르고 이미지가 하나도 없으면 30초 타이머를 지우고 탭의 오류 문장으로 바로 거절한다. 이미지가 하나라도 오면 지금의 3초 수집·가장 큰 이미지 규칙 그대로. 프론트 변경 없음.
+
+| 인수 | 결과 | 근거 |
+|---|---|---|
+| 멈춘 탭 하나 → 바로 "export is paused" 오류 | 통과 | `tests/browser/scene-reload.spec.mjs` "a screenshot from a single paused tab fails at once with the tab error". 요청 timeout 5초. 수정 전 빨강(탭은 오류를 보냈고 서버가 버려 5초 초과) 확인, 수정 뒤 0.4초 |
+| 탭 둘 중 하나만 멈춤 → 정상 탭 이미지 | 통과 | "a screenshot with one paused tab and one loaded tab returns the loaded image". 옛 서버도 초록(정상 탭을 기다렸음). 빌드 산출물을 "첫 오류에 바로 거절"로 바꾸면 빨강임을 확인 |
+| playwright 전체(`npm run test:canvas`) | 통과 | 20개 |
+| `npm test` 전체, 타입 검사 둘 | 통과 | exit 0 |
+
+함께 정리: 마무리분의 서버 주석(재방송 제거 이유, ADR-0010에 있음)과 테스트 주석(기각된 "export가 화살표를 고친다" 가설)을 지웠다.

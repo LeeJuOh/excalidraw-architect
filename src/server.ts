@@ -105,18 +105,21 @@ const clients = new Set<WebSocket>();
 const agentSockets = new Set<WebSocket>();
 
 // Broadcast to all connected clients
-function broadcast(message: WebSocketMessage): void {
+function broadcast(message: WebSocketMessage): number {
   const data = JSON.stringify(message);
+  let sent = 0;
   clients.forEach(client => {
     try {
       if (client.readyState === WebSocket.OPEN) {
         client.send(data);
+        sent++;
       }
     } catch (err) {
       logger.warn('Failed to send to client, removing');
       clients.delete(client);
     }
   });
+  return sent;
 }
 
 function normalizeLineBreakMarkup(text: string): string {
@@ -1105,6 +1108,8 @@ interface PendingExport {
   timeout: ReturnType<typeof setTimeout>;
   collectionTimeout: ReturnType<typeof setTimeout> | null;
   bestResult: { format: string; data: string } | null;
+  sentTabs: number;
+  errors: number;
 }
 const pendingExports = new Map<string, PendingExport>();
 
@@ -1140,28 +1145,15 @@ app.post('/api/export/image', (req: Request, res: Response) => {
         }
       }, 30000);
 
-      pendingExports.set(requestId, { resolve, reject, timeout, collectionTimeout: null, bestResult: null });
+      pendingExports.set(requestId, { resolve, reject, timeout, collectionTimeout: null, bestResult: null, sentTabs: 0, errors: 0 });
     });
 
-    // Re-broadcast current elements so all connected clients (including stale ones)
-    // sync to the canonical server state before exporting
-    const filesObj: Record<string, ExcalidrawFile> = {};
-    files.forEach((f, id) => { filesObj[id] = f; });
-    broadcast({
-      type: 'initial_elements',
-      elements: Array.from(elements.values()),
-      ...(files.size > 0 ? { files: filesObj } : {})
-    } as InitialElementsMessage & { files?: Record<string, ExcalidrawFile> });
-
-    // Give browsers time to process the reload before requesting export
-    setTimeout(() => {
-      broadcast({
-        type: 'export_image_request',
-        requestId,
-        format,
-        background: background ?? true
-      });
-    }, 800);
+    pendingExports.get(requestId)!.sentTabs = broadcast({
+      type: 'export_image_request',
+      requestId,
+      format,
+      background: background ?? true
+    });
 
     exportPromise
       .then(result => {
@@ -1205,8 +1197,13 @@ app.post('/api/export/image/result', (req: Request, res: Response) => {
     }
 
     if (error) {
-      // Don't reject on error — another WebSocket client may still succeed.
       logger.warn(`Export error from one client (requestId=${requestId}): ${error}`);
+      pending.errors++;
+      if (pending.errors >= pending.sentTabs && !pending.bestResult) {
+        clearTimeout(pending.timeout);
+        pendingExports.delete(requestId);
+        pending.reject(new Error(error));
+      }
       return res.json({ success: true });
     }
 

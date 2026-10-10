@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { frameScene, mixedScene, pixelFile } from './fixtures.mjs';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -156,6 +157,32 @@ test('HTTP failure pauses sync and a successful retry recovers the scene', async
   await page.unroute('**/api/elements');
   await page.getByRole('button', { name: 'Retry loading' }).click();
   expectFrame(await sync(page, request));
+});
+
+async function pausedTab(page) {
+  await interceptSocket(page, { forwardInitial: false });
+  await page.route('**/api/elements', route => route.fulfill({ status: 503, json: { success: false } }));
+  await page.goto('/');
+  await expect(warning(page)).toBeVisible();
+}
+
+test('a screenshot from a single paused tab fails at once with the tab error', async ({ page, request }) => {
+  await seed(request, frameScene());
+  await pausedTab(page);
+  const shot = await request.post('/api/export/image', { data: { format: 'png' }, timeout: 5000 });
+  expect(shot.ok()).toBeFalsy();
+  expect((await shot.json()).error).toContain('export is paused');
+});
+
+test('a screenshot with one paused tab and one loaded tab returns the loaded image', async ({ page, request }) => {
+  await seed(request, frameScene());
+  await pausedTab(page);
+  const loaded = await page.context().newPage();
+  await loaded.goto('/');
+  await expect(syncButton(loaded)).toBeEnabled();
+  const shot = await request.post('/api/export/image', { data: { format: 'svg' } });
+  expect(shot.ok()).toBeTruthy();
+  expect((await shot.json()).data).toContain('Hello inside frame');
 });
 
 test('mixed native elements retain stacking order, bindings and shorthand labels', async ({ page, request }) => {
@@ -334,4 +361,38 @@ test('first load measures text after its font file arrives', async ({ page, requ
     return context.measureText(text).width;
   }, text);
   expect(Math.abs(stored.width - measured)).toBeLessThan(2);
+});
+
+test('repeated screenshots leave a bound arrow and its saved state exactly as they were', async ({ page, request }) => {
+  const added = await request.post('/api/elements/batch', { data: { elements: [
+    { id: 'fa', type: 'frame', name: 'Order flow', x: 0, y: 0, width: 600, height: 300 },
+    { id: 'a1', type: 'rectangle', x: 40, y: 40, width: 200, height: 60, frameId: 'fa', text: 'Order API' },
+    { id: 'ax', type: 'arrow', x: 240, y: 70, frameId: 'fa', startElementId: 'a1', endElementId: 'b1' },
+    { id: 'fb', type: 'frame', name: 'Order internals', x: 800, y: 0, width: 400, height: 300 },
+    { id: 'b1', type: 'rectangle', x: 840, y: 40, width: 200, height: 60, frameId: 'fb', text: 'Domain' },
+  ] } });
+  expect(added.ok()).toBeTruthy();
+  await page.goto('/');
+  const geometry = elements => {
+    const { x, y, width, height, points } = elements.find(e => e.id === 'ax');
+    return { x, y, width, height, points };
+  };
+  const before = geometry(await sync(page, request));
+  // Record "Order flow" as saved at a real file, the way export does after writing it.
+  const savedPath = join(mkdtempSync(join(tmpdir(), 'archdraw-shot-')), 'order-flow.excalidraw');
+  writeFileSync(savedPath, '{}');
+  const recorded = await request.post('/api/save-state', { data: { path: savedPath, frameIds: ['fa'] } });
+  expect(recorded.ok()).toBeTruthy();
+  const stateOf = async id => {
+    const { drawings } = await (await request.get('/api/save-state')).json();
+    return drawings.find(d => d.id === id).state;
+  };
+  expect(await stateOf('fa')).toBe('saved');
+  for (let i = 0; i < 3; i++) {
+    const shot = await request.post('/api/export/image', { data: { format: 'png' } });
+    expect(shot.ok()).toBeTruthy();
+    const after = geometry(await sync(page, request));
+    expect(await stateOf('fa')).toBe('saved');
+    expect(after).toEqual(before);
+  }
 });
