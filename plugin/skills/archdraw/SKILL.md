@@ -88,7 +88,7 @@ Before you act in a turn, look at the canvas with `get_canvas_screenshot`
 (`screenshot`). The user has been editing it too.
 
 - **What the user moved is correct.** Never touch the coordinates of an element
-  the user moved. Align only the elements you are drawing now. `describe_scene`
+  the user moved. Place only the elements you are drawing now. `describe_scene`
   (`describe`) rounds coordinates, so use it to find things, not to compare
   positions precisely.
 - **The canvas is never cleared.** A new diagram goes into a new frame beside
