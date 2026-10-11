@@ -1,0 +1,6 @@
+interface:
+  display_name: "archdraw-report"
+  short_description: "Post the current archdraw dogfooding session as a GitHub issue."
+
+policy:
+  allow_implicit_invocation: false

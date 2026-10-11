@@ -20,7 +20,7 @@
 
 **Blocked by:** None (can start immediately) — `describe_scene`과 `dogfooding` 라벨은 이미 있다.
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
 - [ ] archdraw로 그림을 그린 뒤 `/archdraw-report`를 부르면 발화와 그림 설명이 들어간 이슈가 `dogfooding` 라벨로 생기고 채팅에 URL이 나온다
 - [ ] Codex에서 `$archdraw-report`로 같은 결과가 나온다
@@ -30,10 +30,12 @@
 - [ ] 캔버스 서버가 없거나 `describe_scene`이 실패해도 이슈가 생기고, `나온 그림` 칸에 `(캔버스 없음)`이 있으며 원했던 것도 채워져 있다
 - [ ] `gh` 미설치·미인증·이슈 생성 실패면 실패로 끝내지 않고 완성된 제목·본문을 채팅에 내준다
 - [ ] `~/.claude/skills`와 `~/.agents/skills`가 없는 새 PC에서도 위 설치 명령 한 번으로 Claude·Codex 둘 다 스킬이 보인다
-- [ ] `npm pack --dry-run` 목록에 `tools/`가 없다(`package.json` `files`에 없으므로 그대로면 된다). `plugin/` 아래에도 이 스킬이 없다
+- [x] `npm pack --dry-run` 목록에 `tools/`가 없다(`package.json` `files`에 없으므로 그대로면 된다). `plugin/` 아래에도 이 스킬이 없다
 
 ## Comments
 
 **2026-10-12 — 검수와 그릴(사용자).** codex verify 1차 FAIL(P1: 캔버스가 없을 때 "원했던 것"을 묻는지 문장끼리 모순). 그릴에서 정한 것: 플러그인 배포에서 빼고 개인 스킬로(사용자 혼자 쓴다), 각 PC에 `curl` 설치 + Claude 심링크, 수동 호출만, `describe_scene`만 쓰고 실패하면 `(캔버스 없음)`, 캔버스가 없어도 원했던 것을 묻는다, 스킬·이슈 모두 한국어, 이름 빼기는 제목까지, `gh` 실패 전부 본문 붙여넣기 폴백. 01 의존은 지웠다. ADR·CONTEXT.md와 충돌 없음(ADR-0002는 배포 채널 밖이라 미적용).
 
 **2026-10-12 — 2차 검수(사용자).** codex verify 2차 FAIL(P1: 설치 명령이 `~/.claude/skills`를 만들지 않음, 발화 "그대로"와 "본문 한국어"가 영어 발화에서 충돌). 고친 것: 설치 명령에 `~/.claude/skills` 생성과 `&&` 연결, 발화는 원래 언어 그대로(사용자 결정 — 번역하지 않는다), 네트워크 실패 안내에 중복 확인 한 줄.
+
+**2026-10-12 — 08a 구현(에이전트).** `tools/archdraw-report/`에 `SKILL.md`(본문 20줄)·`agents/openai.yaml`·`README.md`(설치 명령)를 썼다. 확인한 것: `npm pack --dry-run`에 `tools/` 0건, `plugin/`에 없음, 임시 HOME에서 설치 명령(URL만 `file://`로 바꿈)이 두 경로와 심링크를 만들고 다시 실행해도 된다. 가짜 `gh`로 돌린 스킬 eval 3건은 with 92% / without 36%다. 묻기 분기, 이름 빼기(확신 없는 이름 질문 포함), `(캔버스 없음)`, 인증 실패 폴백이 통과했다. 네트워크 실패 안내 줄은 auto mode가 가짜 `gh` 호출을 막아 미시험. 남은 체크박스는 실제 Claude·Codex 세션과 실제 이슈 생성이 필요하다(08b).
