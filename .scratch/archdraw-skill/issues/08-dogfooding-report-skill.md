@@ -39,3 +39,52 @@
 **2026-10-12 — 2차 검수(사용자).** codex verify 2차 FAIL(P1: 설치 명령이 `~/.claude/skills`를 만들지 않음, 발화 "그대로"와 "본문 한국어"가 영어 발화에서 충돌). 고친 것: 설치 명령에 `~/.claude/skills` 생성과 `&&` 연결, 발화는 원래 언어 그대로(사용자 결정 — 번역하지 않는다), 네트워크 실패 안내에 중복 확인 한 줄.
 
 **2026-10-12 — 08a 구현(에이전트).** `tools/archdraw-report/`에 `SKILL.md`(본문 20줄)·`agents/openai.yaml`·`README.md`(설치 명령)를 썼다. 확인한 것: `npm pack --dry-run`에 `tools/` 0건, `plugin/`에 없음, 임시 HOME에서 설치 명령(URL만 `file://`로 바꿈)이 두 경로와 심링크를 만들고 다시 실행해도 된다. 가짜 `gh`로 돌린 스킬 eval 3건은 with 92% / without 36%다. 묻기 분기, 이름 빼기(확신 없는 이름 질문 포함), `(캔버스 없음)`, 인증 실패 폴백이 통과했다. 네트워크 실패 안내 줄은 auto mode가 가짜 `gh` 호출을 막아 미시험. 남은 체크박스는 실제 Claude·Codex 세션과 실제 이슈 생성이 필요하다(08b).
+
+---
+
+## 핸드오프 — 08b 실사용 확인 (2026-10-12)
+
+### Goal
+
+08의 남은 체크박스 8개를 닫는다. 실제 Claude·Codex 세션에서 `archdraw-report`를 불러 실제 이슈를 만들어 본다.
+
+### First Action
+
+사용자에게 push 승인을 받는다. 승인이 나면 `git push`. 설치 명령(`tools/archdraw-report/README.md`)은 `raw.githubusercontent.com/.../main/`에서 받으므로 push 전에는 404가 난다.
+
+### Context
+
+- 08을 08a(혼자 검증 가능)와 08b(실제 공개 이슈 생성과 호스트 세션이 필요)로 나눴다. 08a는 끝났다.
+- 08b는 실제 공개 이슈를 만든다. 시험 이슈를 몇 건 올릴지, 끝나고 닫을지는 사용자가 정한다(미결).
+
+### Current Progress (git 기준)
+
+- `a6183a8` — `tools/archdraw-report/SKILL.md`(본문 20줄), `tools/archdraw-report/agents/openai.yaml`, `tools/archdraw-report/README.md`(설치 명령), 이 파일(npm pack 체크박스, Status, Comments).
+- push하지 않았다.
+- 이 PC에는 아직 설치하지 않았다(`~/.agents/skills`, `~/.claude/skills`에 `archdraw-report` 없음).
+
+### Decisions Made
+
+- 설치 안내 파일 이름은 `README.md`다(티켓은 이름을 정하지 않았다).
+- 본문은 `gh issue create ... --body-file -`에 표준 입력으로 넘긴다. 임시 파일 위치를 정하지 않으려는 것이다.
+- `allowed-tools`를 두지 않았다. 그래서 `gh` 호출마다 권한 확인이 뜬다. 공개 이슈를 올리기 전 마지막 확인으로 둔다.
+- eval 파일은 레포에 넣지 않았다. 위치: `~/.claude/plugins/data/skill-creator-pro-claude-code-zero/archdraw-report-workspace/`(채점 `grade.py`, 결과 `iteration-1/benchmark.md`).
+
+### What Worked
+
+- 가짜 `gh`(인자와 표준 입력을 로그에 남기고 성공·인증 실패·네트워크 실패를 흉내 낸다)와 대화 기록 파일로 서브에이전트 eval을 돌렸다. 스킬 있음 92%, 없음 36%. 묻기 분기, 이름 빼기, `(캔버스 없음)`, 인증 실패 폴백을 확인했다.
+- 설치 명령은 URL을 `file://`로 바꿔 임시 HOME에서 돌려 확인했다. 다시 실행해도 된다.
+
+### What Didn't Work
+
+- ⚠️ auto mode가 서브에이전트의 가짜 `gh` 호출을 "외부 쓰기"로 막는 일이 있었다(3건 중 2건). 그래서 네트워크 실패 안내 한 줄은 미시험이다. 권한 설정은 고치지 않았다.
+
+### Next Steps
+
+1. 이 PC에 설치: `tools/archdraw-report/README.md`의 명령을 그대로 실행한다. `ls -la ~/.claude/skills/archdraw-report`로 심링크를 본다.
+2. 다른 폴더에서 Claude Code를 켜고 archdraw로 그림을 그린 뒤 `/archdraw-report`를 부른다. 이슈 URL, 네 칸, `dogfooding` 라벨을 본다.
+3. 같은 일을 Codex에서 `$archdraw-report`로 한다.
+4. 스킬을 부르지 않고 "이거 이상해"라고만 말해 스킬이 돌지 않는지 본다(Claude·Codex 둘 다).
+5. archdraw MCP 없이 부른다. `(캔버스 없음)`과 원했던 것 질문이 나오는지 본다.
+6. `gh` 실패: `GH_TOKEN=invalid`로 인증 실패를 흉내 낸다(미확인 방법). 네트워크 실패는 오프라인에서 부르고 중복 확인 한 줄이 나오는지 본다.
+7. 체크박스를 갱신하고, 다 닫히면 Status를 바꾼다. 시험 이슈 처리는 사용자에게 묻는다.
