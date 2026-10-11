@@ -13,12 +13,13 @@
 1. 그릴 때 `코드` 근거가 근거 없음이면 **거부**한다. 점선 강등, "서버 강등" 표시, 선을 따라다니는 근거 없음 텍스트는 없다.
 2. 검사는 에이전트가 근거를 적거나 고치는 쓰기에서만 한다(요청에 `evidence`가 있을 때). 위치·색만 바꾸는 쓰기와 브라우저 sync는 검사하지 않는다.
 3. 한 묶음(batch)에서 하나라도 틀리면 전부 거부하고, 틀린 것을 모두 나열한다. frame 검사(05)와 같은 방식이다.
-4. `코드` 근거 = `path` + `quote`(둘 다 필수). `quote`는 파일 안에서 한 곳이어야 한다. 공백(탭·공백·줄바꿈) 차이는 무시한다. 줄 번호와 커밋 SHA는 없다 — 지금 파일이 기준이다.
+4. `코드` 근거 = `path` + `quote`(둘 다 필수). `quote`는 파일 안에서 한 곳이어야 한다. 공백(탭·공백·줄바꿈)은 양쪽에서 모두 지우고 비교한다 — 여러 줄 코드를 한 줄로 붙여 적어도 찾는다. 줄 번호와 커밋 SHA는 없다 — 지금 파일이 기준이다.
 5. `path`는 프로젝트 루트 기준 상대 경로다. 루트 밖(`..`, 절대 경로)과 `.git`은 거부한다(archify 규칙).
 6. 서버는 선·박스의 모양을 바꾸지 않는다. 추론 점선에 유효한 근거가 붙어도 점선 그대로다.
 7. 복원·import는 거부하지 않는다. 받아들이고 근거 없음 요소의 목록을 돌려준다. 그림은 바꾸지 않는다.
 8. 복원 뒤 목록을 받은 에이전트: 같은 코드를 다른 곳에서 찾으면 근거를 고치고 사용자에게 알린다. 찾지 못하면 그 관계가 코드에서 없어졌는지 사용자에게 묻는다(스킬 규칙).
 9. 거부 에러의 고치는 길은 두 개만 적는다: 맞는 `quote`로 고치기 / 확인하지 못하면 `코드` 근거를 빼고 추론 점선으로 그리기. `설계`로 바꾸라고는 적지 않는다.
+10. 복원·import·복제(`copy: true`인 쓰기)는 모두 근거 없음 목록을 돌려준다(2026-10-11 사용자 결정). 셋 다 근거를 적은 때와 지금 사이에 코드가 바뀌었을 수 있다. 에이전트는 셋 다 결정 8대로 한다.
 
 남는 위험 2개(관계없는 글자를 베껴 통과, 복원 뒤 에이전트가 목록을 알리지 않음)는 02에서 관찰한다.
 
@@ -33,7 +34,7 @@
 - [x] 파일 안에 한 곳 있는 `quote`로 `코드` 태그 화살표를 만들면 그린 그대로 생긴다
 - [x] 파일이 없거나 `quote`가 파일에 없으면 거부되고 요소가 생기지 않는다. 에러에는 요소, 경로, `quote`, 이유, 그리고 고치는 길 두 개(맞는 `quote` / `코드` 근거를 빼고 추론 점선)가 있다. `설계` 안내는 없다
 - [x] `quote`가 파일에 여러 번 나오면 거부되고, 에러에 나온 횟수와 "한 곳으로 좁혀라"가 있다. 바로 옆 글자를 붙여 한 곳으로 좁히면 통과한다
-- [x] 탭·공백·줄바꿈만 다른 `quote`도 찾는다. 여러 줄 `quote`도 찾는다
+- [x] 탭·공백·줄바꿈만 다른 `quote`도 찾는다. 줄바꿈 자리에 공백 없이 한 줄로 붙인 `quote`도 찾는다. 여러 줄 `quote`도 찾는다
 - [x] `코드` 태그에 `path`나 `quote`가 없거나, 태그가 3종 밖이거나, 값의 타입이 틀리면 거부된다
 - [x] 절대 경로, `..`, `.git`을 가리키는 `path`는 거부된다. 프로젝트 루트 밖을 가리키는 심볼릭 링크도 거부된다
 - [x] batch에서 하나라도 틀리면 아무것도 생기지 않고, 틀린 것이 모두 나열된다
@@ -48,9 +49,9 @@
 - [x] 03 슬라이스 B의 근거 인수가 거부 기준으로 바뀌어 있다
 - [x] 기존 `npm test` 통과
 
-## 슬라이스 B — 복원·import 때 근거 없음 목록
+## 슬라이스 B — 복원·import·복제 때 근거 없음 목록
 
-**What to build:** 저장한 뒤 코드가 바뀌어 근거 없음이 된 요소가 있어도 `snapshot restore`·`import`는 된다. 결과에 근거 없음 요소의 목록이 나온다. 스킬은 그 목록을 받았을 때의 행동(결정 8)을 안다.
+**What to build:** 저장한 뒤 코드가 바뀌어 근거 없음이 된 요소가 있어도 `snapshot restore`·`import`·복제는 된다. 결과에 근거 없음 요소의 목록이 나온다. 스킬은 그 목록을 받았을 때의 행동(결정 8)을 안다.
 
 **Blocked by:** 슬라이스 A
 
@@ -58,6 +59,7 @@
 
 - [ ] 근거 코드를 지운 뒤 `snapshot restore`하면 복원되고, 그림 모양은 그대로이며, 결과에 근거 없음 요소의 목록(요소, 경로, `quote`, 이유)이 있다. 근거가 맞는 요소는 목록에 없다
 - [ ] `import`도 같다. 목록의 요소 ID는 import가 새로 발급한 ID다
+- [ ] 복제도 같다(결정 10). 목록의 요소 ID는 복사본의 ID다
 - [ ] 목록은 결과의 앞부분에 있어 다른 결과에 묻히지 않는다
 - [ ] MCP와 CLI가 같은 결과를 낸다
 - [ ] 스킬 글에 결정 8이 있다: 같은 코드를 찾으면 고치고 알림, 못 찾으면 사용자에게 물음
@@ -95,7 +97,7 @@
 임의로 정한 것(슬라이스 B·C도 이것을 따른다):
 
 1. 복원·import·복제는 batch 본문의 `copy: true`로 구분한다(용어 사전이 import를 복원이라 부르지 않아 `restore`가 아니다). 서버는 이때 검사를 통째로 건너뛴다(모양이 틀린 근거도 받는다). 복제는 요청에 `evidence`가 없으므로 결정 2대로 검사하지 않는다. 슬라이스 B는 `storeCreatedElements()`의 `copy` 갈래에서 `findEvidenceProblems()`로 목록을 만든다.
-2. 공백 규칙: 공백 묶음을 한 칸으로 줄이고 앞뒤를 자른 뒤 비교한다. `f(a,b)`와 `f(a, b)`는 다르다.
+2. 공백 규칙: 양쪽에서 공백을 모두 지운 뒤 비교한다(결정 4, 2026-10-11 사용자 결정). `f(a,b)`와 `f(a, b)`는 같다. `int x`와 `intx`도 같다 — 지어낸 코드는 여전히 거부되므로 받아들였다.
 3. 모양 검사는 서버의 `findEvidenceProblems()` 한 곳이다. MCP zod는 `z.unknown()`, MCP 툴 스키마는 안내용이다.
 4. 태그 값은 영어 `code`/`design`/`log`. 한국어 태그는 거부된다.
 5. `design`·`log`의 `path`·`quote`는 있으면 문자열이어야 한다. 모르는 키는 검사하지 않는다.
@@ -107,37 +109,45 @@
 11. 남은 한계: CLI `apply`의 update는 하나씩 보내므로 원자적이지 않다(기존 동작, 05 frame 검사와 같다). 같은 batch에 frame 오류가 있으면 frame 에러가 먼저 나와 근거 문제는 다음 시도에 나온다. `copy: true`는 맨 REST로도 보낼 수 있다(MCP·CLI는 복원·import·복제에서만 보낸다).
 12. 스킬 글은 skill-creator-pro의 eval 루프를 돌리지 않았다. 고치기 전 스냅샷: `~/.claude/plugins/data/skill-creator-pro-claude-code-zero/archdraw-07-evidence/skill-snapshot/`. 스킬 동작은 03 슬라이스 B와 02에서 확인한다.
 
-### 핸드오프 — 슬라이스 A 커밋 뒤, 결정 4 미결 (2026-10-11)
+### 핸드오프 — 결정 4·10 반영 뒤, 슬라이스 B 착수 전 (2026-10-11)
 
-**Goal:** 결정 4(공백 규칙)를 정해 슬라이스 A를 마무리한다. 그다음 슬라이스 B·C를 슬라이스마다 커밋 한 번씩 한다. 진행 규칙(push 없음, 어긋나면 멈추고 보고, 스킬 글은 skill-creator-pro, 끝 보고 형식)은 사용자의 `/implement` 지시를 따른다. 보고는 짧게 한다.
+**Goal:** 07을 마친다. 슬라이스 B와 C를 슬라이스마다 커밋 한 번씩 한다. 그다음 `/code-review`로 검토한다. 진행 규칙: 어긋나면 멈추고 보고한다. 스킬 글은 skill-creator-pro로 고친다. push는 지시가 있을 때만 한다.
 
-**First Action:** 사용자에게 공백 규칙(결정 4)의 답을 받는다. 답에 따라 다음을 한다.
-- **A(지금대로):** 위 "결정" 4번 문구를 "공백의 양·종류만 무시한다(있고 없음은 구분)"로 고친다. 슬라이스 A의 인수 "탭·공백·줄바꿈만 다른…"도 같이 고친다.
-- **B(공백을 모두 지움):** `src/core/evidence.ts`의 `collapseWhitespace()`를 공백 제거로 바꾼다. 그 전에 `scripts/check-evidence.mjs`의 `whitespaceDifferencesAndLineBreaksMatch()`에 red 케이스를 넣는다. 파일 `payment.charge(⏎  order.total,⏎)`에 quote `payment.charge(order.total,)`가 통과해야 한다. 위 Comments 2번도 고친다.
-
-A든 B든 그다음 `npm test`를 돌리고 따로 커밋한다(영어 1~2문장, 트레일러 없음).
+**First Action:** `/mattpocock-skills:tdd`로 슬라이스 B를 시작한다. 먼저 `scripts/check-evidence.mjs`의 `restoreAndImportAreNotRefused()`에 red 단언을 넣는다: 근거 코드를 지운 뒤 restore·import·duplicate를 하면 결과 앞부분에 근거 없음 목록(요소 ID, 경로, `quote`, 이유)이 있다. 근거가 맞는 요소는 목록에 없다. MCP와 CLI 모두 확인한다.
 
 **Context:**
-- 슬라이스 A의 코드·글·테스트는 다 됐고 커밋했다(사용자 지시). 남은 것은 이 결정 하나뿐이다.
-- 문제: 지금 코드는 공백 묶음을 한 칸으로 줄여서 비교한다. 그래서 `f(a,b)`와 `f(a, b)`가 다르다. 여러 줄 코드를 한 줄로 붙여 적은 quote가 거부된다. `dist/core/evidence.js`로 직접 확인했다.
-- 사용자는 장황한 보고를 싫어한다. 결정 질문은 현상 한 줄 + 선택지 둘로 한다.
+- 이 세션에서 그릴로 두 결정을 정했다(위 "결정" 4번 개정, 10번 추가). 사용자는 두 답 모두 직접 골랐다.
+- 슬라이스 B의 목록 만들기는 서버 한 곳에서 한다. `src/server.ts`의 `storeCreatedElements()`가 `copy` 갈래에서 이미 `assertEvidence()`를 건너뛴다. 이 갈래에서 `findEvidenceProblems()`(`src/core/evidence.ts`)로 목록을 만들어 batch 응답에 넣는다. 그다음 응답을 받는 세 곳이 목록을 결과 앞부분에 보인다:
+  - 복원: MCP `src/core/mcp-dispatch.ts`의 `restore_snapshot` 갈래, CLI `src/cli/commands/snapshot.ts`의 `restore`
+  - import: `src/core/scene-io.ts`의 `importScene()`(MCP `import_scene` 갈래와 CLI가 함께 쓴다 — CLI 경로는 확인하지 않았다)
+  - 복제: `src/core/geometry.ts`의 `duplicateElements()`(MCP `duplicate_elements`, CLI `arrange duplicate`)
+- 지금 `batchCreateElementsOnCanvas()`(`src/core/canvas-client.ts`)는 `elements`만 돌려준다. 목록을 위로 넘기려면 이 반환 모양을 바꿔야 한다.
+- 스킬 글: 결정 8(같은 코드를 찾으면 고치고 알림, 못 찾으면 사용자에게 물음)을 `plugin/skills/archdraw/references/canvas-ops.md`의 Evidence 항목 근처에 넣는 것을 생각했다(미정).
 
-**Current Progress** (`repo_facts.sh`로 확인):
-- 브랜치 `main`. 슬라이스 A는 "Implement issue 07 slice A" 커밋 하나다(`git log --oneline -1`). 작업 트리는 깨끗하다. push 하지 않았다.
-- 이 파일의 슬라이스 A 체크박스와 `Status: resolved`, `spec.md` "지금 할 일" 9번과 표의 07 행은 "슬라이스 A 완료"로 되어 있다.
-- 마지막 실행 결과: `npm run type-check` 통과, 전체 `npm test` 통과(`test:evidence` 포함, 16 케이스).
-- `/code-review`(규약·스펙 두 축)를 돌렸고, 지적은 고쳤다. 고친 내용과 남은 한계는 위 "슬라이스 A 결과"의 1·10·11번에 있다.
+**Current Progress** (repo_facts.sh와 `npm test`로 확인):
+- 브랜치 `main`. 슬라이스 A는 `f0354e7` 커밋이다.
+- 결정 4(공백 규칙)는 이 핸드오프와 같은 커밋에 들어간다. `src/core/evidence.ts`의 `collapseWhitespace()`를 `stripWhitespace()`로 바꿨다(공백을 모두 지움). `scripts/check-evidence.mjs`의 `whitespaceDifferencesAndLineBreaksMatch()`에 `joined` 케이스를 넣었다. 고치기 전 실패, 고친 뒤 통과를 확인했다.
+- 결정 10은 문서에만 있다(위 "결정" 10번, 슬라이스 B 인수, `spec.md` 7-3). 코드는 아직 없다.
+- 마지막 실행: `npm run type-check` 통과, 전체 `npm test` 통과(`test:evidence` 16 케이스).
+- 슬라이스 B·C: 시작하지 않았다.
 
-**Decisions Made:** 위 "슬라이스 A 결과"의 1~12번. 다시 토론하지 않는다. 끝 보고의 "임의로 정한 것"에 그대로 옮긴다. 리뷰 뒤 바뀐 것: 검사를 건너뛰는 플래그가 `restore`에서 `copy`로 바뀌었다. 복제(`duplicate_elements`, CLI `arrange duplicate`)도 이 플래그를 쓴다. ADR-0012 Consequences에서 낡은 한 줄을 지웠다(사용자에게 알렸다).
+**Decisions Made:**
+- 결정 4 = 공백을 모두 지우고 비교한다. 이유: 검사의 목적은 지어낸 코드를 막는 것이다. 지어낸 코드는 공백을 지워도 거부된다. `int x`와 `intx`를 같게 보는 위험은 받아들였다.
+- 결정 10 = 복제도 목록을 돌려준다. 이유: `copy: true`인 쓰기를 모두 같은 규칙으로 하면 규칙과 코드가 단순하다. 셋 다 근거를 적은 때와 지금 사이에 코드가 바뀌었을 수 있다.
+- 서버는 찾기만 하고, 다른 곳에서 코드를 찾는 일은 에이전트가 한다(결정 8). 사용자가 이것을 확인했다.
+- "슬라이스 A 결과"의 1~12번은 다시 토론하지 않는다(2번은 결정 4로 바뀌었다).
 
 **What Worked:**
-- 거부 테스트가 정말 실패할 수 있는지 확인했다. 방법: `dist/server.js`의 `assertEvidence` 줄을 잠시 지우고 돌린 뒤 되돌렸다.
-- 리뷰 서브에이전트가 맥에서 `.GIT` 경로로 검사를 피하는 버그를 찾았다.
+- 질문은 한 번에 하나씩 했다. 실제 파일 내용으로 단계 예시를 보이자 사용자가 빨리 판단했다.
+- red 케이스를 먼저 넣고 실패를 본 뒤 고쳤다.
 
 **What Didn't Work:**
-- ⚠️ 보고가 길어 사용자가 "장황하게 말하지 마"라고 했다. 결과·결정만 몇 줄로 쓴다.
+- ⚠️ 질문 두 개를 한 번에 냈더니 사용자가 "질문 한 번에 하나"라고 했다.
+- ⚠️ 설명이 추상적이면 사용자가 이해하지 못했다("아 먼 소리야", "복제? 임포트? 예시 들어"). 처음부터 구체적 예시(파일 내용, 사용자 동작)로 말한다. 정의하지 않은 용어("근거 없음 목록")를 바로 쓰지 않는다.
+- ⚠️ 한 번 영어로 답해서 사용자가 "한글로 말해"라고 했다. 항상 한국어로 답한다.
 
 **Next Steps:**
-1. 슬라이스 B: 복원·import 결과의 앞부분에 근거 없음 목록을 넣는다. `src/server.ts`의 `storeCreatedElements()`에서 `copy` 갈래일 때 `findEvidenceProblems()`로 목록을 만든다. 복제도 `copy`를 쓰지만, 스펙은 복원·import만 목록을 요구한다. 복제를 목록에 넣을지는 사용자에게 묻는다. 스킬 글에 결정 8을 넣는다(skill-creator-pro).
-2. 슬라이스 C: 브라우저 왕복에서 `evidence`가 보존되는지 Playwright(`tests/browser/`, `npm run test:canvas`)로 확인한다. 스크린샷에 태그 글자가 없는지도 여기서 브라우저로 확인한다.
-3. 07을 마치면 순서 표대로 10 → 08 → 03 슬라이스 B → 02로 간다.
+1. 슬라이스 B 구현 → 스킬 글(결정 8) → `npm test` → 커밋.
+2. 슬라이스 C: Playwright(`tests/browser/`, `npm run test:canvas`)로 브라우저 왕복에서 `evidence`가 남는지 확인한다. 스크린샷에 태그 글자가 없는지도 브라우저로 확인한다. → 커밋.
+3. 07 전체를 `/code-review`로 검토한다. `Status`와 `spec.md`의 07 행을 고친다.
+4. 순서 표대로 10 → 08 → 03 슬라이스 B → 02.

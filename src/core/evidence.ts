@@ -26,9 +26,10 @@ interface EvidenceCarrier {
   evidence?: unknown;
 }
 
-// Tabs, spaces and line breaks may differ between the quote and the file.
-function collapseWhitespace(text: string): string {
-  return text.replace(/\s+/g, ' ').trim();
+// Whitespace is dropped on both sides, so a multi-line call quoted on one line
+// with no space at the break still matches.
+function stripWhitespace(text: string): string {
+  return text.replace(/\s+/g, '');
 }
 
 function countOccurrences(haystack: string, needle: string): number {
@@ -59,7 +60,7 @@ function shapeProblem(evidence: unknown): string | null {
   if (quote !== undefined && typeof quote !== 'string') return 'quote must be a string';
   if (tag === 'code') {
     if (typeof file !== 'string' || file.trim() === '') return 'code evidence needs a path';
-    if (typeof quote !== 'string' || collapseWhitespace(quote) === '') return 'code evidence needs a quote';
+    if (typeof quote !== 'string' || stripWhitespace(quote) === '') return 'code evidence needs a quote';
   }
   return null;
 }
@@ -88,7 +89,7 @@ function codeProblem(projectRoot: string, file: string, quote: string): string |
   } catch {
     return 'the file cannot be read';
   }
-  const count = countOccurrences(collapseWhitespace(text), collapseWhitespace(quote));
+  const count = countOccurrences(stripWhitespace(text), stripWhitespace(quote));
   if (count === 0) return 'the quote is not in the file';
   if (count > 1) {
     return `the quote is in the file ${count} times; narrow it to one place by adding the text right next to it`;

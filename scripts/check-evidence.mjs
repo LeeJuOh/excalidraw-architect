@@ -193,7 +193,9 @@ async function whitespaceDifferencesAndLineBreaksMatch() {
     ...twoBoxes(),
     // The file has a tab, a line break and four spaces inside this call.
     arrow('spaced', code('const receipt = await payment.charge(order.total, order.card);')),
-    arrow('multi', code('repository.save(order);\n    repository.save(receipt);'), { y: 50 })
+    arrow('multi', code('repository.save(order);\n    repository.save(receipt);'), { y: 50 }),
+    // Agents often join a multi-line call into one line with no space at the break.
+    arrow('joined', code('payment.charge(order.total,order.card);'), { y: 100 })
   ]);
   assert.equal(res.status, 200, JSON.stringify(res.json));
 }
@@ -465,7 +467,7 @@ const cases = [
   ['a code arrow whose quote is in the file once is created as drawn', codeArrowWithOneMatchIsCreatedAsDrawn],
   ['a quote not in the file is refused with both fixes, nothing created', missingQuoteRejectsAndCreatesNothing],
   ['a quote found twice is refused with the count until narrowed', repeatedQuoteRejectsUntilNarrowed],
-  ['tabs, spaces and line breaks may differ; multi-line quotes match', whitespaceDifferencesAndLineBreaksMatch],
+  ['whitespace is ignored, even where one side has none; multi-line quotes match', whitespaceDifferencesAndLineBreaksMatch],
   ['missing path or quote, unknown tag and wrong types are refused', badShapesAreRefused],
   ['absolute, .., .git and links out of the project are refused', pathsOutsideTheProjectAreRefused],
   ['one bad element refuses the whole batch and every bad one is listed', oneBadInABatchRefusesAllAndListsEveryBadOne],
