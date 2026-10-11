@@ -395,6 +395,61 @@ test('code evidence survives a browser drag and sync', async ({ page, request })
   expect(arrow.evidence).toEqual(evidence);
 });
 
+test('a browser move syncs even after the evidence code is gone', async ({ page, request }) => {
+  const { projectRoot, evidence } = await codeEvidenceArrow(request);
+  writeFileSync(join(projectRoot, 'orders.ts'), 'export {};\n');
+  await page.goto('/');
+  await dragArrow(page);
+  const arrow = (await sync(page, request)).find(e => e.id === 'ev');
+  expect(arrow.y).toBeGreaterThan(300);
+  expect(arrow.evidence).toEqual(evidence);
+});
+
+test('code evidence survives a browser reload', async ({ page, request }) => {
+  const { evidence } = await codeEvidenceArrow(request);
+  await page.goto('/');
+  await sync(page, request);
+  await page.reload();
+  expect((await sync(page, request)).find(e => e.id === 'ev').evidence).toEqual(evidence);
+});
+
+test('sync ignores the evidence a browser sends', async ({ request }) => {
+  const { evidence } = await codeEvidenceArrow(request);
+  const [arrow] = await serverScene(request);
+  const forged = { tag: 'design' };
+  await seed(request, [{ ...arrow, evidence: forged }, { ...arrow, id: 'copy', evidence: forged }]);
+  const scene = await serverScene(request);
+  expect(scene.find(e => e.id === 'ev').evidence).toEqual(evidence);
+  expect(scene.find(e => e.id === 'copy')).not.toHaveProperty('evidence');
+});
+
+test('a browser copy of an evidence arrow carries no evidence', async ({ page, request }) => {
+  const { evidence } = await codeEvidenceArrow(request);
+  await page.goto('/');
+  await dragArrow(page);
+  await page.keyboard.press('ControlOrMeta+d');
+  const scene = await sync(page, request);
+  const arrows = scene.filter(e => e.type === 'arrow');
+  expect(arrows).toHaveLength(2);
+  expect(arrows.find(e => e.id === 'ev').evidence).toEqual(evidence);
+  expect(arrows.find(e => e.id !== 'ev')).not.toHaveProperty('evidence');
+});
+
+test('a canvas screenshot shows no evidence text', async ({ page, request }) => {
+  const { evidence } = await codeEvidenceArrow(request);
+  expect((await request.post('/api/elements', {
+    data: { id: 'caption', type: 'text', x: 300, y: 200, text: 'Order flow' },
+  })).ok()).toBeTruthy();
+  await page.goto('/');
+  await expect(syncButton(page)).toBeEnabled();
+  const shot = await request.post('/api/export/image', { data: { format: 'svg' } });
+  expect(shot.ok()).toBeTruthy();
+  const svg = (await shot.json()).data;
+  expect(svg).toContain('Order flow');
+  expect(svg).not.toContain(evidence.path);
+  expect(svg).not.toContain(evidence.quote);
+});
+
 test('repeated screenshots leave a bound arrow and its saved state exactly as they were', async ({ page, request }) => {
   const added = await request.post('/api/elements/batch', { data: { elements: [
     { id: 'fa', type: 'frame', name: 'Order flow', x: 0, y: 0, width: 600, height: 300 },

@@ -70,7 +70,7 @@
 
 **Blocked by:** 슬라이스 A
 
-**Status:** ready-for-agent
+**Status:** resolved (2026-10-12)
 
 **결정 (2026-10-12 그릴, [ADR-0005](../../../docs/adr/0005-server-checks-evidence-and-demotes.md) Consequences)**
 
@@ -78,12 +78,12 @@
 - 고치는 곳은 서버 sync다. 프론트는 고치지 않는다. 프론트에서 다시 붙이면 브라우저 복제본이 원본의 근거를 검사 없이 달고 나가서 기각했다. `customData`로 옮기기는 서버·`describe`·스냅샷 모양이 모두 바뀌어 기각했다.
 - 남은 한계(막지 않는다): 브라우저에서 지우고 sync한 뒤 실행 취소로 살린 요소는 근거를 잃는다. 지운 요소의 근거를 기억하면 에이전트가 같은 id로 새 요소를 만들 때 옛 근거가 붙는다. 결과는 "근거 없음"이지 "틀린 근거"가 아니다.
 
-- [ ] 브라우저에서 `코드` 태그 화살표를 끌어 옮긴 뒤 `describe`에 `evidence`가 그대로 있다
-- [ ] 근거 코드를 지운 상태에서 브라우저로 화살표를 옮겨도 sync가 성공한다(검사하지 않음)
-- [ ] 브라우저 탭을 재로드한 뒤에도 `describe`에 `evidence`가 남아 있다
-- [ ] 브라우저에서 복제한 화살표에는 `evidence`가 없다. 원본에는 그대로 있다
-- [ ] 캔버스 스크린샷에 근거 태그 글자가 없다(슬라이스 A에서 미룬 브라우저 확인)
-- [ ] 기존 `npm test`와 `npm run test:canvas` 통과
+- [x] 브라우저에서 `코드` 태그 화살표를 끌어 옮긴 뒤 `describe`에 `evidence`가 그대로 있다
+- [x] 근거 코드를 지운 상태에서 브라우저로 화살표를 옮겨도 sync가 성공한다(검사하지 않음)
+- [x] 브라우저 탭을 재로드한 뒤에도 `describe`에 `evidence`가 남아 있다
+- [x] 브라우저에서 복제한 화살표에는 `evidence`가 없다. 원본에는 그대로 있다
+- [x] 캔버스 스크린샷에 근거 태그 글자가 없다(슬라이스 A에서 미룬 브라우저 확인)
+- [x] 기존 `npm test`와 `npm run test:canvas` 통과
 
 ## 착수 전 검수 결과 처리 (2026-10-11)
 
@@ -170,3 +170,16 @@
 1. 슬라이스 C 구현 → 끝 보고 → 사용자 확인 → 커밋.
 2. 07 전체를 `/code-review`로 검토한다. 07 `Status`와 `spec.md`의 07 행을 고친다.
 3. 순서 표대로 10 → 08 → 03 슬라이스 B → 02.
+
+### 슬라이스 C 결과 (2026-10-12)
+
+확인: `tests/browser/scene-reload.spec.mjs`에 브라우저 케이스 6개(끌어 옮기기, 근거 코드를 지운 뒤 옮기기, 재로드, sync에 직접 보낸 `evidence` 무시, UI 복제(`Ctrl/Cmd+D`), SVG 스크린샷). 서버의 다시 붙이는 줄을 빼면 앞의 5개가 실패하는 것을 확인했다. `npm run test:canvas` 26개, `npm test` 통과.
+
+임의로 정한 것:
+
+1. 서버는 sync 직전 장면에서 `evidence` 칸이 있는 요소만 id별로 기억한다. `evidence: null`이 저장된 요소는 `null` 그대로 남는다.
+2. "sync는 브라우저가 보낸 `evidence`를 무시한다"는 UI로 Red를 볼 수 없어(브라우저가 이미 버림) `POST /api/elements/sync`에 직접 보내 확인했다. 같은 id에 다른 근거를 보내도 이전 근거가 남고, 새 id에 보낸 근거는 저장되지 않는다.
+3. 스크린샷 확인은 `POST /api/export/image`의 SVG로 했다. 같은 장면의 text 글자(`Order flow`)가 SVG에 있는 것을 대조로 두고, 근거의 `path`·`quote`가 없는 것을 본다. PNG 픽셀은 보지 않았다.
+4. 테스트 헬퍼 `seed`도 sync를 쓰므로, 이제 `seed`로는 근거를 심을 수 없다. 근거가 필요한 브라우저 케이스는 `codeEvidenceArrow()`(batch)로 만든다.
+
+5. 인수 기준의 "`describe`에 남아 있다"는 `GET /api/elements`의 `evidence`로 확인했다. `describe`는 같은 저장소를 읽고, 표시 모양은 슬라이스 A에서 확인했다.

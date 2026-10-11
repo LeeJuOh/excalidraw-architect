@@ -1010,6 +1010,10 @@ app.post('/api/elements/sync', (req: Request, res: Response) => {
 
     // Record element count before sync
     const beforeCount = elements.size;
+    const evidenceById = new Map<string, ServerElement['evidence']>();
+    for (const [id, element] of elements) {
+      if (element.evidence !== undefined) evidenceById.set(id, element.evidence);
+    }
 
     // 1. Clear existing memory storage
     elements.clear();
@@ -1025,14 +1029,16 @@ app.post('/api/elements/sync', (req: Request, res: Response) => {
         const elementId = element.id || generateId();
 
         // Add server metadata
+        const { evidence: _browserEvidence, ...browserElement } = element;
         const processedElement: ServerElement = {
-          ...element,
+          ...browserElement,
           id: elementId,
           syncedAt: new Date().toISOString(),
           source: 'frontend_sync',
           syncTimestamp: timestamp,
           version: 1
         };
+        if (evidenceById.has(elementId)) processedElement.evidence = evidenceById.get(elementId);
 
         // Store to memory
         elements.set(elementId, processedElement);
