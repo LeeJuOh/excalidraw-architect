@@ -79,8 +79,6 @@ export interface SyncResponse {
   staleEvidence?: EvidenceProblem[];
 }
 
-// `staleEvidence` is filled only for a copy: the elements whose code evidence
-// is no longer found.
 export interface CreatedBatch {
   elements: ServerElement[];
   staleEvidence: EvidenceProblem[];
@@ -188,9 +186,7 @@ export async function deleteElementOnCanvas(elementId: string): Promise<any> {
 }
 
 // Helper to sync batch creation to canvas (same failure semantics as
-// createElementOnCanvas: disabled = echo, failed = null). `copy` places elements
-// that already existed (restore, import, duplicate): the server keeps their
-// evidence instead of checking it.
+// createElementOnCanvas: disabled = echo, failed = null)
 export async function batchCreateElementsOnCanvas(
   elementsData: ServerElement[],
   options: { copy?: boolean } = {}

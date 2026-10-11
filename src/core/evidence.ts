@@ -1,8 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 
-// Evidence tags record where a line or value came from (ADR-0005). Only `code`
-// is checked: its quote must appear exactly once in the file, today.
 export const EVIDENCE_TAGS = ['code', 'design', 'log'] as const;
 export type EvidenceTag = typeof EVIDENCE_TAGS[number];
 
@@ -118,8 +116,6 @@ function describeProblem(problem: EvidenceProblem): string {
   return `- ${parts.join(', ')}: ${problem.reason}`;
 }
 
-// Restore, import and duplicate accept stale evidence; this text opens their
-// result so the agent sees which elements to fix or ask about (ADR-0005).
 export function describeStaleEvidence(problems: EvidenceProblem[]): string {
   if (problems.length === 0) return '';
   return [
@@ -128,7 +124,6 @@ export function describeStaleEvidence(problems: EvidenceProblem[]): string {
   ].join('\n') + '\n\n';
 }
 
-// One wrong element refuses the whole write, so nothing is created or changed.
 export function assertEvidence(elements: EvidenceCarrier[], projectRoot: string): void {
   const problems = findEvidenceProblems(elements, projectRoot);
   if (problems.length === 0) return;

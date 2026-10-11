@@ -4,7 +4,7 @@ import { EVIDENCE_TAGS } from './evidence.js';
 
 const evidenceProperty = {
   type: ['object', 'null'],
-  description: 'Where this line, box or value comes from. Not drawn on the canvas; describe shows it. tag "code" needs path (relative to the project root) and quote (code text that appears exactly once in that file; spaces and line breaks may differ). The server checks a code quote when you write evidence and refuses the whole write if the file or quote is wrong. "design" and "log" are recorded without a check. null removes the evidence.',
+  description: 'Where this line, box or value comes from. Not drawn on the canvas; describe shows it. tag "code" needs path (relative to the project root) and quote (code text that appears exactly once in that file; spaces and line breaks may differ). The server checks a code quote when you write evidence and refuses the whole write if the file or quote is wrong. A relationship you expect in the code but cannot find is an inference (dashed line), not "design". null removes the evidence.',
   properties: {
     tag: { type: 'string', enum: [...EVIDENCE_TAGS] },
     path: { type: 'string' },

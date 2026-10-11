@@ -828,8 +828,7 @@ function buildCreatedElement(params: z.infer<typeof CreateElementSchema>): Serve
 }
 
 // Validates frame membership and evidence before anything is stored, so a bad
-// request creates nothing. A copy (restore, import, duplicate) keeps the
-// evidence it carries. Returns the existing frames that grew to fit new children.
+// request creates nothing. Returns the existing frames that grew to fit new children.
 function storeCreatedElements(created: ServerElement[], options: { copy?: boolean } = {}): ServerElement[] {
   assertFrameMembership(created, elements);
   assertFramesHaveContent(created);

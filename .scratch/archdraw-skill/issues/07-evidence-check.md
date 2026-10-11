@@ -105,7 +105,7 @@
 
 임의로 정한 것(슬라이스 B·C도 이것을 따른다):
 
-1. 복원·import·복제는 batch 본문의 `copy: true`로 구분한다(용어 사전이 import를 복원이라 부르지 않아 `restore`가 아니다). 서버는 이때 검사를 통째로 건너뛴다(모양이 틀린 근거도 받는다). 복제는 요청에 `evidence`가 없으므로 결정 2대로 검사하지 않는다. 슬라이스 B는 `storeCreatedElements()`의 `copy` 갈래에서 `findEvidenceProblems()`로 목록을 만든다.
+1. 복원·import·복제는 batch 본문의 `copy: true`로 구분한다(용어 사전이 import를 복원이라 부르지 않아 `restore`가 아니다). 서버는 이때 검사를 통째로 건너뛴다(모양이 틀린 근거도 받는다). 복제도 원본의 `evidence`를 실어 보내지만 `copy: true`라 검사하지 않는다. 슬라이스 B는 `storeCreatedElements()`의 `copy` 갈래에서 `findEvidenceProblems()`로 목록을 만든다.
 2. 공백 규칙: 양쪽에서 공백을 모두 지운 뒤 비교한다(결정 4, 2026-10-11 사용자 결정). `f(a,b)`와 `f(a, b)`는 같다. `int x`와 `intx`도 같다 — 지어낸 코드는 여전히 거부되므로 받아들였다.
 3. 모양 검사는 서버의 `findEvidenceProblems()` 한 곳이다. MCP zod는 `z.unknown()`, MCP 툴 스키마는 안내용이다.
 4. 태그 값은 영어 `code`/`design`/`log`. 한국어 태그는 거부된다.
