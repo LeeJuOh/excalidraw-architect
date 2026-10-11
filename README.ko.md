@@ -15,15 +15,18 @@
 
 ## 설치
 
-채널은 셋, 스킬 폴더는 하나입니다. 플러그인 두 채널은 MCP 서버를 등록해 에이전트가 MCP 툴로 캔버스를 다루고, `npx skills add`는 스킬만 복사하므로 내장 CLI shim으로 폴백합니다.
+채널은 넷, 스킬 폴더는 하나입니다. 플러그인 두 채널은 MCP 서버를 등록해 에이전트가 MCP 툴로 캔버스를 다루고, `npx skills add`는 스킬만 복사하므로 내장 CLI shim으로 폴백합니다. MCP 서버만 등록하는 방식은 어느 MCP 클라이언트에서나 되고, 서버가 같은 스킬을 MCP prompt `archdraw`로 줍니다.
 
 | 채널 | 설치 | 부르는 법 |
 |---|---|---|
 | Claude Code 플러그인 | `/plugin marketplace add LeeJuOh/excalidraw-architect` 후 `/plugin install excalidraw-architect@excalidraw-architect` | `/excalidraw-architect:archdraw <그려줬으면 하는 것>` — 이름이 겹치지 않으면 `/archdraw` |
 | Codex 플러그인 | `codex plugin marketplace add LeeJuOh/excalidraw-architect` 후 `codex plugin add excalidraw-architect@excalidraw-architect` (`~/.codex/plugins`에 폴더만 두는 방식은 인식되지 않음) | `$excalidraw-architect:archdraw` 또는 `/skills`에서 선택. ChatGPT 데스크톱 Codex에서는 `@excalidraw-architect` 플러그인 선택 |
 | 그 외 Agent Skills 호스트 | `npx skills add LeeJuOh/excalidraw-architect --skill archdraw -g --agent <호스트> -y` | Codex는 `$archdraw`, Claude Code는 `/archdraw` |
+| MCP 서버만 (Claude Desktop, Cursor 등 MCP 클라이언트) | stdio 명령 `npx --prefix ~ -y excalidraw-architect@latest`를 등록. Claude Code에서는 `claude mcp add archdraw -- npx --prefix ~ -y excalidraw-architect@latest` | MCP prompt `archdraw`를 부름. Claude Code에서는 `/mcp__archdraw__archdraw` |
 
 `<호스트>`에는 `codex` 또는 `claude-code`를 넣으세요. 자동 감지는 실행 중인 에이전트 하나에만 설치할 수 있으므로 `--agent`를 명시합니다. `-g`는 모든 프로젝트에서 쓰는 전역 설치이며, 현재 프로젝트에만 설치할 때만 뺍니다.
+
+`--prefix ~`는 등록하는 폴더에 같은 이름의 `package.json`이 있어도 npx가 그것을 잡지 않게 합니다. `@latest`는 이 채널의 업데이트 방법입니다 — 업데이트할 플러그인이 없습니다.
 
 이 스킬은 수동 전용입니다. 알아서 시작하지 않고, 사용자가 부른 뒤부터 그 대화에서 그림으로 답합니다.
 

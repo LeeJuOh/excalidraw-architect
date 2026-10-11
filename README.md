@@ -15,15 +15,18 @@ The canvas comes from [yctimlin/mcp_excalidraw](https://github.com/yctimlin/mcp_
 
 ## Install
 
-Three channels, one skill folder. The two plugin channels register the MCP server, so the agent drives the canvas through MCP tools; `npx skills add` copies the skill only, and it falls back to the bundled CLI shim.
+Four channels, one skill folder. The two plugin channels register the MCP server, so the agent drives the canvas through MCP tools; `npx skills add` copies the skill only, and it falls back to the bundled CLI shim. Registering the MCP server alone works in any MCP client; the server hands out the same skill as the MCP prompt `archdraw`.
 
 | Channel | Install | Call it |
 |---|---|---|
 | Claude Code plugin | `/plugin marketplace add LeeJuOh/excalidraw-architect`, then `/plugin install excalidraw-architect@excalidraw-architect` | `/excalidraw-architect:archdraw <what you want drawn>` — plain `/archdraw` when nothing else claims the name |
 | Codex plugin | `codex plugin marketplace add LeeJuOh/excalidraw-architect`, then `codex plugin add excalidraw-architect@excalidraw-architect` (a bare folder under `~/.codex/plugins` is not discovered) | `$excalidraw-architect:archdraw`, or pick it in `/skills`; in ChatGPT desktop pick the `@excalidraw-architect` plugin |
 | Any Agent Skills host | `npx skills add LeeJuOh/excalidraw-architect --skill archdraw -g --agent <host> -y` | `$archdraw` in Codex; `/archdraw` in Claude Code |
+| MCP server only (Claude Desktop, Cursor, any MCP client) | Register the stdio command `npx --prefix ~ -y excalidraw-architect@latest`; in Claude Code: `claude mcp add archdraw -- npx --prefix ~ -y excalidraw-architect@latest` | Call the MCP prompt `archdraw`; in Claude Code: `/mcp__archdraw__archdraw` |
 
 Use `codex` or `claude-code` for `<host>`. Keep `--agent` explicit: auto-detection can install the skill for only the agent that happens to be running. `-g` installs it for every project; omit `-g` only when you want the skill in the current project.
+
+`--prefix ~` keeps npx from picking up a `package.json` of the same name in the folder you register from. `@latest` is how this channel gets updates: there is no plugin to update.
 
 The skill is manual only. It never starts itself — you call it, and then it keeps drawing for that conversation.
 

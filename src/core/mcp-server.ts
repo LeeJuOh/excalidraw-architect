@@ -5,6 +5,7 @@ import { packageName, packageVersion } from './version.js';
 import { tools } from './mcp-tools.js';
 import { callExcalidrawTool } from './mcp-dispatch.js';
 import { canvasGuide, CANVAS_GUIDE_URI } from './canvas-guide.js';
+import { skillGuide, SKILL_PROMPT_NAME } from './skill-guide.js';
 
 const SERVER_NAME = packageName();
 const SERVER_DESCRIPTION =
@@ -30,8 +31,9 @@ const STATIC_SURFACE_CACHE_HINT = { ttlMs: 300_000, cacheScope: 'public' as cons
  * `_meta` envelope (2026-07-28).
  */
 export function createExcalidrawMcpServer(ctx?: McpRequestContext): McpServer {
-  // Throws if the guide file is gone, rather than serving no drawing spec.
+  // Throws if a served file is gone, rather than serving nothing.
   const guide = canvasGuide();
+  const skill = skillGuide();
 
   const server = new McpServer(
     {
@@ -40,7 +42,7 @@ export function createExcalidrawMcpServer(ctx?: McpRequestContext): McpServer {
       description: SERVER_DESCRIPTION
     },
     {
-      capabilities: { tools: {}, resources: {} },
+      capabilities: { tools: {}, resources: {}, prompts: {} },
       instructions: guide.summary,
       cacheHints: {
         'tools/list': STATIC_SURFACE_CACHE_HINT,
@@ -62,6 +64,19 @@ export function createExcalidrawMcpServer(ctx?: McpRequestContext): McpServer {
     },
     uri => ({ contents: [{ uri: uri.href, mimeType: 'text/markdown', text: guide.text }] })
   );
+
+  for (const reference of skill.references) {
+    server.registerResource(
+      reference.path,
+      reference.uri,
+      { title: reference.title, mimeType: 'text/markdown' },
+      uri => ({ contents: [{ uri: uri.href, mimeType: 'text/markdown', text: reference.text }] })
+    );
+  }
+
+  server.registerPrompt(SKILL_PROMPT_NAME, { description: skill.description }, () => ({
+    messages: [{ role: 'user', content: { type: 'text', text: skill.body } }]
+  }));
 
   for (const tool of tools) {
     server.registerTool(

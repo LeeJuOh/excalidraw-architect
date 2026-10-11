@@ -16,18 +16,29 @@
 
 **Blocked by:** 03 슬라이스 C — 완료(03의 슬라이스 C 문서 기준 항목 전부 체크, `references/situations/` 존재, 스펙 구현 순서 표 "착수 가능").
 
-**Status:** ready-for-agent
+**Status:** resolved (2026-10-12 — 에이전트 칸 전부 통과. 다음 릴리즈 뒤 사람이 확인: 레포 밖 폴더와 이 레포 폴더에서 README 명령으로 등록)
 
 **완료 규칙:** 아래 에이전트 칸이 모두 통과하면 resolved로 닫고, 손 확인 칸은 Status에 "다음 릴리즈 뒤 사람이 확인"으로 남긴다(01과 같은 방식).
 
 **테스트 경계(합의됨):** 기존 MCP stdio 와이어 테스트. 새 시임은 없다. 본문 문장은 검사하지 않는다.
 
-- [ ] 서버에 붙어 prompt 목록에 `archdraw`가 있고, 받으면 스킬 본문이 온다(frontmatter 없음)
-- [ ] resource 목록이 테스트가 직접 훑은 스킬 `references/` 아래 파일 목록(하위 폴더 포함)과 정확히 같고(`guide://` + 상대경로), 각각 읽으면 그 파일 내용이 온다. `guide://canvas`도 그대로 있다
-- [ ] 목록에 없는 이름(예: `guide://references/../SKILL.md`)을 읽으면 에러다
-- [ ] `npm pack` 산출물을 설치해 띄운 서버에서도 prompt와 resource가 동작한다
-- [ ] README 두 언어에 MCP 직접 등록 명령(`--prefix ~`, `@latest` 포함)과 prompt 호출 안내가 있다
-- [ ] `npm test` 통과
+- [x] 서버에 붙어 prompt 목록에 `archdraw`가 있고, 받으면 스킬 본문이 온다(frontmatter 없음)
+- [x] resource 목록이 테스트가 직접 훑은 스킬 `references/` 아래 파일 목록(하위 폴더 포함)과 정확히 같고(`guide://` + 상대경로), 각각 읽으면 그 파일 내용이 온다. `guide://canvas`도 그대로 있다
+- [x] 목록에 없는 이름(예: `guide://references/../SKILL.md`)을 읽으면 에러다
+- [x] `npm pack` 산출물을 설치해 띄운 서버에서도 prompt와 resource가 동작한다
+- [x] README 두 언어에 MCP 직접 등록 명령(`--prefix ~`, `@latest` 포함)과 prompt 호출 안내가 있다
+- [x] `npm test` 통과
 - [ ] 손 확인: 레포 밖 폴더와 이 레포 폴더에서 각각 README 명령으로 등록해 서버가 붙는다(게시본이 필요하므로 다음 릴리즈 뒤)
 
 02에서 관찰(이 티켓의 구현 판단이 아님, 스펙 7-10 "미확인"): Claude Desktop·Cursor에서 prompt가 어떻게 보이고 불리는지, 모델이 resource를 스스로 읽는지.
+
+## Comments
+
+**2026-10-12 — 구현 완료.**
+
+- `src/core/skill-guide.ts`가 시작할 때 `plugin/skills/archdraw/`의 SKILL.md와 `references/` 아래 파일 전부(하위 폴더 포함)를 읽는다. `canvas-guide.ts`와 같은 구조다. `runServer()`가 두 파일 묶음을 모두 읽어, 없으면 시작이 실패한다.
+- 목록에 없는 이름의 에러는 SDK가 낸다(정적 등록만 하므로 `ResourceNotFoundError`). 추가 코드는 없다.
+- 와이어 검사 4개 추가(`scripts/check-mcp-stdio.mjs`): prompt 본문, resource 목록·읽기, 목록 밖 이름, 스킬 폴더 없을 때 시작 실패.
+- tarball 확인은 레포 밖에서 했다: `npm pack` → 임시 프로젝트에 설치 → prompt 본문, resource 28개(참고 문서 27 + `guide://canvas`), saga 읽기가 동작했다.
+- SKILL.md 줄은 문서 안 상대 링크 규칙도 적었다. 처음 문장("링크 경로 앞에 `guide://`")만으로는 `routing-table.md` 안의 `situations/saga.md`가 `guide://situations/saga.md`로 틀리게 풀린다.
+- 미확인: README의 Claude Code prompt 호출 형식 `/mcp__archdraw__archdraw`는 Claude Code 문서의 MCP prompt 명명 규칙을 따랐고, 실제 호출은 손 확인 때 본다.

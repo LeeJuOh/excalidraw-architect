@@ -16,6 +16,12 @@ Your job is the judgement: which diagram answers this question, how far in it
 stands, which elements it must carry, and what is evidence versus what is a
 plan.
 
+If a `references/…` link here does not open (you got this file as the MCP
+prompt `archdraw`), read the MCP resource named `guide://` plus the link path,
+such as `guide://references/routing-table.md`. A link inside one of those
+resolves against that resource's name, as on a web page: `situations/saga.md`
+in `guide://references/routing-table.md` is `guide://references/situations/saga.md`.
+
 ## 1. Use the archdraw MCP tools
 
 Look at your tool list. If it has archdraw tools — `batch_create_elements`,

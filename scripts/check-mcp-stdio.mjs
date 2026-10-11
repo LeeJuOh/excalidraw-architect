@@ -5,8 +5,8 @@
 // so what is asserted is exactly what a client sees on the wire.
 
 import { spawn, spawnSync } from 'node:child_process';
-import { cpSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
-import { basename, dirname, join } from 'node:path';
+import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { basename, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -39,6 +39,9 @@ const GUIDE_URI = 'guide://canvas';
 const GUIDE_PATH = join(repoRoot, 'docs', 'canvas-guide.md');
 const GUIDE_TEXT = readFileSync(GUIDE_PATH, 'utf-8');
 const INSTRUCTIONS_LIMIT_BYTES = 2048;
+
+const SKILL_DIR = join(repoRoot, 'plugin', 'skills', 'archdraw');
+const SKILL_PROMPT = 'archdraw';
 // Codex reads the head of `instructions` as the core; these are the rules
 // that must survive that clip (issue 09).
 const INSTRUCTIONS_HEAD_CHARS = 512;
@@ -335,6 +338,66 @@ async function checkGuideResource() {
   );
 }
 
+async function checkSkillPrompt() {
+  const { responses } = await exchange([
+    { jsonrpc: '2.0', id: 1, method: 'prompts/list', params: { _meta: envelope() } },
+    { jsonrpc: '2.0', id: 2, method: 'prompts/get', params: { name: SKILL_PROMPT, _meta: envelope() } }
+  ], 2);
+
+  const listResult = resultOf(responses.find(r => r.id === 1), 'prompts/list');
+  assert(
+    listResult.prompts?.some(prompt => prompt.name === SKILL_PROMPT),
+    `prompts/list: expected ${SKILL_PROMPT} to be listed`
+  );
+
+  const getResult = resultOf(responses.find(r => r.id === 2), 'prompts/get');
+  const texts = (getResult.messages ?? []).map(message => message.content?.text);
+  assertEqual(texts.length, 1, 'prompts/get: message count');
+  const skill = readFileSync(join(SKILL_DIR, 'SKILL.md'), 'utf-8');
+  const body = skill.slice(skill.indexOf('\n---\n', 3) + '\n---\n'.length);
+  assert(texts[0] === body, 'prompts/get: text must be SKILL.md with the frontmatter removed, verbatim');
+}
+
+// Walked here, not taken from the server, so a file the server skips fails.
+function referenceFiles(dir = join(SKILL_DIR, 'references')) {
+  return readdirSync(dir, { withFileTypes: true }).flatMap(entry =>
+    entry.isDirectory() ? referenceFiles(join(dir, entry.name)) : [relative(SKILL_DIR, join(dir, entry.name))]
+  );
+}
+
+async function checkReferenceResources() {
+  const files = referenceFiles();
+  assert(files.some(file => file.startsWith('references/situations/')), 'test setup: expected situation documents');
+
+  const { responses } = await exchange([
+    { jsonrpc: '2.0', id: 0, method: 'resources/list', params: { _meta: envelope() } },
+    ...files.map((file, index) => ({
+      jsonrpc: '2.0',
+      id: index + 1,
+      method: 'resources/read',
+      params: { uri: `guide://${file}`, _meta: envelope() }
+    }))
+  ], files.length + 1);
+
+  const listResult = resultOf(responses.find(r => r.id === 0), 'resources/list');
+  const listed = listResult.resources.map(resource => resource.uri).sort();
+  const expected = [GUIDE_URI, ...files.map(file => `guide://${file}`)].sort();
+  assertEqual(JSON.stringify(listed), JSON.stringify(expected), 'resources/list: uris');
+
+  files.forEach((file, index) => {
+    const readResult = resultOf(responses.find(r => r.id === index + 1), `resources/read ${file}`);
+    assertEqual(readResult.contents?.[0]?.text, readFileSync(join(SKILL_DIR, file), 'utf-8'), `resources/read ${file}: body`);
+  });
+}
+
+async function checkUnlistedResourceRefused() {
+  const uri = 'guide://references/../SKILL.md';
+  const { responses } = await exchange([
+    { jsonrpc: '2.0', id: 1, method: 'resources/read', params: { uri, _meta: envelope() } }
+  ], 1);
+  assert(responses[0]?.error !== undefined, `resources/read ${uri}: expected a JSON-RPC error, got ${JSON.stringify(responses[0])}`);
+}
+
 // The skill-only install (`npx skills add`) registers no MCP server, so the CLI
 // is its one way to the spec (issue 09). Same file, same bytes. No --session:
 // reading the guide must not need a canvas.
@@ -355,16 +418,18 @@ function checkGuideCommand() {
   );
 }
 
-// A build with no guide file must say so and stop, rather than serve an empty
-// drawing spec. Copied into a throwaway tree so the repo keeps its own copy.
-async function checkMissingGuideFails() {
+// A build missing a file it serves must say so and stop, rather than serve
+// nothing. Copied into a throwaway tree so the repo keeps its own copy.
+async function startupFailure(extraPaths) {
   const sandbox = mkdtempSync(join(repoRoot, '.mcp-stdio-check-'));
   try {
     cpSync(join(repoRoot, 'dist'), join(sandbox, 'dist'), {
       recursive: true,
       filter: source => source !== join(repoRoot, 'dist', 'frontend')
     });
-    cpSync(join(repoRoot, 'package.json'), join(sandbox, 'package.json'));
+    for (const path of ['package.json', ...extraPaths]) {
+      cpSync(join(repoRoot, path), join(sandbox, path), { recursive: true });
+    }
 
     const child = spawn(runtime, argsFor(join(sandbox, 'dist', 'index.js')), {
       cwd: sandbox,
@@ -377,20 +442,33 @@ async function checkMissingGuideFails() {
     const code = await new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         child.kill('SIGKILL');
-        reject(new Error('missing guide: server kept running instead of failing'));
+        reject(new Error('server kept running instead of failing'));
       }, RESPONSE_TIMEOUT_MS);
       child.on('error', error => { clearTimeout(timer); reject(error); });
       child.on('exit', exitCode => { clearTimeout(timer); resolve(exitCode); });
     });
-
-    assert(code !== 0, 'missing guide: the server must exit non-zero');
-    assert(
-      stderr.includes('Canvas guide missing at') && stderr.includes('canvas-guide.md'),
-      `missing guide: the reason must name the file, got:\n${stderr}`
-    );
+    return { code, stderr };
   } finally {
     rmSync(sandbox, { recursive: true, force: true });
   }
+}
+
+async function checkMissingGuideFails() {
+  const { code, stderr } = await startupFailure([]);
+  assert(code !== 0, 'missing guide: the server must exit non-zero');
+  assert(
+    stderr.includes('Canvas guide missing at') && stderr.includes('canvas-guide.md'),
+    `missing guide: the reason must name the file, got:\n${stderr}`
+  );
+}
+
+async function checkMissingSkillFails() {
+  const { code, stderr } = await startupFailure([join('docs', 'canvas-guide.md')]);
+  assert(code !== 0, 'missing skill folder: the server must exit non-zero');
+  assert(
+    stderr.includes('Skill folder file missing at') && stderr.includes('SKILL.md'),
+    `missing skill folder: the reason must name the file, got:\n${stderr}`
+  );
 }
 
 const checks = [
@@ -402,7 +480,11 @@ const checks = [
   ['initialize carries the canvas guide summary', checkGuideInstructions],
   [`${GUIDE_URI} serves the guide verbatim`, checkGuideResource],
   ['the CLI guide command prints the guide verbatim', checkGuideCommand],
-  ['a missing canvas guide fails startup with a reason', checkMissingGuideFails]
+  [`prompt ${SKILL_PROMPT} serves the skill body`, checkSkillPrompt],
+  ['the skill references are resources named guide:// plus their path', checkReferenceResources],
+  ['a resource name outside the list is refused', checkUnlistedResourceRefused],
+  ['a missing canvas guide fails startup with a reason', checkMissingGuideFails],
+  ['a missing skill folder fails startup with a reason', checkMissingSkillFails]
 ];
 
 let failed = 0;
