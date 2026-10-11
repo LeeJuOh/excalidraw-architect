@@ -48,6 +48,14 @@ export function describeScene(allElements: ServerElement[]): string {
     if (el.strokeColor && el.strokeColor !== '#000000') {
       parts.push(`stroke: ${el.strokeColor}`);
     }
+    if (el.evidence && typeof el.evidence === 'object') {
+      const { tag, path, quote } = el.evidence;
+      parts.push(['evidence:', tag, path, quote === undefined ? undefined : JSON.stringify(quote)]
+        .filter(part => part !== undefined).join(' '));
+    } else if (el.evidence) {
+      // A restore or import keeps evidence of any shape; show it as stored.
+      parts.push(`evidence: ${JSON.stringify(el.evidence)}`);
+    }
     if (el.locked) parts.push('(locked)');
     if (el.groupIds && el.groupIds.length > 0) {
       parts.push(`groups: [${el.groupIds.join(', ')}]`);

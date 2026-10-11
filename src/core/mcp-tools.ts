@@ -1,5 +1,17 @@
 import type { Tool } from '@modelcontextprotocol/server';
 import { EXCALIDRAW_ELEMENT_TYPES } from '../types.js';
+import { EVIDENCE_TAGS } from './evidence.js';
+
+const evidenceProperty = {
+  type: ['object', 'null'],
+  description: 'Where this line, box or value comes from. Not drawn on the canvas; describe shows it. tag "code" needs path (relative to the project root) and quote (code text that appears exactly once in that file; spaces and line breaks may differ). The server checks a code quote when you write evidence and refuses the whole write if the file or quote is wrong. "design" and "log" are recorded without a check. null removes the evidence.',
+  properties: {
+    tag: { type: 'string', enum: [...EVIDENCE_TAGS] },
+    path: { type: 'string' },
+    quote: { type: 'string' }
+  },
+  required: ['tag']
+};
 
 // Tool definitions
 export const tools: Tool[] = [
@@ -70,6 +82,7 @@ export const tools: Tool[] = [
         frameId: { type: ['string', 'null'], description: 'ID of the frame (drawing) this element belongs to. The frame must exist or be in the same batch. null takes the element out of its frame.' },
         name: { type: 'string', description: 'For frames: the drawing title shown on the frame' },
         link: { type: ['string', 'null'], description: 'Link opened from the element. "?element=<frame id>" points at another drawing and moves the canvas to it on click. null removes the link.' },
+        evidence: evidenceProperty,
         startElementId: { type: 'string', description: 'For arrows: ID of the element to bind the arrow start to. Arrow auto-routes to element edge.' },
         endElementId: { type: 'string', description: 'For arrows: ID of the element to bind the arrow end to. Arrow auto-routes to element edge.' },
         endArrowhead: { type: 'string', description: 'Arrowhead style at end: arrow, bar, dot, triangle, or null' },
@@ -104,7 +117,8 @@ export const tools: Tool[] = [
         fontFamily: { type: ['string', 'number'], description: 'Font family: nunito (6, the default) or comic shanns/comic (8, monospace, for code and contracts). Also excalifont (5), lilita (7), or a numeric ID. Do not use virgil (1), helvetica (2) or cascadia (3): Excalidraw marks them old. On a box or an arrow it applies to the label.' },
         frameId: { type: ['string', 'null'], description: 'ID of the frame (drawing) this element belongs to. The frame must exist or be in the same batch. null takes the element out of its frame.' },
         name: { type: 'string', description: 'For frames: the drawing title shown on the frame' },
-        link: { type: ['string', 'null'], description: 'Link opened from the element. "?element=<frame id>" points at another drawing and moves the canvas to it on click. null removes the link.' }
+        link: { type: ['string', 'null'], description: 'Link opened from the element. "?element=<frame id>" points at another drawing and moves the canvas to it on click. null removes the link.' },
+        evidence: evidenceProperty
       },
       required: ['id']
     }
@@ -317,6 +331,7 @@ export const tools: Tool[] = [
               frameId: { type: ['string', 'null'], description: 'ID of the frame (drawing) this element belongs to. The frame must exist or be in the same batch. null takes the element out of its frame.' },
               name: { type: 'string', description: 'For frames: the drawing title shown on the frame' },
               link: { type: ['string', 'null'], description: 'Link opened from the element. "?element=<frame id>" points at another drawing and moves the canvas to it on click. null removes the link.' },
+              evidence: evidenceProperty,
               startElementId: { type: 'string', description: 'For arrows: ID of element to bind arrow start to' },
               endElementId: { type: 'string', description: 'For arrows: ID of element to bind arrow end to' },
               endArrowhead: { type: 'string', description: 'Arrowhead style at end: arrow, bar, dot, triangle, or null' },

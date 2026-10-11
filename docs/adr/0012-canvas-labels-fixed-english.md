@@ -14,7 +14,6 @@ status: accepted
 
 ## Consequences
 
-- 07의 서버가 생성하는 근거 검사 실패 텍스트도 영어 문자열이다.
 - 한국어 문서에서 개념명(근거 없음·추론·동기·비동기)은 한국어로 쓰되, 캔버스에 보이는 문자열을 인용하지 않는다. 문자열이 필요한 자리는 `docs/canvas-guide.md`를 가리킨다.
 - [ADR-0005](0005-server-checks-evidence-and-demotes.md)가 구체 표기의 자리로 PRD §3을 가리키던 것은 `docs/canvas-guide.md`로 바뀐다.
 - 캔버스에 영어 라벨이 보인다. 한국어 사용자가 이를 낯설어하는지는 02 도그푸딩에서 본다.

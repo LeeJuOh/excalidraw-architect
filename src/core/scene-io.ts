@@ -237,7 +237,7 @@ export async function importScene(options: {
     version: 1
   })) as ServerElement[];
 
-  const created = await batchCreateElementsOnCanvas(elementsToCreate);
+  const created = await batchCreateElementsOnCanvas(elementsToCreate, { copy: true });
   if (!created) {
     throw new Error('Import failed: canvas rejected the batch create (nothing was added)');
   }

@@ -242,7 +242,7 @@ export async function duplicateElements(
     throw new Error('No elements could be duplicated (none found)');
   }
 
-  const canvasElements = await batchCreateElementsOnCanvas(duplicates);
+  const canvasElements = await batchCreateElementsOnCanvas(duplicates, { copy: true });
   if (!canvasElements) {
     throw new Error('Failed to duplicate elements: HTTP server unavailable');
   }

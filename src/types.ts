@@ -1,3 +1,5 @@
+import type { Evidence } from './core/evidence.js';
+
 export interface ExcalidrawElementBase {
   id: string;
   type: ExcalidrawElementType;
@@ -147,6 +149,8 @@ export interface ServerElement extends Omit<ExcalidrawElementBase, 'id'> {
   // Arrow element binding: connect arrows to shapes by element ID
   start?: { id: string };
   end?: { id: string };
+  // Not drawn: only the server check and describe read it (ADR-0005)
+  evidence?: Evidence | null;
 }
 
 // API Response types

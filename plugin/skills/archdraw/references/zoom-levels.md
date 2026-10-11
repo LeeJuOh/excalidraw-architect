@@ -116,21 +116,28 @@ then convention, then ask.
 Every line and every value you draw carries one evidence tag in its `evidence`
 field:
 
-- **`code`** — written with `path` and `line`. The server checks that the file
-  exists and that the line is inside it on every draw; a line that fails the
-  check is demoted to dashed and gets a no-evidence marker. The server checks
-  existence only, never whether the dependency is real. That judgement is
-  yours.
+- **`code`** — written with `path`, relative to the project root, and
+  `quote`: code text that shows the relationship and appears exactly once in
+  that file. Spaces and line breaks may differ from the file. When you write
+  or change evidence, the server checks the quote against the file as it is
+  now. If the file or the quote is wrong, it refuses the whole write and
+  nothing is created or changed. Then do one of two things: correct the
+  quote — when it appears more than once, add the text right next to it — or,
+  if you cannot confirm the relationship in code, remove the `code` evidence
+  and draw the line as an inference, dashed. A relationship you expect in the
+  code but cannot find is an inference, not `design`. The server checks only
+  that the text is there, never whether it proves the relationship. That
+  judgement is yours.
 - **`design`** — something agreed or under discussion that is not in the code
   yet: a migration plan, a contract being negotiated, a change proposal. Not
   checked, only recorded. How these lines are drawn is in the line notation of
   `guide://canvas`.
-  Tagging them `code` is what piles up no-evidence markers, one per line.
+  Tagged `code`, they are refused, because the code is not there yet.
 - **`log`** — an actual recorded occurrence, as in an incident timeline. Not
   checked.
 
-Evidence tags are element data, not something drawn. You and the server read
-them; the user sees the dashed lines and the markers.
+Evidence tags are element data, not something drawn. You, the server and
+`describe` read them; the user sees only the lines and labels you drew.
 
 ## Crowding
 

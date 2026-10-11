@@ -53,6 +53,7 @@ import {
   moveFrameMembers
 } from './core/frames.js';
 import { recordSave, recordSnapshot, saveStateReport } from './core/save-state.js';
+import { assertEvidence } from './core/evidence.js';
 
 // Load environment variables
 dotenv.config();
@@ -417,6 +418,7 @@ app.put('/api/elements/:id', (req: Request, res: Response) => {
     if (touches(['frameId']) || updatedElement.type === 'frame') {
       assertFrameMembership([updatedElement], elements);
     }
+    if (touches(['evidence'])) assertEvidence([updatedElement], PROJECT_ROOT!);
 
     const movedMembers: ServerElement[] = [];
     if (updatedElement.type === 'frame') {
@@ -825,11 +827,13 @@ function buildCreatedElement(params: z.infer<typeof CreateElementSchema>): Serve
   } as ServerElement;
 }
 
-// Validates frame membership before anything is stored, so a bad request
-// creates nothing. Returns the existing frames that grew to fit new children.
-function storeCreatedElements(created: ServerElement[]): ServerElement[] {
+// Validates frame membership and evidence before anything is stored, so a bad
+// request creates nothing. A copy (restore, import, duplicate) keeps the
+// evidence it carries. Returns the existing frames that grew to fit new children.
+function storeCreatedElements(created: ServerElement[], options: { copy?: boolean } = {}): ServerElement[] {
   assertFrameMembership(created, elements);
   assertFramesHaveContent(created);
+  if (!options.copy) assertEvidence(created, PROJECT_ROOT!);
   // Resolve arrow bindings (computes positions, startBinding, endBinding, boundElements)
   resolveArrowBindings(created);
   created.forEach(el => elements.set(el.id, el));
@@ -908,7 +912,7 @@ function broadcastUpdated(changed: ServerElement[]): void {
 // Batch create elements
 app.post('/api/elements/batch', (req: Request, res: Response) => {
   try {
-    const { elements: elementsToCreate } = req.body;
+    const { elements: elementsToCreate, copy } = req.body;
 
     if (!Array.isArray(elementsToCreate)) {
       return res.status(400).json({
@@ -919,7 +923,7 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
 
     const createdElements: ServerElement[] = elementsToCreate
       .map(elementData => buildCreatedElement(CreateElementSchema.parse(elementData)));
-    const grownFrames = storeCreatedElements(createdElements);
+    const grownFrames = storeCreatedElements(createdElements, { copy: copy === true });
 
     // Broadcast to all connected clients
     const message: BatchCreatedMessage = {

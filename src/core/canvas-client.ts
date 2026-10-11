@@ -116,11 +116,12 @@ export async function syncToCanvas(operation: string, data: any): Promise<SyncRe
         break;
 
       case 'batch_create':
+      case 'batch_copy':
         pathname = '/api/elements/batch';
         options = {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ elements: data })
+          body: JSON.stringify({ elements: data, copy: operation === 'batch_copy' })
         };
         break;
 
@@ -177,10 +178,15 @@ export async function deleteElementOnCanvas(elementId: string): Promise<any> {
 }
 
 // Helper to sync batch creation to canvas (same failure semantics as
-// createElementOnCanvas: disabled = echo, failed = null)
-export async function batchCreateElementsOnCanvas(elementsData: ServerElement[]): Promise<ServerElement[] | null> {
+// createElementOnCanvas: disabled = echo, failed = null). `copy` places elements
+// that already existed (restore, import, duplicate): the server keeps their
+// evidence instead of checking it.
+export async function batchCreateElementsOnCanvas(
+  elementsData: ServerElement[],
+  options: { copy?: boolean } = {}
+): Promise<ServerElement[] | null> {
   if (!ENABLE_CANVAS_SYNC) return elementsData;
-  const result = await syncToCanvas('batch_create', elementsData);
+  const result = await syncToCanvas(options.copy ? 'batch_copy' : 'batch_create', elementsData);
   return result?.elements ?? null;
 }
 
@@ -344,11 +350,14 @@ export async function getElementStrict(id: string): Promise<ServerElement> {
   return data.element;
 }
 
-export async function batchCreateElementsStrict(elements: ServerElement[]): Promise<ServerElement[]> {
+export async function batchCreateElementsStrict(
+  elements: ServerElement[],
+  options: { copy?: boolean } = {}
+): Promise<ServerElement[]> {
   const data = await requestJson<ApiResponse>('/api/elements/batch', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ elements })
+    body: JSON.stringify({ elements, copy: options.copy === true })
   });
   return data.elements || [];
 }

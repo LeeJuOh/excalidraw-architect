@@ -94,8 +94,8 @@ Before you act in a turn, look at the canvas with `get_canvas_screenshot`
   because it appeared on the canvas.
 - **Stop repairing after two tries.** If the same problem (overlapping labels,
   evidence you cannot find) is no better after two fixes, stop and say so:
-  "I cannot get these labels apart, please move them" / "I cannot find
-  evidence for order → payment, leaving it dashed."
+  "I cannot get these labels apart, please move them" / "I cannot find the
+  code for order → payment, so I drew it as an inferred line."
 - **Deleting a label is not a repair.** An overlapping arrow label gets moved
   or shortened, never removed: the label carries the meaning, and without it
   the diagram states something false. The only exception is a label whose
@@ -160,15 +160,15 @@ a diagram true:
   inference, and an inference is dashed.
 - Lines that are not in the code yet — a change proposal, a migration plan, a
   contract under negotiation — take the `design` evidence tag and are drawn as
-  the line notation in `guide://canvas` says. Tagging them `code` just fills
-  the diagram with no-evidence markers.
+  the line notation in `guide://canvas` says. Tagged `code`, they are refused:
+  the server cannot find code that is not written yet.
 
 ## 8. Notation
 
 Dashed means exactly one thing: this line or this value is not confirmed. How
 two things communicate is read from the arrowhead and the label, independently.
 The exact strings — for a synchronous call, an asynchronous event, a response,
-an inference, a failed evidence check — are fixed English, and they live in the
+an inference — are fixed English, and they live in the
 line-notation table of `guide://canvas`. Read them there and write them
 verbatim, whatever language the conversation is in. The names you fill in (the
 call, the event, the result) come from the code.

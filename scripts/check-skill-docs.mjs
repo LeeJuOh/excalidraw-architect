@@ -111,10 +111,10 @@ for (const name of DRAWING_FILES) {
   );
 }
 
-// The fixed labels distinctive enough to grep for: three of ADR-0012's five,
+// The fixed labels distinctive enough to grep for: two of ADR-0012's four,
 // and the change-status labels (ADR-0015). The other two ("response:",
 // "inferred") are ordinary English, so they are read for, not checked here.
-const FIXED_LABELS = ['[sync]', '[async]', 'no evidence:', '[added]', '[removed]', '[modified]'];
+const FIXED_LABELS = ['[sync]', '[async]', '[added]', '[removed]', '[modified]'];
 for (const [name, text] of Object.entries(FILES)) {
   for (const label of FIXED_LABELS) {
     assert.ok(

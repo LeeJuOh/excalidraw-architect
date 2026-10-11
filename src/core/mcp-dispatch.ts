@@ -67,6 +67,8 @@ const ElementSchema = z.object({
   frameId: z.string().nullable().optional(),
   name: z.string().nullable().optional(),
   link: z.string().nullable().optional(),
+  // The canvas server checks the shape, so MCP and CLI refuse the same way.
+  evidence: z.unknown().optional(),
   locked: z.boolean().optional(),
   strokeStyle: z.string().optional(),
   roundness: z.object({ type: z.number(), value: z.number().optional() }).nullable().optional(),
@@ -610,7 +612,7 @@ export async function callExcalidrawTool(
 
         // Clear current canvas, then restore elements
         await clearCanvas();
-        const restored = await batchCreateElementsOnCanvas(snapshot.elements);
+        const restored = await batchCreateElementsOnCanvas(snapshot.elements, { copy: true });
         if (!restored) {
           throw new Error(`Failed to restore snapshot "${params.name}": HTTP server unavailable (canvas was cleared)`);
         }

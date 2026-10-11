@@ -123,13 +123,12 @@ A changed contract is shown line by line, as a diff:
 | Confirmed asynchronous event | solid, `endArrowhead: "arrow"` (open)     | event name + `[async]`        |
 | Confirmed response           | solid, `endArrowhead: "arrow"` (open)     | `response: <result>`          |
 | Inferred relationship        | dashed                                    | relationship name + `inferred`|
-| Failed code-evidence check   | dashed                                    | relationship name + `no evidence: A -> B` |
 
 These label strings are fixed — write them exactly as shown, in English,
 whatever language the conversation is in. Only the names you fill in (the call,
 the event, the result) come from the code.
 
-- A line that goes dashed keeps its arrowhead and its `[sync]` / `[async]` or
+- An inferred, dashed line keeps its arrowhead and its `[sync]` / `[async]` or
   response label.
 - If you could not confirm how two things communicate, leave the marker off.
   Do not guess one.
