@@ -42,3 +42,47 @@
 - tarball 확인은 레포 밖에서 했다: `npm pack` → 임시 프로젝트에 설치 → prompt 본문, resource 28개(참고 문서 27 + `guide://canvas`), saga 읽기가 동작했다.
 - SKILL.md 줄은 문서 안 상대 링크 규칙도 적었다. 처음 문장("링크 경로 앞에 `guide://`")만으로는 `routing-table.md` 안의 `situations/saga.md`가 `guide://situations/saga.md`로 틀리게 풀린다.
 - 미확인: README의 Claude Code prompt 호출 형식 `/mcp__archdraw__archdraw`는 Claude Code 문서의 MCP prompt 명명 규칙을 따랐고, 실제 호출은 손 확인 때 본다.
+
+---
+
+## 핸드오프 — v0.2.0 게시 뒤 손 확인 (2026-10-12)
+
+### Goal
+
+10의 마지막 칸(손 확인)을 닫는다. 게시본 0.2.0을 README 명령으로 등록하면 서버가 붙고, prompt `archdraw`를 부르면 스킬 본문이 온다.
+
+### First Action
+
+게시를 확인한다: `npm view excalidraw-architect version`이 `0.2.0`이어야 한다. 아니면 `gh run list -R LeeJuOh/excalidraw-architect --workflow npm-publish.yml -L 1`로 "Publish to NPM" 실행의 결과를 본다. 게시 직후 몇 분은 npm 검사("Validating") 때문에 안 보일 수 있다.
+
+### Context
+
+- 릴리즈는 스펙 7-5d 절차대로 했다: `npm version 0.2.0`(커밋 `cfa704f`, 태그 `v0.2.0`) → `git push --follow-tags` → `gh release create v0.2.0 -R LeeJuOh/excalidraw-architect --generate-notes`.
+- 릴리즈를 만들 때 `b7aceef`의 CI는 아직 돌고 있었다. 게시 워크플로(`.github/workflows/npm-publish.yml`)가 게시 전에 `npm test`와 `check-pack-contents.mjs`를 다시 돌리므로 관문은 그대로다. 게시가 실패했다면 그 로그부터 본다.
+- 버전은 0.2.0이다. 0.1.1 뒤로 세션·frame·저장·근거 검사·MCP prompt가 들어갔다.
+
+### Current Progress (git 기준)
+
+- `b7aceef` — 10 구현: `src/core/skill-guide.ts`(신규), `src/core/mcp-server.ts`, `src/index.ts`, `scripts/check-mcp-stdio.mjs`(와이어 검사 4개 추가), SKILL.md 3문장, README 두 언어, 이 이슈 파일(체크박스·Status·Comments).
+- `7c88997` — 스펙 구현 순서 표와 목록에서 10을 완료로 표시.
+- `cfa704f` — `0.2.0`: 매니페스트와 shim(`plugin/skills/archdraw/scripts/archdraw`)의 버전이 `0.2.0`.
+- 커밋하지 않은 것: `tools/`(추적 안 됨). 이 세션의 작업이 아니다. 08 작업으로 보인다(미확인).
+
+### Next Steps
+
+1. **레포 밖 폴더에서 등록.** 빈 폴더에서 `claude mcp add archdraw -- npx --prefix ~ -y excalidraw-architect@latest` → `claude`를 켜 `/mcp`에서 archdraw가 connected인지 본다 → `/mcp__archdraw__archdraw`를 불러 SKILL.md 본문이 오는지 본다.
+2. **이 레포 폴더에서 같은 등록.** 같은 이름의 로컬 `package.json`이 있어도 `--prefix ~` 덕분에 게시본이 붙는지 본다. 끝나면 `claude mcp remove archdraw`로 지운다.
+3. **호출 형식 확인.** README의 `/mcp__archdraw__archdraw`는 Claude Code의 MCP prompt 명명 규칙을 따라 적었고 실제로 불러 보지 않았다. 다르면 README 두 언어를 고친다.
+4. 둘 다 붙으면 위 마지막 체크박스를 체크하고 Status의 "다음 릴리즈 뒤 사람이 확인" 문구를 정리한다. 스펙 순서 목록 10번의 "손 확인 1건이 남았다"도 지운다.
+5. 그 다음은 스펙 순서 11번: [08 기록 스킬](08-dogfooding-report-skill.md).
+
+### Decisions Made
+
+- 참고 문서 resource의 SDK `name`은 스킬 폴더 기준 상대경로, `title`은 파일의 첫 `#` 줄이다. URI는 티켓대로 `guide://` + 상대경로다.
+- 목록 밖 이름 거부는 SDK의 정적 등록에 맡겼다(`ResourceNotFoundError`). 읽기는 메모리에서만 하므로 파일 시스템에 닿지 않는다.
+- 빈 `references/` 폴더는 따로 막지 않았다. npm은 빈 폴더를 싣지 않으므로 게시본에서는 "폴더 없음 → 시작 실패"가 된다.
+
+### What Didn't Work
+
+- ⚠️ SKILL.md에 "링크 경로 앞에 `guide://`를 붙인다"만 적으면 참고 문서 안의 상대 링크가 틀리게 풀린다(`routing-table.md`의 `situations/saga.md` → `guide://situations/saga.md`). 그래서 "resource 이름 기준으로 웹 링크처럼 푼다" 문장과 예시를 더했다. 참고 문서의 링크 형태를 바꿀 때 이 규칙을 같이 본다.
+- 과정: 끝 보고에 결정이 아닌 정리 항목을 "판단할 것"으로 올려 사용자가 혼란스러워했다. 결정 질문에는 사용자만 정할 수 있는 것만 올린다.
