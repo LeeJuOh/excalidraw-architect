@@ -158,59 +158,57 @@
 - **`SPEC_VALUES` 정규식은 근사다.** hex·px·`NxN`·JSON 크기 네 모양만 잡는다. 산문으로 쓴 치수는 못 잡으므로 리뷰 때 읽어야 한다.
 - `references/cheatsheet.md`의 REST API 표는 업스트림 스킬과 함께 사라졌다. `canvas-ops.md`로 옮긴 것은 조작법·요소 포맷·오류 복구뿐이고, REST는 스킬 경로가 아니라 옮기지 않았다.
 
-## 핸드오프 — 슬라이스 A 완료, 슬라이스 B 대기 (2026-09-22)
-
-**목표.** 03 본문 구현. 인수가 40건을 넘어 두 슬라이스로 갈랐다 — **A(문서·파일을 읽어 판정) 완료**, **B(캔버스를 띄워 판정) 미착수**. 경계는 이 이슈의 "검증 방법과 결과 기록(R10)" 표가 가르는 선을 그대로 썼다.
-
-**첫 행동.** 재개하면 사용자에게 셋 중 무엇인지 먼저 물어라: ① 순서 표대로 04→05를 구현하고 슬라이스 B를 한 번에 돈다 ② 지금 서버로 돌 수 있는 인수 12건만 먼저 실행해 본문 오류를 조기에 잡는다(샘플 백엔드 레포와 브라우저 탭 필요) ③ 03을 두고 04로 넘어간다. 세션이 끊길 때 이 질문에 답이 없었다. ①이면 `/implement .scratch/archdraw-skill/issues/04-session-per-canvas.md`.
-
-**당시 판단.** 본문은 스펙 §1·§2·§3·§3.5·§4·"선 표기"·"yctimlin과의 경계"를 다 옮겼다고 본다. 자동 검사는 통과하는데 내용이 빠진 곳이 /code-review에서 3종 나왔고(아래), 그걸 고친 뒤 커밋했다. 슬라이스 B를 지금 돌리면 절반이 05 frame에 걸려 헛돈다고 판단해 멈췄다.
-
-### 진행 상태 (git 기준)
-
-- 브랜치 `main`, `origin/main`까지 푸시됨. 이 작업의 커밋은 둘 — `ebca557`(슬라이스 A 산출물과 삭제) · `07b0e53`(이 핸드오프). 그 앞의 `main` 이력은 09까지의 작업이다.
-- 미커밋은 `.claude/settings.json` 하나 — 이번 세션 권한 승인이고 03과 무관해 일부러 커밋에서 뺐다.
-- 산출물: `plugin/skills/archdraw/SKILL.md`(296줄, §1~§11 + Developing) · `references/routing-table.md`(상황 21개) · `references/zoom-levels.md` · `references/canvas-ops.md`(툴↔CLI 대응표·요소 포맷·오류 복구).
-- 삭제: `skills/excalidraw-skill/` · `src/cli/commands/install-skill.ts`와 `src/cli/run.ts`의 등록 · `scripts/sync-skills.mjs` · `package.json`의 `sync:skills`와 `files`의 `skills/**/*`.
-- 검사: `scripts/check-skill-docs.mjs`를 `npm test`의 `test:skill-docs`로 물렸다. `npm test` 5종과 `tsc --noEmit` 통과.
-- 인수: 문서 판정 5건 통과(위 체크박스 34·35·46·47·52), 근거는 위 Comments 표. 나머지는 전부 미시험.
-
-### 결정
-
-- 슬라이스 경계 = R10 표의 관측 수단. 문서 읽기로 닫히는 것만 A.
-- 드리프트 검사를 스크립트로 박았다 — 매니페스트 드리프트 검사와 같은 자리(레포 관례).
-- **04의 세션 커맨드를 미리 가리킨다.** SKILL.md §10과 `canvas-ops.md` 대응표가 `session start`/`session list`/`session_attach`/`session_end`를 부르는데 오늘은 없는 이름이다. 스펙 "yctimlin과의 경계"가 첫 턴 붙기·종료를 스킬 몫으로 적어 넣었다. 04에서 이름이 달라지면 두 파일을 함께 고친다.
-- 구 `cheatsheet.md`의 REST API 표는 옮기지 않고 버렸다 — 스킬 경로가 아니다.
-
-### 통한 것
-
-- 문서 인수를 스크립트로 먼저 쓰고(빨강) 본문을 채운 순서. 삭제 인수까지 스크립트가 잡아줬다.
-- `/code-review` 2축 병렬. 스크립트가 통과하는데 내용이 틀린 것 3종을 전부 거기서 잡았다 — 스펙 §4 모드·이식 원칙 2개 누락, ADR-0006 위반 2곳, SKILL.md §2가 MCP 경로에 요소 포맷을 막던 구조 오류.
-
-### 안 통한 것
-
-- ⚠️ **자동 검사로 본문 누락은 못 잡는다.** `check-skill-docs.mjs`는 줄 수·행 수·리터럴 부재만 본다. 스펙 대조는 읽어야 한다.
-- ⚠️ **규격 복사를 조심할 것.** `canvas-ops.md`가 "규격은 `guide://canvas`에 있다"고 적고 바로 아래에서 가이드 문장 2개와 노드 크기를 다시 적고 있었다. 정규식에 JSON 크기를 추가했지만 산문으로 쓴 치수는 여전히 못 잡는다.
-
-### 슬라이스 B를 막는 것
-
-| 막는 것 | 상태 | 막히는 인수 |
-|---|---|---|
-| 05 frame | `src/types.ts`의 `ExcalidrawElementType` union에 `frame`이 없다 | frame 이름 = 답하는 질문, "안 그림" 줄 위치, 그림 참조 `?element=<frame id>`, 내부 탐색·중복 방지. **라우팅 인수의 전제이기도 하다** |
-| 04 세션 | `src/cli/run.ts`의 `COMMANDS`에 session 계열이 없다 | 첫 턴 붙기, 세션 종료 1회 질문 |
-| 06 저장 | 미착수 | 저장 범위·경로·파일명·동명 거부·스냅샷 디스크 보관·저장 상태 한 줄 |
-| 07 근거 | 슬라이스 A 완료(2026-10-11) | `코드` 근거 검사 통과와 거부 뒤 고치기. 복원 뒤 근거 없음 목록 처리는 07 슬라이스 B 뒤 |
-| 02 도그푸딩 | ready-for-human | with/without eval. 02 판정이 03 수정 사항으로 돌아오므로 **03은 02 뒤에 최종 닫힌다** |
-
-슬라이스 B 실행 자체에 샘플 백엔드 레포와 열린 브라우저 탭이 필요하다. 이 세션에서 archdraw MCP 서버는 연결 실패 상태였다(호스트가 15분 캐시).
-
-### 남은 단계
-
-1. 04 → 05 → 06 → 07 (순서 표 3번 묶음, 06은 05 후)
-2. 05 뒤: 슬라이스 B에서 지금 돌 수 있는 12건 실행 — 라우팅 3종·선택 이유·성능 병목 병렬·가독성 자가 수정·좌표 유지·기존 그림 보존·정방향/역방향/초안/끌고 가기/경계·허용 디테일·의존 선언만일 때 점선
-3. 06·07 뒤: 저장·스냅샷·근거 인수
-4. 02 도그푸딩 → 03 수정 → 03 닫기
+**2026-09-23 — 01·09 사후 검수 중 발견: 스킬과 규격의 충돌.** `SKILL.md:73`의 "Align only the elements you are drawing now"는 `docs/canvas-guide.md:68`("Do not run `align_elements` or `distribute_elements` to clean up a diagram you just placed")과 요약 절 20행의 align 금지에 어긋난다. 09가 뺀 사후 정렬 지시를 스킬이 되살리는 셈이다. 문장의 뜻은 "사용자가 옮긴 요소는 건드리지 말고, 지금 그리는 요소만 배치하라"로 보인다. `Align`을 다른 동사로 바꿀 것. `check-skill-docs.mjs`는 이런 충돌을 잡지 못한다.
 
 ---
 
-**2026-09-23 — 01·09 사후 검수 중 발견: 스킬과 규격의 충돌.** `SKILL.md:73`의 "Align only the elements you are drawing now"는 `docs/canvas-guide.md:68`("Do not run `align_elements` or `distribute_elements` to clean up a diagram you just placed")과 요약 절 20행의 align 금지에 어긋난다. 09가 뺀 사후 정렬 지시를 스킬이 되살리는 셈이다. 문장의 뜻은 "사용자가 옮긴 요소는 건드리지 말고, 지금 그리는 요소만 배치하라"로 보인다. `Align`을 다른 동사로 바꿀 것. `check-skill-docs.mjs`는 이런 충돌을 잡지 못한다.
+## 핸드오프 — 슬라이스 B 착수 (2026-10-12)
+
+이 절은 2026-09-22 핸드오프("슬라이스 A 완료, 슬라이스 B 대기")를 대체한다. 그 핸드오프의 "슬라이스 B를 막는 것" 표는 낡았다 — 04·05·06·07이 모두 resolved다.
+
+### Goal
+
+슬라이스 B를 실행한다. 캔버스에 실제로 그려서 판정하는 인수를 돌리고 결과를 기록한다. 코드는 고치지 않는다. 본문(SKILL.md·references)의 결함을 찾으면 본문을 고친다.
+
+### First Action
+
+사용자에게 **샘플 백엔드 레포**를 묻는다. 인수 발화가 주문·배송·결제·재고·인증 코드를 전제로 한다(예: "주문 취소는 배송 상태에 따라 어떻게 갈라져?", "`order`를 고치면 어디까지 닿아?"). 이것은 사용자만 정할 수 있다. 참고: `review.md`의 02 재료 기록은 "사용자 Spring 프로젝트 하나 + NestJS 공개 레포(미정)"이다.
+
+### Context
+
+- **범위.** 위 첫 인수 목록의 미체크 항목과 슬라이스 C 끝 "인수 — 캔버스로 판정" 8건이다. 제외: with/without 비교 eval 항목과 R10 절의 두 번째 체크박스. 둘 다 02 뒤에 한다.
+- **기록 방식.** "검증 방법과 결과 기록 (R10)" 표를 따른다. 항목마다 발화·초기 조건·기대·실제·판정·근거를 남긴다. 의미 평가와 화면 확인은 따로 적는다. 결과는 이 파일의 Comments에 쓴다.
+- **다른 이슈가 여기로 넘긴 확인.** 06 Status: "03 슬라이스 B·02 도그푸딩과의 공동 확인만 남음". 06의 미시험 "6d2 모델이 실제로 묻는지"도 여기서 본다. 07의 근거 인수는 이미 거부 기준으로 바뀌었다(07 체크박스).
+- **02와의 차이.** 03 B는 정해진 발화로 스킬 규칙을 판정한다. 02는 사용자가 실제 일에 써 본다.
+- **이 레포의 Claude Code에는 archdraw MCP가 없다.** 2026-10-12 `claude mcp list`에 archdraw가 없었다. 레포의 스킬과 서버로 돌리려면 `npm run build` 뒤 `ARCHDRAW_BIN=<레포>/dist/bin.js`를 두고 `claude --plugin-dir ./plugin`으로 켠다(`--plugin-dir` 플래그는 `claude --help`에 있다. 이 조합 자체는 미확인).
+- 08b(개인 스킬 `archdraw-report`의 실제 세션 확인)는 사용자 몫으로 남아 있다. 03 B와 무관하다.
+
+### Current Progress
+
+- 브랜치 `main`, 작업 트리 깨끗함, HEAD `73b2721`(이슈 10 손 확인 닫음). 이 세션은 03을 고치지 않았다.
+- 03: 슬라이스 A·C의 문서 인수는 체크됨. 슬라이스 B는 미착수. Status는 `ready-for-agent` 그대로다.
+- 아는 본문 결함 1건이 남아 있다: `plugin/skills/archdraw/SKILL.md`의 "Align only the elements you are drawing now"(위 2026-09-23 Comments). 2026-10-12에 grep으로 아직 있음을 확인했다.
+
+### Decisions Made
+
+- 슬라이스 경계는 R10 표의 관측 수단이다. 문서로 닫히는 것은 A·C, 캔버스가 필요한 것은 B(2026-09-22).
+- 03은 02 뒤에 최종으로 닫는다. 02 판정이 03 수정 사항으로 돌아온다.
+
+### What Worked
+
+- **헤드리스 확인.** `claude -p "/<명령>" --output-format stream-json --verbose < /dev/null`로 실행한다. stream-json에는 펼쳐진 prompt 본문이 나오지 않는다. 세션 기록 `~/.claude/projects/<인코딩된 cwd>/<session_id>.jsonl`에 본문과 툴 호출이 다 있다. `session_id`는 stream-json의 `init` 줄에 있다(이슈 10 손 확인에서 사용).
+- 판정은 요소 데이터로 한다. 좌표 비교에는 `describe`를 쓰지 않는다(반올림). 그림 제목만으로 그림 종류를 판정하지 않는다(R10).
+
+### What Didn't Work
+
+- ⚠️ **자동 검사는 본문 누락과 규칙 충돌을 잡지 못한다.** `check-skill-docs.mjs`는 줄 수·행 수·리터럴만 본다. "Align only" 충돌도 검사를 통과했다.
+- ⚠️ 규격 값(치수·색)을 스킬 문서에 다시 적지 않는다. 원본은 `docs/canvas-guide.md` 하나다(ADR-0006).
+- 과정: 사용자는 짧은 한국어 보고를 원한다. 결정 질문에는 사용자만 정할 수 있는 것만 올린다.
+
+### Next Steps
+
+1. 샘플 레포를 정한다(First Action).
+2. 실행 환경을 만든다: `npm run build`, `ARCHDRAW_BIN`, `--plugin-dir ./plugin`. 첫 발화 하나로 MCP 경로가 레포 빌드를 쓰는지 확인한다.
+3. 묶음 순서로 돈다: 라우팅·선택 이유 → 캔버스 우선(좌표 유지·옆에 그리기·자가 수정) → 대화 중 사용(정방향·역방향·초안·끌고 가기·경계) → 선 표기·근거 → 줌 포함 관계 → 내부 탐색·저장·스냅샷·저장 상태 → 슬라이스 C 8건.
+4. 결함을 찾으면 본문을 고치고 그 인수를 다시 돈다. "Align only" 문장도 이때 고친다.
+5. 끝나면 체크박스와 Status를 갱신한다. 스펙 순서 목록 12번도 갱신한다. 그다음은 02 도그푸딩이다.
