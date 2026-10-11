@@ -1,19 +1,39 @@
 # 08: 도그푸딩 이슈 기록 스킬 — `archdraw-report`
 
-**What to build:** 도그푸딩 PC에서 archdraw를 쓰다가 사용자가 "이슈 남겨" / "이거 이상해"라고 하면, 에이전트가 방금 발화와 나온 그림(캔버스 `describe`)을 모으고, 불만·원했던 것을 아직 말하지 않았으면 그것만 묻고, 회사명·클래스명·테이블명을 뺀 뒤 이 레포 GitHub Issues에 `dogfooding` 라벨로 한 건 올리고 URL을 알려준다. 02의 기록 방법(발화 · 나온 그림 · 불만/고친 것 · 원했던 것)을 사람 손 대신 에이전트가 채운다. 판단 규칙은 담지 않는다.
+**What to build:** 도그푸딩 PC에서 archdraw를 쓰다가 사용자가 `/archdraw-report`(Codex는 `$archdraw-report`)를 부르면, 에이전트가 방금 발화와 나온 그림(`describe_scene`)을 모으고, 불만·원했던 것 중 아직 말하지 않은 것만 묻고, 제목과 본문에서 회사명·클래스명·테이블명을 뺀 뒤 이 레포 GitHub Issues에 `dogfooding` 라벨로 한 건 올리고 URL을 알려준다. 02의 기록 방법(발화 · 나온 그림 · 불만/고친 것 · 원했던 것)을 사람 손 대신 에이전트가 채운다. 판단 규칙은 담지 않는다.
 
-- archdraw와 같은 스킬 폴더 구조로 두어 세 채널(Claude 플러그인 · Codex 플러그인 · `npx skills add`)에서 함께 설치된다. 01의 수동 호출 정책을 따른다.
-- 그림 파악은 archdraw와 같은 규약으로 `describe`를 부른다(MCP 툴 우선, 없으면 shim). 서버가 없거나 그림이 없으면 발화와 불만만으로 올린다.
-- 이슈 제목은 발화 요약 한 줄, 본문은 02의 네 항목 순서. 스킬 본문 30줄 이하, 영어.
-- 이슈 대상 레포는 스킬 안에 고정한다(`gh repo set-default`에 의존하지 않는다).
+- **개인 스킬이다 — 플러그인에 넣지 않는다.** 도그푸딩은 사용자 혼자 한다. 파일은 레포 `tools/archdraw-report/`(`SKILL.md`, `agents/openai.yaml`)에 둔다. `plugin/` 밖이라 플러그인·npm·`npx skills add` 어디에도 실리지 않는다(ADR-0011). 프로젝트 스킬(`.claude/skills/`)은 쓰지 않는다 — 도그푸딩은 다른 레포에서 하므로 보이지 않는다.
+- **설치는 PC마다 한 번, 아래 명령으로 한다.** 실제 파일은 `~/.agents/skills/`(Codex가 읽는다)에 두고, `~/.claude/skills/`에 심링크를 건다. 스킬을 고치면 같은 명령을 다시 실행한다. 명령은 `&&`로 이어져 있어 한 단계가 실패하면 거기서 멈춘다. README에는 넣지 않고 `tools/archdraw-report/` 안에 이 명령을 적은 짧은 안내만 둔다.
+  ```
+  mkdir -p ~/.agents/skills/archdraw-report/agents ~/.claude/skills \
+  && curl -fsSL https://raw.githubusercontent.com/LeeJuOh/excalidraw-architect/main/tools/archdraw-report/SKILL.md -o ~/.agents/skills/archdraw-report/SKILL.md \
+  && curl -fsSL https://raw.githubusercontent.com/LeeJuOh/excalidraw-architect/main/tools/archdraw-report/agents/openai.yaml -o ~/.agents/skills/archdraw-report/agents/openai.yaml \
+  && ln -sfn ../../.agents/skills/archdraw-report ~/.claude/skills/archdraw-report
+  ```
+- **수동 호출만 한다.** `SKILL.md`에 `disable-model-invocation: true`, `agents/openai.yaml`에 `policy.allow_implicit_invocation: false`. "이거 이상해"라는 말만으로는 실행되지 않는다 — 그림 수정 요청이 공개 이슈가 되는 것을 막는다.
+- **그림은 archdraw MCP 툴 `describe_scene`으로만 읽는다.** 툴이 없거나 호출이 실패하면 `나온 그림` 칸에 `(캔버스 없음)`을 쓰고 나머지는 그대로 진행한다. shim 폴백은 두지 않는다 — 개인 스킬은 archdraw 스킬 폴더 위치를 모르고, ADR-0002가 shim을 두는 이유(`npx skills add` 채널)가 이 스킬에는 없다.
+- **본문은 02의 네 칸을 항상 이 순서로 쓴다:** 발화 · 나온 그림 · 불만/고친 것 · 원했던 것. 캔버스가 없어도 네 칸을 모두 쓰고, 원했던 것도 묻는다. 발화는 이름을 뺀 것 외에는 사용자 말 그대로, 사용자가 쓴 언어 그대로 옮긴다(영어로 말했으면 영어로, 번역하지 않는다).
+- **제목은 발화 요약 한 줄이다.** 이름 빼기 규칙은 제목에도 적용한다.
+- **언어:** 스킬 본문·이슈 제목·이슈 본문은 한국어. 예외는 발화 칸 하나다 — 원래 언어 그대로 둔다. 스킬 본문은 30줄 이하.
+- **이슈 대상 레포는 스킬 안에 `LeeJuOh/excalidraw-architect`로 고정한다**(`gh repo set-default`에 의존하지 않는다). `dogfooding` 라벨은 이 레포에 이미 있다(2026-10-12 `gh label list` 확인).
+- **`gh`가 실패하면 실패로 끝내지 않는다.** 미설치·미인증·`gh issue create` 실패(권한·네트워크 포함) 모두, 완성된 제목과 본문을 채팅에 내주어 사용자가 붙여넣게 한다. 네트워크 실패는 이슈가 이미 생겼을 수 있으므로, 이때 안내에 "붙여넣기 전에 이 레포의 최근 `dogfooding` 이슈를 확인하라"는 한 줄을 붙인다.
 
-**Blocked by:** 01 (플러그인 골격)
+**Blocked by:** None (can start immediately) — `describe_scene`과 `dogfooding` 라벨은 이미 있다.
 
 **Status:** ready-for-agent
 
-- [ ] archdraw로 그림을 그린 뒤 "이슈 남겨"라고 하면 발화와 그림 설명이 들어간 이슈가 `dogfooding` 라벨로 생기고 채팅에 URL이 나온다
-- [ ] 불만·원했던 것을 말하지 않았으면 그 둘만 묻고, 이미 말했으면 묻지 않는다
-- [ ] 이슈 본문에 회사명·클래스명·테이블명이 없다. 에이전트가 지우고, 확신이 없는 이름은 올리기 전에 사용자에게 확인한다
-- [ ] `gh` 미설치·미인증이면 실패로 끝내지 않고 완성된 본문을 채팅에 내주어 사용자가 붙여넣을 수 있다
-- [ ] 세 채널 설치 시 archdraw와 함께 들어오고, 호스트별 표기로 부를 수 있다
-- [ ] 캔버스 서버가 없는 상태에서도 발화·불만만으로 이슈가 생긴다
+- [ ] archdraw로 그림을 그린 뒤 `/archdraw-report`를 부르면 발화와 그림 설명이 들어간 이슈가 `dogfooding` 라벨로 생기고 채팅에 URL이 나온다
+- [ ] Codex에서 `$archdraw-report`로 같은 결과가 나온다
+- [ ] 스킬을 부르지 않고 "이거 이상해"라고만 말하면 스킬이 실행되지 않는다
+- [ ] 불만·원했던 것을 둘 다 말하지 않았으면 둘 다 묻고, 하나만 말했으면 나머지 하나만 묻고, 둘 다 말했으면 묻지 않는다
+- [ ] 이슈 제목과 본문에 회사명·클래스명·테이블명이 없다. 에이전트가 지우고, 확신이 없는 이름은 올리기 전에 사용자에게 확인한다
+- [ ] 캔버스 서버가 없거나 `describe_scene`이 실패해도 이슈가 생기고, `나온 그림` 칸에 `(캔버스 없음)`이 있으며 원했던 것도 채워져 있다
+- [ ] `gh` 미설치·미인증·이슈 생성 실패면 실패로 끝내지 않고 완성된 제목·본문을 채팅에 내준다
+- [ ] `~/.claude/skills`와 `~/.agents/skills`가 없는 새 PC에서도 위 설치 명령 한 번으로 Claude·Codex 둘 다 스킬이 보인다
+- [ ] `npm pack --dry-run` 목록에 `tools/`가 없다(`package.json` `files`에 없으므로 그대로면 된다). `plugin/` 아래에도 이 스킬이 없다
+
+## Comments
+
+**2026-10-12 — 검수와 그릴(사용자).** codex verify 1차 FAIL(P1: 캔버스가 없을 때 "원했던 것"을 묻는지 문장끼리 모순). 그릴에서 정한 것: 플러그인 배포에서 빼고 개인 스킬로(사용자 혼자 쓴다), 각 PC에 `curl` 설치 + Claude 심링크, 수동 호출만, `describe_scene`만 쓰고 실패하면 `(캔버스 없음)`, 캔버스가 없어도 원했던 것을 묻는다, 스킬·이슈 모두 한국어, 이름 빼기는 제목까지, `gh` 실패 전부 본문 붙여넣기 폴백. 01 의존은 지웠다. ADR·CONTEXT.md와 충돌 없음(ADR-0002는 배포 채널 밖이라 미적용).
+
+**2026-10-12 — 2차 검수(사용자).** codex verify 2차 FAIL(P1: 설치 명령이 `~/.claude/skills`를 만들지 않음, 발화 "그대로"와 "본문 한국어"가 영어 발화에서 충돌). 고친 것: 설치 명령에 `~/.claude/skills` 생성과 `&&` 연결, 발화는 원래 언어 그대로(사용자 결정 — 번역하지 않는다), 네트워크 실패 안내에 중복 확인 한 줄.
