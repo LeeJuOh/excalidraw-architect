@@ -66,15 +66,24 @@
 
 ## 슬라이스 C — 브라우저 왕복에서 근거 보존
 
-**What to build:** 사용자가 브라우저에서 요소를 만지고 저장·재로드해도 `evidence`가 남는다. sync는 검사하지 않는다. 깨지면 프론트 작업이 이 슬라이스에 추가된다.
+**What to build:** 사용자가 브라우저에서 요소를 만지고 저장·재로드해도 `evidence`가 남는다. sync는 근거를 검사하지도 쓰지도 않는다 — 서버는 브라우저가 보낸 `evidence`를 무시하고 같은 id의 근거를 유지한다. 브라우저에서 복제·붙여넣기로 생긴 요소에는 근거가 없다.
 
 **Blocked by:** 슬라이스 A
 
 **Status:** ready-for-agent
 
+**결정 (2026-10-12 그릴, [ADR-0005](../../../docs/adr/0005-server-checks-evidence-and-demotes.md) Consequences)**
+
+- 원인: 브라우저가 서버 장면을 받을 때 Excalidraw의 요소 변환(`convertToExcalidrawElements`)이 모르는 키를 버려 `evidence`가 빠진다. 그 뒤 sync가 서버를 덮어써 근거가 지워진다(Red 테스트로 확인).
+- 고치는 곳은 서버 sync다. 프론트는 고치지 않는다. 프론트에서 다시 붙이면 브라우저 복제본이 원본의 근거를 검사 없이 달고 나가서 기각했다. `customData`로 옮기기는 서버·`describe`·스냅샷 모양이 모두 바뀌어 기각했다.
+- 남은 한계(막지 않는다): 브라우저에서 지우고 sync한 뒤 실행 취소로 살린 요소는 근거를 잃는다. 지운 요소의 근거를 기억하면 에이전트가 같은 id로 새 요소를 만들 때 옛 근거가 붙는다. 결과는 "근거 없음"이지 "틀린 근거"가 아니다.
+
 - [ ] 브라우저에서 `코드` 태그 화살표를 끌어 옮긴 뒤 `describe`에 `evidence`가 그대로 있다
 - [ ] 근거 코드를 지운 상태에서 브라우저로 화살표를 옮겨도 sync가 성공한다(검사하지 않음)
-- [ ] 브라우저 탭을 재로드한 뒤에도 `evidence`가 남아 있다
+- [ ] 브라우저 탭을 재로드한 뒤에도 `describe`에 `evidence`가 남아 있다
+- [ ] 브라우저에서 복제한 화살표에는 `evidence`가 없다. 원본에는 그대로 있다
+- [ ] 캔버스 스크린샷에 근거 태그 글자가 없다(슬라이스 A에서 미룬 브라우저 확인)
+- [ ] 기존 `npm test`와 `npm run test:canvas` 통과
 
 ## 착수 전 검수 결과 처리 (2026-10-11)
 
@@ -109,49 +118,6 @@
 11. 남은 한계: CLI `apply`의 update는 하나씩 보내므로 원자적이지 않다(기존 동작, 05 frame 검사와 같다). 같은 batch에 frame 오류가 있으면 frame 에러가 먼저 나와 근거 문제는 다음 시도에 나온다. `copy: true`는 맨 REST로도 보낼 수 있다(MCP·CLI는 복원·import·복제에서만 보낸다).
 12. 스킬 글은 skill-creator-pro의 eval 루프를 돌리지 않았다. 고치기 전 스냅샷: `~/.claude/plugins/data/skill-creator-pro-claude-code-zero/archdraw-07-evidence/skill-snapshot/`. 스킬 동작은 03 슬라이스 B와 02에서 확인한다.
 
-### 핸드오프 — 결정 4·10 반영 뒤, 슬라이스 B 착수 전 (2026-10-11)
-
-**Goal:** 07을 마친다. 슬라이스 B와 C를 슬라이스마다 커밋 한 번씩 한다. 그다음 `/code-review`로 검토한다. 진행 규칙: 어긋나면 멈추고 보고한다. 스킬 글은 skill-creator-pro로 고친다. push는 지시가 있을 때만 한다.
-
-**First Action:** `/mattpocock-skills:tdd`로 슬라이스 B를 시작한다. 먼저 `scripts/check-evidence.mjs`의 `restoreAndImportAreNotRefused()`에 red 단언을 넣는다: 근거 코드를 지운 뒤 restore·import·duplicate를 하면 결과 앞부분에 근거 없음 목록(요소 ID, 경로, `quote`, 이유)이 있다. 근거가 맞는 요소는 목록에 없다. MCP와 CLI 모두 확인한다.
-
-**Context:**
-- 이 세션에서 그릴로 두 결정을 정했다(위 "결정" 4번 개정, 10번 추가). 사용자는 두 답 모두 직접 골랐다.
-- 슬라이스 B의 목록 만들기는 서버 한 곳에서 한다. `src/server.ts`의 `storeCreatedElements()`가 `copy` 갈래에서 이미 `assertEvidence()`를 건너뛴다. 이 갈래에서 `findEvidenceProblems()`(`src/core/evidence.ts`)로 목록을 만들어 batch 응답에 넣는다. 그다음 응답을 받는 세 곳이 목록을 결과 앞부분에 보인다:
-  - 복원: MCP `src/core/mcp-dispatch.ts`의 `restore_snapshot` 갈래, CLI `src/cli/commands/snapshot.ts`의 `restore`
-  - import: `src/core/scene-io.ts`의 `importScene()`(MCP `import_scene` 갈래와 CLI가 함께 쓴다 — CLI 경로는 확인하지 않았다)
-  - 복제: `src/core/geometry.ts`의 `duplicateElements()`(MCP `duplicate_elements`, CLI `arrange duplicate`)
-- 지금 `batchCreateElementsOnCanvas()`(`src/core/canvas-client.ts`)는 `elements`만 돌려준다. 목록을 위로 넘기려면 이 반환 모양을 바꿔야 한다.
-- 스킬 글: 결정 8(같은 코드를 찾으면 고치고 알림, 못 찾으면 사용자에게 물음)을 `plugin/skills/archdraw/references/canvas-ops.md`의 Evidence 항목 근처에 넣는 것을 생각했다(미정).
-
-**Current Progress** (repo_facts.sh와 `npm test`로 확인):
-- 브랜치 `main`. 슬라이스 A는 `f0354e7` 커밋이다.
-- 결정 4(공백 규칙)는 이 핸드오프와 같은 커밋에 들어간다. `src/core/evidence.ts`의 `collapseWhitespace()`를 `stripWhitespace()`로 바꿨다(공백을 모두 지움). `scripts/check-evidence.mjs`의 `whitespaceDifferencesAndLineBreaksMatch()`에 `joined` 케이스를 넣었다. 고치기 전 실패, 고친 뒤 통과를 확인했다.
-- 결정 10은 문서에만 있다(위 "결정" 10번, 슬라이스 B 인수, `spec.md` 7-3). 코드는 아직 없다.
-- 마지막 실행: `npm run type-check` 통과, 전체 `npm test` 통과(`test:evidence` 16 케이스).
-- 슬라이스 B·C: 시작하지 않았다.
-
-**Decisions Made:**
-- 결정 4 = 공백을 모두 지우고 비교한다. 이유: 검사의 목적은 지어낸 코드를 막는 것이다. 지어낸 코드는 공백을 지워도 거부된다. `int x`와 `intx`를 같게 보는 위험은 받아들였다.
-- 결정 10 = 복제도 목록을 돌려준다. 이유: `copy: true`인 쓰기를 모두 같은 규칙으로 하면 규칙과 코드가 단순하다. 셋 다 근거를 적은 때와 지금 사이에 코드가 바뀌었을 수 있다.
-- 서버는 찾기만 하고, 다른 곳에서 코드를 찾는 일은 에이전트가 한다(결정 8). 사용자가 이것을 확인했다.
-- "슬라이스 A 결과"의 1~12번은 다시 토론하지 않는다(2번은 결정 4로 바뀌었다).
-
-**What Worked:**
-- 질문은 한 번에 하나씩 했다. 실제 파일 내용으로 단계 예시를 보이자 사용자가 빨리 판단했다.
-- red 케이스를 먼저 넣고 실패를 본 뒤 고쳤다.
-
-**What Didn't Work:**
-- ⚠️ 질문 두 개를 한 번에 냈더니 사용자가 "질문 한 번에 하나"라고 했다.
-- ⚠️ 설명이 추상적이면 사용자가 이해하지 못했다("아 먼 소리야", "복제? 임포트? 예시 들어"). 처음부터 구체적 예시(파일 내용, 사용자 동작)로 말한다. 정의하지 않은 용어("근거 없음 목록")를 바로 쓰지 않는다.
-- ⚠️ 한 번 영어로 답해서 사용자가 "한글로 말해"라고 했다. 항상 한국어로 답한다.
-
-**Next Steps:**
-1. 슬라이스 B 구현 → 스킬 글(결정 8) → `npm test` → 커밋.
-2. 슬라이스 C: Playwright(`tests/browser/`, `npm run test:canvas`)로 브라우저 왕복에서 `evidence`가 남는지 확인한다. 스크린샷에 태그 글자가 없는지도 브라우저로 확인한다. → 커밋.
-3. 07 전체를 `/code-review`로 검토한다. `Status`와 `spec.md`의 07 행을 고친다.
-4. 순서 표대로 10 → 08 → 03 슬라이스 B → 02.
-
 ### 슬라이스 B 결과 (2026-10-11)
 
 확인: `scripts/check-evidence.mjs`의 `restoreAndImportAreNotRefused()`. 근거 코드를 지운 뒤 restore·duplicate·import를 CLI와 MCP로 각각 부른다. 맞는 근거(`keep`)는 목록에 없고, 목록의 ID는 복사본·import가 새로 만든 ID다. 단언을 먼저 넣고 restore → duplicate → import 순으로 실패를 본 뒤 고쳤다.
@@ -166,3 +132,41 @@
 4. `batchCreateElementsOnCanvas()`·`batchCreateElementsStrict()`는 `{ elements, staleEvidence }`를 돌려준다(`CreatedBatch`). copy가 아닌 호출자는 `elements`만 쓴다.
 5. 스킬 글(결정 8)은 `references/zoom-levels.md` "Evidence tags" 끝에 두고, `canvas-ops.md`의 Evidence 항목에서 가리킨다. "못 찾으면 선을 고치기 전에 묻는다"로 적었다. 고치기 전 스냅샷: `~/.claude/plugins/data/skill-creator-pro-claude-code-zero/archdraw-07-evidence-b/skill-snapshot/`. eval 루프는 돌리지 않았다(슬라이스 A와 같음).
 
+### 핸드오프 — 슬라이스 C 그릴 뒤, 구현 전 (2026-10-12)
+
+**Goal:** 07을 마친다. 슬라이스 C(브라우저 왕복에서 근거 보존)를 구현하고, 사용자 확인 뒤 커밋 한 번 한다. 그다음 07 전체를 `/code-review`로 검토한다. 어긋나면 멈추고 보고한다. push는 지시가 있을 때만 한다.
+
+**First Action:** `/mattpocock-skills:tdd`로 이어 간다. `tests/browser/scene-reload.spec.mjs`의 `code evidence survives a browser drag and sync`는 이미 Red다(`arrow.evidence`가 `undefined`). `src/server.ts`의 `POST /api/elements/sync`에서, `elements.clear()` 전에 id별 `evidence`를 꺼내 두고 받은 요소의 `evidence`는 버린 뒤 같은 id에 이전 값을 다시 붙여 Green으로 만든다. 실행: `npm run build && npx playwright test -g "code evidence"`.
+
+**Context:**
+- 슬라이스 C의 결정·인수 기준·남은 한계는 위 "슬라이스 C" 절과 ADR-0005 Consequences(2026-10-12 줄)에 있다. 다시 토론하지 않는다.
+- 원인(확인함): 브라우저 `frontend/src/utils/scene.ts` → `prepareServerScene()`이 `convertToExcalidrawElements()`를 부르고, Excalidraw 0.18.1의 `_newElementBase()`는 아는 키와 `customData`만 새 객체에 넣는다. `restoreElements()`는 모르는 키를 남긴다. 프론트는 고치지 않는다.
+- 테스트 경계: Playwright(`tests/browser/`, `npm run test:canvas`). 새 케이스는 같은 spec 파일에 넣는다(헬퍼 `seed`·`sync`·`serverScene` 재사용). 이번에 넣은 헬퍼: `codeEvidenceArrow()`(`/health`의 `projectRoot`에 `orders.ts`를 쓰고 `code` 근거 화살표 `ev`를 batch로 만든다), `dragArrow()`.
+- 남은 Red 후보(인수 기준 순):
+  - 근거 코드를 지운 뒤 브라우저로 옮겨도 sync 성공.
+  - 재로드 뒤 `GET /api/elements`에 `evidence`.
+  - 복제본에 `evidence` 없음. ⚠️ 지금 브라우저는 `evidence`를 아예 버리므로 UI 복제 테스트는 처음부터 통과한다. "sync는 브라우저가 보낸 `evidence`를 무시한다"를 Red로 보려면 `POST /api/elements/sync`에 새 id + `evidence`를 직접 보내 근거가 없는지 본다.
+  - 스크린샷에 태그 글자 없음.
+- 끝 보고 전에 "슬라이스 C 결과" 코멘트에 임의로 정한 것을 적고, 체크박스·Status를 갱신한다. ADR이 이미 적은 내용은 코드 주석으로 다시 쓰지 않는다.
+
+**Current Progress** (repo_facts.sh로 확인):
+- 브랜치 `main`. 마지막 커밋 `12bbbd7`(슬라이스 B), push하지 않음(`origin/main...HEAD` = `0 1`).
+- 커밋하지 않은 변경 4개:
+  - `tests/browser/scene-reload.spec.mjs`: Red 케이스 1개와 헬퍼 2개.
+  - `docs/adr/0005-server-checks-evidence-and-demotes.md`: sync는 근거를 쓰지 않는다, 기각안, 남은 한계.
+  - `CONTEXT.md`: 근거 태그·browser edit 정의.
+  - 이 이슈 문서: 슬라이스 C 결정·인수 기준, 이 핸드오프.
+- 서버 코드는 아직 고치지 않았다.
+
+**What Worked:**
+- 고치기 전에 Red 테스트로 사실을 확인하고, Excalidraw 번들 코드로 버리는 지점을 짚었다.
+- 그릴에서 복제 경우를 따라가다 고칠 자리를 프론트에서 서버로 바꿨다. 서버 쪽이 두 문제를 한 번에 막았다.
+
+**What Didn't Work:**
+- ⚠️ 설명이 길고 추상적이면 사용자가 "장황하게 말하지마", "예시 들어"라고 한다. AGENTS.md "문제를 설명할 때" 순서(현상 → 컴포넌트별 번호 예시 → 영향 → 원인)를 처음부터 짧게 지킨다. 질문은 한 번에 하나다.
+- 보고·질문은 모두 한국어로 쓴다.
+
+**Next Steps:**
+1. 슬라이스 C 구현 → 끝 보고 → 사용자 확인 → 커밋.
+2. 07 전체를 `/code-review`로 검토한다. 07 `Status`와 `spec.md`의 07 행을 고친다.
+3. 순서 표대로 10 → 08 → 03 슬라이스 B → 02.

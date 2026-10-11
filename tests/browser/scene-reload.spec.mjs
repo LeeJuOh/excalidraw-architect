@@ -363,6 +363,38 @@ test('first load measures text after its font file arrives', async ({ page, requ
   expect(Math.abs(stored.width - measured)).toBeLessThan(2);
 });
 
+async function codeEvidenceArrow(request) {
+  const { projectRoot } = await (await request.get('/health')).json();
+  const quote = 'await callPayments(order)';
+  writeFileSync(join(projectRoot, 'orders.ts'), `export async function place(order) {\n  ${quote};\n}\n`);
+  const evidence = { tag: 'code', path: 'orders.ts', quote };
+  const created = await request.post('/api/elements/batch', { data: { elements: [
+    { id: 'ev', type: 'arrow', x: 300, y: 300, width: 200, height: 0, points: [[0, 0], [200, 0]], evidence },
+  ] } });
+  expect(created.ok()).toBeTruthy();
+  return { projectRoot, evidence };
+}
+
+async function dragArrow(page) {
+  await expect(syncButton(page)).toBeEnabled();
+  const canvas = await page.locator('canvas.interactive').boundingBox();
+  await page.mouse.click(850, 650);
+  await page.keyboard.press('v');
+  await page.mouse.move(canvas.x + 400, canvas.y + 300);
+  await page.mouse.down();
+  await page.mouse.move(canvas.x + 400, canvas.y + 400, { steps: 8 });
+  await page.mouse.up();
+}
+
+test('code evidence survives a browser drag and sync', async ({ page, request }) => {
+  const { evidence } = await codeEvidenceArrow(request);
+  await page.goto('/');
+  await dragArrow(page);
+  const arrow = (await sync(page, request)).find(e => e.id === 'ev');
+  expect(arrow.y).toBeGreaterThan(300);
+  expect(arrow.evidence).toEqual(evidence);
+});
+
 test('repeated screenshots leave a bound arrow and its saved state exactly as they were', async ({ page, request }) => {
   const added = await request.post('/api/elements/batch', { data: { elements: [
     { id: 'fa', type: 'frame', name: 'Order flow', x: 0, y: 0, width: 600, height: 300 },
