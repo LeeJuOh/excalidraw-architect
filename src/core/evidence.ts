@@ -118,6 +118,16 @@ function describeProblem(problem: EvidenceProblem): string {
   return `- ${parts.join(', ')}: ${problem.reason}`;
 }
 
+// Restore, import and duplicate accept stale evidence; this text opens their
+// result so the agent sees which elements to fix or ask about (ADR-0005).
+export function describeStaleEvidence(problems: EvidenceProblem[]): string {
+  if (problems.length === 0) return '';
+  return [
+    `Evidence no longer checks out for ${problems.length} element(s); they were placed as saved:`,
+    ...problems.map(describeProblem)
+  ].join('\n') + '\n\n';
+}
+
 // One wrong element refuses the whole write, so nothing is created or changed.
 export function assertEvidence(elements: EvidenceCarrier[], projectRoot: string): void {
   const problems = findEvidenceProblems(elements, projectRoot);

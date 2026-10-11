@@ -139,6 +139,15 @@ field:
 Evidence tags are element data, not something drawn. You, the server and
 `describe` read them; the user sees only the lines and labels you drew.
 
+A restore, an import or a duplicate is never refused for evidence, because the
+code may have changed since the evidence was written. The drawing comes back
+as it was, and the result opens with a list of the elements whose evidence no
+longer checks out, each with the reason. For each one, search the project for
+the same code. If you find it — in another place, or now in more than one
+place — correct `path` and `quote` so it points at one place, and tell the
+user what changed. If you cannot find it, ask the user whether that
+relationship is gone from the code before you change the line.
+
 ## Crowding
 
 Past roughly ten to fifteen main nodes in one diagram, group them one level

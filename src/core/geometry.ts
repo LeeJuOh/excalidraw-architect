@@ -6,6 +6,7 @@ import {
   batchCreateElementsOnCanvas,
   getElements
 } from './canvas-client.js';
+import type { EvidenceProblem } from './evidence.js';
 
 export type Alignment = 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom';
 export type Direction = 'horizontal' | 'vertical';
@@ -216,7 +217,13 @@ export async function duplicateElements(
   elementIds: string[],
   offsetX = 20,
   offsetY = 20
-): Promise<{ duplicates: ServerElement[]; canvasElements: ServerElement[] | null; offsetX: number; offsetY: number }> {
+): Promise<{
+  duplicates: ServerElement[];
+  canvasElements: ServerElement[];
+  staleEvidence: EvidenceProblem[];
+  offsetX: number;
+  offsetY: number;
+}> {
   const duplicates: ServerElement[] = [];
   for (const id of elementIds) {
     const original = await getElementFromCanvas(id);
@@ -242,9 +249,9 @@ export async function duplicateElements(
     throw new Error('No elements could be duplicated (none found)');
   }
 
-  const canvasElements = await batchCreateElementsOnCanvas(duplicates, { copy: true });
-  if (!canvasElements) {
+  const created = await batchCreateElementsOnCanvas(duplicates, { copy: true });
+  if (!created) {
     throw new Error('Failed to duplicate elements: HTTP server unavailable');
   }
-  return { duplicates, canvasElements, offsetX, offsetY };
+  return { duplicates, canvasElements: created.elements, staleEvidence: created.staleEvidence, offsetX, offsetY };
 }

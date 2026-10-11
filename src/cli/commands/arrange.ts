@@ -82,6 +82,7 @@ export async function arrange(argv: string[]): Promise<void> {
       const result = await duplicateElements(ids, offsetX, offsetY);
       printJson({
         success: true,
+        staleEvidence: result.staleEvidence,
         count: result.duplicates.length,
         offsetX: result.offsetX,
         offsetY: result.offsetY,

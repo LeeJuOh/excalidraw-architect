@@ -53,7 +53,7 @@ import {
   moveFrameMembers
 } from './core/frames.js';
 import { recordSave, recordSnapshot, saveStateReport } from './core/save-state.js';
-import { assertEvidence } from './core/evidence.js';
+import { assertEvidence, findEvidenceProblems } from './core/evidence.js';
 
 // Load environment variables
 dotenv.config();
@@ -923,6 +923,7 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
 
     const createdElements: ServerElement[] = elementsToCreate
       .map(elementData => buildCreatedElement(CreateElementSchema.parse(elementData)));
+    const staleEvidence = copy === true ? findEvidenceProblems(createdElements, PROJECT_ROOT!) : [];
     const grownFrames = storeCreatedElements(createdElements, { copy: copy === true });
 
     // Broadcast to all connected clients
@@ -936,7 +937,8 @@ app.post('/api/elements/batch', (req: Request, res: Response) => {
     res.json({
       success: true,
       elements: createdElements,
-      count: createdElements.length
+      count: createdElements.length,
+      staleEvidence
     });
   } catch (error) {
     logger.error('Error batch creating elements:', error);

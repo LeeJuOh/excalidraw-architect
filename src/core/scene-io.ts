@@ -11,6 +11,7 @@ import {
 import { isObsidianExcalidrawMd, extractSceneJsonFromObsidianMd } from './obsidian-md.js';
 import { expandElementsForExport } from './expand-elements.js';
 import { FRAME_MARGIN, elementBounds, fitFrame, frameMembers, union } from './frames.js';
+import type { EvidenceProblem } from './evidence.js';
 
 function createdAt(file: string): string {
   try { return fs.statSync(file).mtime.toISOString(); } catch { return 'unknown'; }
@@ -196,6 +197,7 @@ export interface ImportResult {
   fileCount: number;
   frames: { id: string; name: string | null }[];
   unnamedFrames: string[];
+  staleEvidence: EvidenceProblem[];
 }
 
 // Loads a .excalidraw JSON file, an Obsidian .excalidraw.md file, or raw JSON
@@ -261,6 +263,7 @@ export async function importScene(options: {
     count: elementsToCreate.length,
     fileCount: importedFileCount,
     frames: frames.map(frame => ({ id: frame.id, name: frame.name ?? null })),
-    unnamedFrames: frames.filter(frame => !isNamed(frame)).map(frame => frame.id)
+    unnamedFrames: frames.filter(frame => !isNamed(frame)).map(frame => frame.id),
+    staleEvidence: created.staleEvidence
   };
 }

@@ -75,6 +75,9 @@ Both interfaces take the same agent-friendly shape and normalise it:
 - **Evidence** — `"evidence": {"tag": "code"|"design"|"log", "path": ..., "quote": ...}`.
   `code` needs both `path` and `quote`. A wrong one refuses the whole write;
   the error says how to fix it (`references/zoom-levels.md`, "Evidence tags").
+  A restore, import or duplicate is not refused; its result lists the
+  evidence that no longer checks out first, and the same section says what to
+  do with it.
 - **fontFamily** — a name (`"nunito"`, `"comic shanns"`) or a string number.
   Leave it out for Nunito. On a box or an arrow, `fontFamily` and `fontSize`
   apply to its label.

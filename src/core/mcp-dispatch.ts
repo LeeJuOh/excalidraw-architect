@@ -37,6 +37,7 @@ import {
 import { buildSceneFile, importScene, writeOutputFile } from './scene-io.js';
 import { wrapSceneAsObsidianMd } from './obsidian-md.js';
 import { describeScene } from './describe.js';
+import { describeStaleEvidence } from './evidence.js';
 import { exportToExcalidrawUrl } from './share-url.js';
 import { sceneState, toolNeedsCanvasBeforeDispatch } from './canvas-state.js';
 import { isSessionTool, callSessionTool, requireAttachedCanvas, resolveFromProjectRoot } from './mcp-session.js';
@@ -424,7 +425,7 @@ export async function callExcalidrawTool(
 
         const createdElements: ServerElement[] = params.elements.map(elementData => prepareElement(elementData));
 
-        const canvasElements = await batchCreateElementsOnCanvas(createdElements);
+        const canvasElements = (await batchCreateElementsOnCanvas(createdElements))?.elements;
 
         if (!canvasElements) {
           throw new Error('Failed to batch create elements: HTTP server unavailable');
@@ -529,7 +530,7 @@ export async function callExcalidrawTool(
         return {
           content: [{
             type: 'text',
-            text: `Imported ${result.count} elements${result.fileCount > 0 ? ` and ${result.fileCount} files` : ''} as a copy. Frames: ${frames}.${unnamed}\n\n✅ Synced to canvas`
+            text: `${describeStaleEvidence(result.staleEvidence)}Imported ${result.count} elements${result.fileCount > 0 ? ` and ${result.fileCount} files` : ''} as a copy. Frames: ${frames}.${unnamed}\n\n✅ Synced to canvas`
           }]
         };
       }
@@ -578,7 +579,7 @@ export async function callExcalidrawTool(
 
         logger.info('Duplicating elements via MCP', { count: params.elementIds.length });
 
-        const { duplicates, canvasElements, offsetX, offsetY } = await duplicateElements(
+        const { duplicates, canvasElements, staleEvidence, offsetX, offsetY } = await duplicateElements(
           params.elementIds,
           params.offsetX ?? 20,
           params.offsetY ?? 20
@@ -587,7 +588,7 @@ export async function callExcalidrawTool(
         return {
           content: [{
             type: 'text',
-            text: `Duplicated ${duplicates.length} elements (offset: ${offsetX}, ${offsetY})\n\n${JSON.stringify(canvasElements, null, 2)}\n\n✅ Synced to canvas`
+            text: `${describeStaleEvidence(staleEvidence)}Duplicated ${duplicates.length} elements (offset: ${offsetX}, ${offsetY})\n\n${JSON.stringify(canvasElements, null, 2)}\n\n✅ Synced to canvas`
           }]
         };
       }
@@ -620,7 +621,7 @@ export async function callExcalidrawTool(
         return {
           content: [{
             type: 'text',
-            text: `Snapshot "${params.name}" restored (${snapshot.elements.length} elements)\n\n✅ Canvas updated`
+            text: `${describeStaleEvidence(restored.staleEvidence)}Snapshot "${params.name}" restored (${snapshot.elements.length} elements)\n\n✅ Canvas updated`
           }]
         };
       }

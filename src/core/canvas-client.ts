@@ -3,6 +3,7 @@ import { ServerElement } from '../types.js';
 import { ENABLE_CANVAS_SYNC } from './config.js';
 import { CANVAS_SERVICE_NAME, CanvasHealth } from './sessions.js';
 import type { SaveState } from './save-state.js';
+import type { EvidenceProblem } from './evidence.js';
 
 // The canvas session every request goes to. The CLI sets it from --session,
 // the MCP process from session_start / session_attach. There is no default.
@@ -69,11 +70,20 @@ export interface ApiResponse {
   message?: string;
   error?: string;
   count?: number;
+  staleEvidence?: EvidenceProblem[];
 }
 
 export interface SyncResponse {
   element?: ServerElement;
   elements?: ServerElement[];
+  staleEvidence?: EvidenceProblem[];
+}
+
+// `staleEvidence` is filled only for a copy: the elements whose code evidence
+// is no longer found.
+export interface CreatedBatch {
+  elements: ServerElement[];
+  staleEvidence: EvidenceProblem[];
 }
 
 // Helper functions to sync with Express server (canvas)
@@ -184,10 +194,11 @@ export async function deleteElementOnCanvas(elementId: string): Promise<any> {
 export async function batchCreateElementsOnCanvas(
   elementsData: ServerElement[],
   options: { copy?: boolean } = {}
-): Promise<ServerElement[] | null> {
-  if (!ENABLE_CANVAS_SYNC) return elementsData;
+): Promise<CreatedBatch | null> {
+  if (!ENABLE_CANVAS_SYNC) return { elements: elementsData, staleEvidence: [] };
   const result = await syncToCanvas(options.copy ? 'batch_copy' : 'batch_create', elementsData);
-  return result?.elements ?? null;
+  if (!result?.elements) return null;
+  return { elements: result.elements, staleEvidence: result.staleEvidence ?? [] };
 }
 
 // Helper to fetch element from canvas
@@ -353,13 +364,13 @@ export async function getElementStrict(id: string): Promise<ServerElement> {
 export async function batchCreateElementsStrict(
   elements: ServerElement[],
   options: { copy?: boolean } = {}
-): Promise<ServerElement[]> {
+): Promise<CreatedBatch> {
   const data = await requestJson<ApiResponse>('/api/elements/batch', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ elements, copy: options.copy === true })
   });
-  return data.elements || [];
+  return { elements: data.elements || [], staleEvidence: data.staleEvidence ?? [] };
 }
 
 export function foreignServiceError(): Error {

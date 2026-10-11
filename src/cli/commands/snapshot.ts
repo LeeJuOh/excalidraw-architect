@@ -28,8 +28,8 @@ export async function snapshot(argv: string[]): Promise<void> {
       if (!name) throw new CliUsageError('Usage: snapshot restore <name>');
       const snap = await getSnapshot(name);
       await clearCanvas();
-      await batchCreateElementsStrict(snap.elements, { copy: true });
-      printJson({ success: true, name, restored: snap.elements.length });
+      const { staleEvidence } = await batchCreateElementsStrict(snap.elements, { copy: true });
+      printJson({ success: true, staleEvidence, name, restored: snap.elements.length });
       return;
     }
     default:

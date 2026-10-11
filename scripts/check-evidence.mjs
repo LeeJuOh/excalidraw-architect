@@ -423,40 +423,77 @@ async function mcpAndCliGiveTheSameResult() {
   }
 }
 
+const STALE_HEADER = /^Evidence no longer checks out for 1 element\(s\); they were placed as saved:\n/;
+
+function staleLine(id) {
+  return new RegExp(`^- arrow ${id}, path "src/order\\.ts", quote "payment\\.charge\\(order\\.total,": the quote is not in the file$`, 'm');
+}
+
+function assertCliStale(json, id) {
+  assert.deepEqual(Object.keys(json).slice(0, 2), ['success', 'staleEvidence'], 'the list comes first');
+  assert.deepEqual(json.staleEvidence, [{
+    id, type: 'arrow', path: 'src/order.ts', quote: 'payment.charge(order.total,', reason: 'the quote is not in the file'
+  }]);
+}
+
+// The list opens the text, before anything else the tool reports.
+function assertMcpStale(text, id) {
+  assert.match(text, STALE_HEADER);
+  const block = text.split('\n\n')[0];
+  assert.match(block, staleLine(id));
+  assert.doesNotMatch(block, /keep/, 'evidence that still matches is not listed');
+}
+
 // A restore, an import or a duplicate keeps what was saved even when its code
-// evidence has gone stale (decisions 2 and 7). Slice B adds the list of stale elements.
+// evidence has gone stale, and lists the stale elements (decisions 7 and 10).
 async function restoreAndImportAreNotRefused() {
-  await batch([...twoBoxes(), arrow('pay', code('payment.charge(order.total,'))]);
+  await batch([
+    ...twoBoxes(),
+    arrow('pay', code('payment.charge(order.total,')),
+    arrow('keep', code('repository.save(order);'), { y: 50 })
+  ]);
   assert.equal(onCanvas(['snapshot', 'save', 'before-change', '--force']).status, 0);
   const scene = join(sandbox, 'saved.excalidraw');
   fs.writeFileSync(scene, JSON.stringify({ type: 'excalidraw', version: 2, elements: await all() }));
 
   const orderFile = join(project, 'src', 'order.ts');
-  fs.writeFileSync(orderFile, '// payment moved elsewhere\n');
+  fs.writeFileSync(orderFile, '// payment moved elsewhere\nrepository.save(order);\n');
   const mcp = await new McpClient().init();
   try {
     await mcp.callOk('session_attach', { key: session });
 
     const cliRestored = onCanvas(['snapshot', 'restore', 'before-change']);
     assert.equal(cliRestored.status, 0, cliRestored.stderr);
+    assertCliStale(cliRestored.json, 'pay');
     assert.deepEqual((await get('pay')).evidence, code('payment.charge(order.total,'));
 
-    await mcp.callOk('restore_snapshot', { name: 'before-change' });
+    assertMcpStale(await mcp.callOk('restore_snapshot', { name: 'before-change' }), 'pay');
     assert.equal((await get('pay')).evidence.quote, 'payment.charge(order.total,');
 
+    // The listed id is the one the copy got, not the original's.
+    const newPayCopy = async run => {
+      const before = new Set((await all()).map(el => el.id));
+      const result = await run();
+      const copies = (await all()).filter(el => !before.has(el.id) && el.evidence?.quote === 'payment.charge(order.total,');
+      assert.equal(copies.length, 1, 'one copy of the stale arrow');
+      return { result, id: copies[0].id };
+    };
+
     // A duplicate copies evidence the agent did not write in that request (decision 2).
-    const cliCopied = onCanvas(['arrange', 'duplicate', '--ids', 'pay']);
-    assert.equal(cliCopied.status, 0, cliCopied.stderr);
-    await mcp.callOk('duplicate_elements', { elementIds: ['pay'] });
-    assert.equal((await all()).filter(el => el.evidence?.quote === 'payment.charge(order.total,').length, 3);
+    const cliCopied = await newPayCopy(() => onCanvas(['arrange', 'duplicate', '--ids', 'pay,keep']));
+    assert.equal(cliCopied.result.status, 0, cliCopied.result.stderr);
+    assertCliStale(cliCopied.result.json, cliCopied.id);
+    const mcpCopied = await newPayCopy(() => mcp.callOk('duplicate_elements', { elementIds: ['pay', 'keep'] }));
+    assertMcpStale(mcpCopied.result, mcpCopied.id);
 
     await clear();
-    const cliImported = onCanvas(['import', scene]);
-    assert.equal(cliImported.status, 0, cliImported.stderr);
-    await mcp.callOk('import_scene', { filePath: scene });
+    const cliImported = await newPayCopy(() => onCanvas(['import', scene]));
+    assert.equal(cliImported.result.status, 0, cliImported.result.stderr);
+    assertCliStale(cliImported.result.json, cliImported.id);
+    const mcpImported = await newPayCopy(() => mcp.callOk('import_scene', { filePath: scene }));
+    assertMcpStale(mcpImported.result, mcpImported.id);
     const arrows = (await all()).filter(el => el.type === 'arrow');
-    assert.equal(arrows.length, 2, 'both imports landed');
-    assert.ok(arrows.every(el => el.evidence?.quote === 'payment.charge(order.total,'));
+    assert.equal(arrows.length, 4, 'both imports landed');
   } finally {
     fs.writeFileSync(orderFile, ORDER_TS);
     await mcp.kill();
@@ -479,7 +516,7 @@ const cases = [
   ['elements without a tag behave as before', untaggedElementsBehaveAsBefore],
   ['update checks evidence only when the write carries it', updateChecksOnlyWhenEvidenceIsWritten],
   ['MCP create/batch/update and CLI add/apply/update give the same result', mcpAndCliGiveTheSameResult],
-  ['snapshot restore, import and duplicate keep stale code evidence, CLI and MCP', restoreAndImportAreNotRefused]
+  ['snapshot restore, import and duplicate keep stale code evidence and list it first, CLI and MCP', restoreAndImportAreNotRefused]
 ];
 
 let failed = 0;

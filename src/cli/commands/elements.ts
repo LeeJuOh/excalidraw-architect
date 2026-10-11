@@ -46,7 +46,7 @@ export async function apply(argv: string[]): Promise<void> {
 
   let created: ServerElement[] = [];
   if (patch.create?.length) {
-    created = await batchCreateElementsStrict(patch.create.map(el => prepareElement(el)));
+    created = (await batchCreateElementsStrict(patch.create.map(el => prepareElement(el)))).elements;
   }
 
   const updated: ServerElement[] = [];
@@ -95,7 +95,7 @@ export async function add(argv: string[]): Promise<void> {
     elements = Array.isArray(input) ? input : [input];
   }
 
-  const created = await batchCreateElementsStrict(elements.map(el => prepareElement(el)));
+  const { elements: created } = await batchCreateElementsStrict(elements.map(el => prepareElement(el)));
   printJson({ success: true, count: created.length, elements: created });
 }
 

@@ -115,6 +115,7 @@ export async function importCmd(argv: string[]): Promise<void> {
 
   printJson({
     success: true,
+    staleEvidence: result.staleEvidence,
     imported: result.count,
     files: result.fileCount,
     frames: result.frames,

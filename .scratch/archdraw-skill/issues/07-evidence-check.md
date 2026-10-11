@@ -55,14 +55,14 @@
 
 **Blocked by:** 슬라이스 A
 
-**Status:** ready-for-agent
+**Status:** resolved (2026-10-11)
 
-- [ ] 근거 코드를 지운 뒤 `snapshot restore`하면 복원되고, 그림 모양은 그대로이며, 결과에 근거 없음 요소의 목록(요소, 경로, `quote`, 이유)이 있다. 근거가 맞는 요소는 목록에 없다
-- [ ] `import`도 같다. 목록의 요소 ID는 import가 새로 발급한 ID다
-- [ ] 복제도 같다(결정 10). 목록의 요소 ID는 복사본의 ID다
-- [ ] 목록은 결과의 앞부분에 있어 다른 결과에 묻히지 않는다
-- [ ] MCP와 CLI가 같은 결과를 낸다
-- [ ] 스킬 글에 결정 8이 있다: 같은 코드를 찾으면 고치고 알림, 못 찾으면 사용자에게 물음
+- [x] 근거 코드를 지운 뒤 `snapshot restore`하면 복원되고, 그림 모양은 그대로이며, 결과에 근거 없음 요소의 목록(요소, 경로, `quote`, 이유)이 있다. 근거가 맞는 요소는 목록에 없다
+- [x] `import`도 같다. 목록의 요소 ID는 import가 새로 발급한 ID다
+- [x] 복제도 같다(결정 10). 목록의 요소 ID는 복사본의 ID다
+- [x] 목록은 결과의 앞부분에 있어 다른 결과에 묻히지 않는다
+- [x] MCP와 CLI가 같은 결과를 낸다
+- [x] 스킬 글에 결정 8이 있다: 같은 코드를 찾으면 고치고 알림, 못 찾으면 사용자에게 물음
 
 ## 슬라이스 C — 브라우저 왕복에서 근거 보존
 
@@ -151,3 +151,18 @@
 2. 슬라이스 C: Playwright(`tests/browser/`, `npm run test:canvas`)로 브라우저 왕복에서 `evidence`가 남는지 확인한다. 스크린샷에 태그 글자가 없는지도 브라우저로 확인한다. → 커밋.
 3. 07 전체를 `/code-review`로 검토한다. `Status`와 `spec.md`의 07 행을 고친다.
 4. 순서 표대로 10 → 08 → 03 슬라이스 B → 02.
+
+### 슬라이스 B 결과 (2026-10-11)
+
+확인: `scripts/check-evidence.mjs`의 `restoreAndImportAreNotRefused()`. 근거 코드를 지운 뒤 restore·duplicate·import를 CLI와 MCP로 각각 부른다. 맞는 근거(`keep`)는 목록에 없고, 목록의 ID는 복사본·import가 새로 만든 ID다. 단언을 먼저 넣고 restore → duplicate → import 순으로 실패를 본 뒤 고쳤다.
+
+임의로 정한 것:
+
+1. 서버 batch 응답의 필드 이름은 `staleEvidence`다. 항목 모양은 거부 에러와 같은 `EvidenceProblem`(`id`, `type`, `path`, `quote`, `reason`)이다. `copy`가 아니면 빈 배열이다.
+2. CLI JSON은 `success` 바로 뒤에 `staleEvidence`를 둔다. 비어도 `[]`를 넣는다.
+3. MCP 글은 목록이 있을 때만 맨 앞에 블록을 둔다: `Evidence no longer checks out for N element(s); they were placed as saved:` + 거부 에러와 같은 모양의 줄. 비면 블록이 없다. 목록에는 코드에 없는 것뿐 아니라 여러 곳에 있는 것과 모양이 틀린 것도 들어가서 "not found"라 하지 않았다. 복제·import는 요소를 더하므로 "the drawing was not changed"도 쓰지 않았다(코드 리뷰).
+6. 목록은 저장 전에 만든다. 검사 중 예외가 나도 요소가 저장만 되고 브라우저에 알려지지 않는 일이 없다(코드 리뷰).
+7. 리뷰에서 고치지 않은 것: 요소마다 파일을 동기로 다시 읽음(슬라이스 A 검사와 같은 방식, 큰 스냅샷에서만 문제), sync 꺼진 모드에서 빈 목록(레거시 모드), 목록 전달 헬퍼 통합(호출자마다 한 줄).
+4. `batchCreateElementsOnCanvas()`·`batchCreateElementsStrict()`는 `{ elements, staleEvidence }`를 돌려준다(`CreatedBatch`). copy가 아닌 호출자는 `elements`만 쓴다.
+5. 스킬 글(결정 8)은 `references/zoom-levels.md` "Evidence tags" 끝에 두고, `canvas-ops.md`의 Evidence 항목에서 가리킨다. "못 찾으면 선을 고치기 전에 묻는다"로 적었다. 고치기 전 스냅샷: `~/.claude/plugins/data/skill-creator-pro-claude-code-zero/archdraw-07-evidence-b/skill-snapshot/`. eval 루프는 돌리지 않았다(슬라이스 A와 같음).
+
