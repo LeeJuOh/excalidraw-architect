@@ -9,14 +9,14 @@
 - 참고 문서 resource는 캔버스 규격 resource(`guide://canvas`)와 같은 방식(서버가 원본 md를 읽어 등록, 목록·읽기 지원)이다. 목록 항목은 이름과 제목(파일의 첫 `#` 줄)만 갖고 설명은 두지 않는다 — 라우팅은 routing-table이 한다.
 - 서버는 시작할 때 `references/`를 하위 폴더까지 훑어 목록을 만든다. 문서의 개수를 코드에 고정하지 않는다(2026-10-04). 읽기 요청은 이 목록에 있는 이름만 받고, 목록에 없는 이름(`..` 포함)은 에러다.
 - **스킬 폴더 파일(SKILL.md 또는 `references/`)이 패키지에 없으면 서버가 시작하지 않는다.** 캔버스 규격 md가 없을 때와 같다(09). 조용히 빈 본문을 돌려주지 않는다.
-- README 두 언어에 MCP 직접 등록 절차를 적는다. 명령은 `npx --prefix ~ -y excalidraw-architect@latest`를 쓴다 — `--prefix ~`는 등록한 폴더의 같은 이름 `package.json`을 피하고(01 사후 검수 5), `@latest`는 MCP 직접 등록 사용자에게 다른 업데이트 채널이 없어서다. 등록 뒤 prompt `archdraw`를 부른다고 적는다.
+- README 두 언어에 MCP 직접 등록 절차를 적는다. 명령은 `npx -y excalidraw-architect@latest`를 쓴다(2026-10-12 수정: `--prefix ~`를 뺐다 — 아래 Comments). `@latest`는 MCP 직접 등록 사용자에게 다른 업데이트 채널이 없어서다. 등록 뒤 prompt `archdraw`를 부른다고 적는다.
 - SKILL.md에 한 줄을 둔다: 참고 문서 링크가 열리지 않으면(prompt로 받은 경우) 링크 경로 앞에 `guide://`를 붙여 resource로 읽는다. 줄 수 예산은 `test:skill-docs`가 지킨다.
 - SKILL.md의 "MCP 툴이 있으면" 분기는 MCP 직접 등록 사용자에게 MCP 경로로 읽힌다(스펙 7-10에서 결정됨). 문구는 고치지 않는다.
 - 로컬 확인은 `npm run build` 후 `ARCHDRAW_BIN`을 두고 한다(AGENTS.md gotcha).
 
 **Blocked by:** 03 슬라이스 C — 완료(03의 슬라이스 C 문서 기준 항목 전부 체크, `references/situations/` 존재, 스펙 구현 순서 표 "착수 가능").
 
-**Status:** resolved (2026-10-12 — 에이전트 칸 전부 통과. 다음 릴리즈 뒤 사람이 확인: 레포 밖 폴더와 이 레포 폴더에서 README 명령으로 등록)
+**Status:** resolved (2026-10-12 — 모든 칸 통과. 손 확인은 v0.2.0 게시본으로 했다)
 
 **완료 규칙:** 아래 에이전트 칸이 모두 통과하면 resolved로 닫고, 손 확인 칸은 Status에 "다음 릴리즈 뒤 사람이 확인"으로 남긴다(01과 같은 방식).
 
@@ -26,9 +26,9 @@
 - [x] resource 목록이 테스트가 직접 훑은 스킬 `references/` 아래 파일 목록(하위 폴더 포함)과 정확히 같고(`guide://` + 상대경로), 각각 읽으면 그 파일 내용이 온다. `guide://canvas`도 그대로 있다
 - [x] 목록에 없는 이름(예: `guide://references/../SKILL.md`)을 읽으면 에러다
 - [x] `npm pack` 산출물을 설치해 띄운 서버에서도 prompt와 resource가 동작한다
-- [x] README 두 언어에 MCP 직접 등록 명령(`--prefix ~`, `@latest` 포함)과 prompt 호출 안내가 있다
+- [x] README 두 언어에 MCP 직접 등록 명령(`@latest` 포함)과 prompt 호출 안내가 있다
 - [x] `npm test` 통과
-- [ ] 손 확인: 레포 밖 폴더와 이 레포 폴더에서 각각 README 명령으로 등록해 서버가 붙는다(게시본이 필요하므로 다음 릴리즈 뒤)
+- [x] 손 확인: 레포 밖 폴더와 이 레포 폴더에서 각각 등록해 서버가 붙는다(v0.2.0, 2026-10-12)
 
 02에서 관찰(이 티켓의 구현 판단이 아님, 스펙 7-10 "미확인"): Claude Desktop·Cursor에서 prompt가 어떻게 보이고 불리는지, 모델이 resource를 스스로 읽는지.
 
@@ -42,6 +42,12 @@
 - tarball 확인은 레포 밖에서 했다: `npm pack` → 임시 프로젝트에 설치 → prompt 본문, resource 28개(참고 문서 27 + `guide://canvas`), saga 읽기가 동작했다.
 - SKILL.md 줄은 문서 안 상대 링크 규칙도 적었다. 처음 문장("링크 경로 앞에 `guide://`")만으로는 `routing-table.md` 안의 `situations/saga.md`가 `guide://situations/saga.md`로 틀리게 풀린다.
 - 미확인: README의 Claude Code prompt 호출 형식 `/mcp__archdraw__archdraw`는 Claude Code 문서의 MCP prompt 명명 규칙을 따랐고, 실제 호출은 손 확인 때 본다.
+
+**2026-10-12 — 손 확인 통과, README 명령 수정.**
+
+- v0.2.0 게시본을 Claude Code에 `claude mcp add archdraw -- npx --prefix ~ -y excalidraw-architect@latest`로 등록했다. 레포 밖 폴더와 이 레포 폴더 모두 `✔ Connected`였다. `claude -p "/mcp__archdraw__archdraw"`의 세션 기록에 스킬 본문(16.5KB, `# archdraw`로 시작, frontmatter 없음)이 들어왔다. README의 호출 이름 `/mcp__archdraw__archdraw`가 맞다.
+- 결함: `--prefix ~`는 JSON 설정으로 등록하는 호스트(Claude Desktop·Cursor)에서 깨진다. 셸이 없어 `~`가 글자 그대로 npm에 가고 `npm error ENOENT ... lstat '<cwd>/~'`(종료 코드 254)로 죽는다. 셸 없이 args 배열로 재현했다. Claude Desktop 자체에서는 미확인.
+- 수정: README 두 언어의 명령을 `npx -y excalidraw-architect@latest`로 바꿨다. 같은 이름 `package.json` 문제는 이 레포 폴더에서 등록하는 메인테이너에게만 생기므로 AGENTS.md gotcha로 옮겼다. 스펙 7-10도 고쳤다.
 
 ---
 

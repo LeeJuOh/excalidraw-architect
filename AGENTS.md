@@ -42,7 +42,7 @@ sibling 레포 소유라 읽기만 한다. git에는 심링크째로 들어가 G
 - 매니페스트와 스킬 shim은 **생성물이다.** `package.json`을 고치고 `npm run manifests`로 재생성한다. `npm test`·CI가 드리프트와 shim 실행 권한을 검사한다.
 - `gh`는 기본 레포를 `upstream`(yctimlin)으로 잡는다. 새 클론마다 `gh repo set-default LeeJuOh/excalidraw-architect`. 이슈·라벨 작업 전 `gh repo view`로 확인.
 - 서버 코드 변경 확인은 `npm run build` 후 `ARCHDRAW_BIN=<레포>/dist/bin.js`를 둔 셸에서 호스트(claude/codex)를 시작한다. 비어 있으면 shim이 npm 게시본을 `npx`로 띄워 방금 고친 코드가 돌지 않는다. 스킬 텍스트만 고칠 땐 불필요.
-- npm 게시본은 shim(`plugin/skills/archdraw/scripts/archdraw`)으로 검증한다. 레포 안에서 맨 `npx excalidraw-architect`는 같은 이름의 로컬 패키지로 잡혀 `command not found`가 난다(ADR-0011).
+- npm 게시본은 shim(`plugin/skills/archdraw/scripts/archdraw`)으로 검증한다. 레포 안에서 맨 `npx excalidraw-architect`는 같은 이름의 로컬 패키지로 잡혀 `command not found`가 난다(ADR-0011). README의 MCP 직접 등록 명령을 이 레포에서 시험할 땐 셸에서 `--prefix ~`를 붙인다 — README에는 넣지 않는다(JSON 설정 호스트는 `~`를 풀지 못한다).
 
 ## 문제를 설명할 때
 
