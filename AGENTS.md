@@ -18,6 +18,7 @@
 | 구현 착수 전 | 스펙(PRD)과 구현 순서 표, 이슈 티켓 | `.scratch/<feature-slug>/` |
 | 이슈 파일을 만들거나 `Status:`를 바꿀 때 | 티켓 파일 규약, 라벨 문자열 5종 | `docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md` |
 | 코드 탐색 전 | 용어·결정 기록 읽는 순서, 용어 준수·ADR 충돌 규칙 | `docs/agents/domain.md` → `CONTEXT.md`, `docs/adr/` |
+| 기능 방향을 판단하거나 이해·설계 참여를 돕는 상호작용을 설계할 때 | 질문별 외부 글·참고 레포 | `docs/agents/design-references.md` |
 | 업스트림을 머지한 뒤 | 되살아나면 다시 지울 파일·설정 목록 | `docs/agents/upstream-merge.md` |
 
 ## 지식 소스 — 심링크 3종 (읽기 전용)
