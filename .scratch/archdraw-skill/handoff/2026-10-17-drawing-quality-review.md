@@ -70,12 +70,12 @@ archdraw의 그림 결과가 사용자 마음에 들지 않는다. 그래서 F1~
 
 ### Verified repo state (repo_facts.sh, 2026-10-17)
 
-- **Branch:** `main`. 최신 커밋 `b97c7cf`. push는 하지 않았다.
-- **Uncommitted:** `docs/agents/design-references.md` (4줄 추가) + 이 파일.
+- **Branch:** `main`. `docs/agents/design-references.md`(4줄 추가)와 이 파일을 커밋 `4854607`로 커밋하고 origin에 push했다.
+- **Uncommitted:** 없음 (이 줄을 고친 후속 커밋 제외).
 
 ### 이 세션에서 한 것
 
-- `docs/agents/design-references.md`에 참고 레포 4줄을 추가했다(커밋 전):
+- `docs/agents/design-references.md`에 참고 레포 4줄을 추가했다:
   - "시각적 설명과 피드백" 표: `html-plan`(Thariq Shihipar, `references/claude-plugins-community/html-plan/`), `comprendo`
   - "구조 탐색과 공동 편집" 표: `excalidraw-toolkit`
   - "설계 합의와 의도 보존" 표: `c4-model-skill`
@@ -120,4 +120,3 @@ archdraw의 그림 결과가 사용자 마음에 들지 않는다. 그래서 F1~
 5. 문제마다 참고 레포 1~2개를 README 너머 관련 파일까지 읽는다. 남은 참고 후보는 이때 필요하면 목록에 추가한다.
 6. 스킬 지시문을 pstack 원칙으로 줄인다(다음 결정을 바꾸지 않는 문장은 지운다. 반복되는 일은 서버나 스크립트로 옮긴다).
 7. 외부 확인(접근 방법 6번)을 한다.
-8. 커밋: `docs/agents/design-references.md` 변경과 이 핸드오프. 사용자에게 언제 커밋할지 묻는다(push는 지시가 있을 때만).
