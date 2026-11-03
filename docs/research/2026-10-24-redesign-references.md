@@ -31,6 +31,12 @@ archdraw를 다시 설계하기 전에 참고 레포와 위키 글을 모으고 
 - pstack, mattpocock과 함께 쓴다. 다른 스킬이 일하다가 부를 수 있다.
 - 다른 스킬의 역할을 얼마나 겸할지는 **정하지 않았다**. 최소는 humanlayer `show-me` 느낌이고, `show-me` + archify를 염두에 둔다(사용자, 11/04). 그 밖의 스킬은 참고 스킬을 하나씩 찾아 읽고 정한다. 미리 후보를 정해 두지 않는다.
 
+**근거 더 찾기 (11/04, 위키 요약 첫 줄만 읽음).**
+- 문제: `wiki/summaries/comprehension-debt-osmani.md`(이해부채는 경고음 없이 거짓 자신감을 키운다, 의견) · `wiki/summaries/ai-skill-formation-rct.md`(위임 그룹 이해 점수 17%p 낮음, **실증**) · `wiki/concepts/intent-debt.md`("왜"를 잃는 부채).
+- 얼마나: `wiki/summaries/learning-programming-in-age-of-llms-seemann.md`(추상화 위아래 1계층, 레벨 이동 기준 후보) · `wiki/concepts/risk-based-review-depth.md` · `wiki/summaries/ask-hn-shipping-ai-code-you-dont-understand.md`.
+- 무엇을: `wiki/summaries/do-you-still-read-the-code.md`(Naur, 자산은 코드가 아니라 이론).
+- 도구: `wiki/comparisons/shared-understanding-reference-tools.md`(레포 22개, 구조 보이기·근거 잇기·판단 받기·이해 확인을 나눔, 기능 그릴의 틀 후보, **다음에 전문을 읽는다**) · `wiki/summaries/explain-diff-skill.md`.
+
 **버린 생각 (11/03~04).**
 - "그림으로 하는 in-your-own-words"(아래 유용함 절). 범위가 좁다.
 - "에이전트의 이해를 보이게 해서 사람이 검사한다". 한 방향이다.
