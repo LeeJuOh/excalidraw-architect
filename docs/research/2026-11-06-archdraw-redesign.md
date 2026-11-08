@@ -285,3 +285,8 @@ archdraw는 개발자가 코드를 다 읽지 않아도 설계에 계속 참여�
 ### 다시 시작할 때
 
 evidence 종류부터 다시 논의한다. 사용자가 "애매하다"고 한 부분을 먼저 묻고, 예시 하나로 짧게 설명한다.
+
+이번 세션은 목표 결정에 위키만 읽었다. 참고 레포의 원문은 읽지 않았다. 지도 안과 evidence 종류는 에이전트의 추론으로 낸 제안이다. 다시 묻기 전에 아래 원문을 읽고 제안을 고친다.
+
+- evidence 종류: archify의 코드 인용(`references/archify/archify/explainer/sources.mjs`), whiteboard의 고정 소스 참조(`references/whiteboard/packages/review/instructions/authoring.md`), visual-explainer의 주장·근거 연결(`references/visual-explainer/plugins/visual-explainer/references/plans.md`).
+- 지도와 상세 그림: archify의 탐색(`references/archify/archify/references/viewer-runtime.md`), Understand-Anything의 GraphView와 설명 절차, diagram-design의 변경 비교(같은 요소의 ID·위치 유지).
