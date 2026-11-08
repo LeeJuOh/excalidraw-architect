@@ -286,7 +286,17 @@ archdraw는 개발자가 코드를 다 읽지 않아도 설계에 계속 참여�
 
 evidence 종류부터 다시 논의한다. 사용자가 "애매하다"고 한 부분을 먼저 묻고, 예시 하나로 짧게 설명한다.
 
-이번 세션은 목표 결정에 위키만 읽었다. 참고 레포의 원문은 읽지 않았다. 지도 안과 evidence 종류는 에이전트의 추론으로 낸 제안이다. 다시 묻기 전에 아래 원문을 읽고 제안을 고친다.
+이번 세션은 목표 결정에 위키만 읽었다. 주 참고 세 레포(whiteboard·archify·show-me)를 포함해 참고 레포의 원문은 읽지 않았다. 그래서 다음 세션은 이번 세션의 결정을 주 참고 세 레포로 먼저 검수한다. 검수 결과가 결정과 다르면 사용자에게 다시 묻는다.
+
+| 이번 세션 결정·제안 | 검수할 원문 | 이유 |
+|---|---|---|
+| 줌 단계는 다른 그림으로 둔다 | archify `viewer-runtime.md` | archify는 원래 배치를 유지하며 상세를 읽는다. 같은 그림 안 펼침에 가까울 수 있다. |
+| 지도 + 상세 그림 (추천만) | archify `viewer-runtime.md`, whiteboard `authoring.md` | 큰 구조에서 세부로 내려가는 방식을 비교한다. |
+| evidence 표시와 종류 (제안만) | archify `sources.mjs`, whiteboard `authoring.md`·`agent-selection.ts` | 코드 인용과 고정 소스 참조가 무엇을 화면에 보이는지 확인한다. |
+| 기본 그림은 얕게, 깊이는 원할 때 | show-me `SKILL.md` | 최소 표현을 고르고 생략되면 전체를 보여주는 규칙과 맞는지 확인한다. |
+| 이해 단위는 한 명 + 에이전트 | whiteboard `authoring.md` | 리뷰 장면의 참여자와 공유 방식을 확인한다. |
+
+주 참고 세 레포를 읽은 뒤에도 필요하면 아래 보완 원문을 읽는다.
 
 - evidence 종류: archify의 코드 인용(`references/archify/archify/explainer/sources.mjs`), whiteboard의 고정 소스 참조(`references/whiteboard/packages/review/instructions/authoring.md`), visual-explainer의 주장·근거 연결(`references/visual-explainer/plugins/visual-explainer/references/plans.md`).
 - 지도와 상세 그림: archify의 탐색(`references/archify/archify/references/viewer-runtime.md`), Understand-Anything의 GraphView와 설명 절차, diagram-design의 변경 비교(같은 요소의 ID·위치 유지).
