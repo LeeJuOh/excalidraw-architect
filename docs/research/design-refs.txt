@@ -1,0 +1,20 @@
+# archdraw 디자인·표현 조사 대상. references/ 아래 폴더 이름. 조사표는 이 레포마다 한 행을 둔다.
+# 출처: 2026-11-06-archdraw-redesign.md의 "주 참고 세 레포", "필요한 부분을 보완할 레포", "그림 표현을 보완할 샘플".
+# Claude Whiteboard는 레포가 아니라 claude.ai Artifact 타입이라 여기 두지 않는다.
+whiteboard
+archify
+humanlayer-skills
+visual-explainer
+answer-me-with-html
+effective-html
+diagram-design
+excalidraw-diagram-skill
+Understand-Anything
+pr-lens
+drawio-skill
+open-design
+anatomy
+system-design-101
+system-design-primer
+stack-diagram
+system-design-academy
