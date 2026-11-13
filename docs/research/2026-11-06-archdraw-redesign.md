@@ -312,14 +312,21 @@ System Design 101은 동작과 기술 비교를 설명하는 샘플로, Primer�
 
 **Q8 닫힘(11-14 아홉 번째 세션): 가.** 사용자가 "가 좋은데"라고 했다. 이미 정한 것을 어떻게 할지 물었다. 에이전트가 "모양을 한 장에 모아 참고 스타일 2~3개로 한 번에 비교"를 제안했다. 사용자가 "별로 같은데 작게 하나씩 결정하는 게 맞지 않나"라고 해서 기각했다. 디자인은 기능 하나씩 작게 비교해 정한다. 공통 규칙(색, 기호, ADR-0015 충돌)도 그 비교 중에 생기면 작은 질문 하나로 묻는다. 선택지 수는 정하지 않는다. 사용자가 "왜 스타일이 2~3개?"라고 물었다. 2~3개는 에이전트가 근거 없이 정한 수였다. 주 참고·보완 레포와 "그림 표현을 보완할 샘플"의 시스템 디자인 레포(system-design-101, system-design-primer, stack-diagram, system-design-academy)를 모두 보고, 찾은 서로 다른 방식을 모두 선택지로 낸다. 에이전트가 시스템 디자인 레포를 빼고 말해 사용자가 "시스템 디자인 관련 레포도 참고하라고 했잖아"라고 짚었다.
 
-**재개 첫 행동(11-14 아홉 번째 세션 끝): ③ 표 카드(DB 테이블·설정값)의 모양을 위 레포 전부에서 찾아 비교해 묻는다.** 사용자가 ③-2를 "다"로 닫고 "pause safely"라고 했다.
+**재개 첫 행동(11-14 열 번째 세션 끝): ③-2 계약 블록 모양을 다시 본다.** ③-3 표 카드를 나-1(pr-lens 계열)로 닫았다. ③-2는 "Q7 표 카드와 같은 머리줄"이라는 이유로 골랐는데 표 카드 모양이 바뀌었다(아래 불릿 규칙). 바꿀 근거가 없으면 사용자에게 한 줄로 확인만 받는다. 사용자가 ③-3을 "그렇게하자"로 닫고 "pause safely"라고 했다.
+
+- 그 뒤 순서: ③-4(데이터 예시 행이 필요할 때) → 남은 부품(변경 표시, unknown 글, 괄호 라벨) → 용어집 `CONTEXT.md:57` 계약 정의 정정 질문.
+- ③-4는 에이전트가 제안만 했고 사용자가 답하지 않았다. 사용자가 "테이블만 보고 싶을 때랑 데이터 예시가 필요할 때가 다를 수 있다"고 물어, ③-3을 구조 보기 카드로 좁히고 예시 행(system-design-101 가로 격자 표, 샤딩·마이그레이션 설명용)은 따로 묻자고 했다. 사용자는 답 없이 나·바 비교로 넘어갔다. 묻기 전에 나눌지부터 확인한다.
+- 변경 표시 부품 질문의 재료(열 번째 세션 조사): pr-lens는 행 기호 없이 글자색만 바꾸고 카드에 `NEW`·`CHANGED` 배지(`svg/datamodel.ts:62-236`), answer-me-with-html은 행 배경 띠와 부호 열 `+ − ~`(`src/components/er.js:364-387`, `src/themes/delta.css:9-45`), whiteboard·drawio-skill·visual-explainer는 카드 전체 테두리 색만(`SoftwareMap.tsx:3765-3773`, `drawiodiff.py:53-57`, `kit/kit.css:179-183`).
+- 용어집 `CONTEXT.md:57`은 계약을 "그 경계의 원래 모양대로 글자로 써서 해당 화살표 옆에 둔다"고 정의한다. ③-1(그림 밖 목록)·③-3(카드, 원래 정의는 채팅)과 맞지 않는다. 묻고 고친다.
+
+이전 재개 첫 행동(11-14 아홉 번째 세션 끝): ③ 표 카드(DB 테이블·설정값)의 모양을 위 레포 전부에서 찾아 비교해 묻는다. 열 번째 세션에 닫았다.
 
 - 순서는 "부품 먼저, 그림 종류별 디자인은 나중"이다. 사용자가 "오케이 부품 모양부터 해 보자"로 받았다. 부품은 계약 블록·표 카드·변경 표시·unknown 글·괄호 라벨이다. 기본 그림인 아키텍처 그림 위에서 하나씩 정한다. 그림 종류(시퀀스, 상태, ERD 등)의 디자인은 ①(그림 고르기, 라우팅)에서 다룰 그림을 정할 때 하나씩 정한다. 지금 스킬의 상황 23개(`plugin/skills/archdraw/references/routing-table.md`)도 재개편 대상이다.
 - 닫은 것: ③-1 계약 블록 자리(다, 번호와 그림 밖 목록), ③-2 계약 블록 모양(다, 흰 카드 + 머리줄). 기록은 5번 항목의 ③ 불릿에 있다.
 - ③-2는 Q7 표 카드와 같은 머리줄이라는 이유로 골랐다. 표 카드 모양이 바뀌면 계약 블록도 같이 다시 본다.
 - 표 카드 비교의 시작점: diagram-design `type-db-schema.md`·`type-er.md`·`docs/screenshots/db-schema.png`, pr-lens `packages/renderer/src/svg/datamodel.ts`, archify `authoring-contract.md:349-350`(ERD 필드 표)·`examples/erd-orders-rendered.html`, visual-explainer `references/diagrams.md:25`(박스 안 키 필드), system-design-primer `solutions/system_design/pastebin/README.md:111-117`(스키마 코드 블록), drawio-skill 스키마 노드. 다크 모드 모습도 같이 보인다.
 - 다크 모드는 Excalidraw가 캔버스 전체에 `invert(93%) hue-rotate(180deg)`를 씌운다. 흉내 낼 때는 내보낸 PNG에 `magick in.png -color-matrix "-0.86 0 0 0 0 0.93  0 -0.86 0 0 0 0.93  0 0 -0.86 0 0 0.93  0 0 0 1 0 0  0 0 0 0 1 0  0 0 0 0 0 1" -color-matrix "-0.574 1.430 0.144  0.426 0.430 0.144  0.426 1.430 -0.856" out.png`를 쓴다.
-- 캔버스 그리기: 세션 `ab1674`(http://127.0.0.1:64582)에 `POST /api/elements/batch`로 그리고, `POST /api/export/image`(`{"format":"png"}`, 브라우저 탭이 열려 있어야 함)로 확인한다. 그리기 전에 `POST /api/snapshots`로 이전 그림을 저장한다. 아홉 번째 세션 스냅샷은 `session8-q7-table-card`, `session9-q1-contract-place`, `session9-q2-contract-block`이다. 그린 스크립트는 커밋하지 않았다.
+- 캔버스 그리기: 세션 `ab1674`(http://127.0.0.1:64582)에 `POST /api/elements/batch`로 그리고, `POST /api/export/image`(`{"format":"png"}`, 브라우저 탭이 열려 있어야 함)로 확인한다. 그리기 전에 `POST /api/snapshots`로 이전 그림을 저장한다. 아홉 번째 세션 스냅샷은 `session8-q7-table-card`, `session9-q1-contract-place`, `session9-q2-contract-block`이다. 열 번째 세션 스냅샷은 `session10-start`(③-2 그림), `session10-q3-table-card-six`(표 카드 여섯 안), `session10-q3-nullable-constraints`(나·나-1·나-2), `session10-q3-store-kinds`(저장소 네 종류, 지금 캔버스)다. 그린 스크립트는 커밋하지 않았다. 다크 모드 그림은 내보낸 PNG에 위 필터를 씌워 `POST /api/files`로 올리고 `image` 요소(`fileId`)로 옆에 둔다.
 
 이전 재개 첫 행동: ③ 화살표 옆 계약 블록의 모양을 위 레포 전부에서 찾아 비교해 묻는다. 그다음 ③ 표 카드를 같은 방식으로 묻는다. 둘 다 비교 없이 정했다.
 
@@ -352,6 +359,13 @@ System Design 101은 동작과 기술 비교를 설명하는 샘플로, Primer�
 1. ③: 주 참고 세 레포·visual-explainer·Claude Whiteboard가 계약과 데이터를 어떻게 보이는지 원문으로 더 읽는다. 일곱 번째 세션에 읽은 범위는 5번 항목에 있다. 메모와 블록의 차이는 캔버스에 예시로 그려 보인다.
 2. 더할 것: `wiki/index.md`에서 목적과 관련된 아티클(이해 병목, 리뷰 병목, AI-DLC, comprehension debt 등)을 찾아, 목록 8개가 놓친 할 일이 있는지 본다. 참고 레포도 같은 기준으로 본다.
 3. 찾은 것마다 근거(파일:줄 또는 위키 경로)와 추천을 붙여 하나씩 묻는다. 질문마다 목적과의 관계를 먼저 말한다. 일곱 번째 세션에 사용자가 "이 목표를 항상 생각해"라고 했다.
+
+열 번째 세션의 교훈.
+
+- 디자인을 SQL 테이블 하나로만 비교하고 추천했다. 사용자가 "몽고이거나 그런 경우는 어쩌려고? 그런 것도 따져 봤어? mysql, pg, 벡터디비"라고 짚었다. 부품 모양을 고를 때는 그 부품이 쓰일 경우(저장소 종류, 경계 종류)를 모두 그려 비교한다.
+- NULL 허용·제약조건이 빠진 안(pr-lens 원형)을 추천했다. 사용자가 "널러블이 안 보이는데? 제약조건은?"이라고 짚었다. 참고 레포의 원형이 판단에 필요한 정보를 빼면 그 점을 먼저 말하고 보완안을 같이 그린다.
+- 사용자가 "지금 주제가 뭐지? 뭐에 대한 디자인 고르는 거지?"라고 물었다. 질문 첫 줄에 "무엇을, 어떤 상황에서 그릴 때의 모양인지"를 한 줄로 쓴다.
+- 진행 상황 보고가 길어 사용자가 "장황하게 말하지 마 다시 보고해"라고 했다.
 
 아홉 번째 세션의 교훈.
 
@@ -461,7 +475,7 @@ System Design 101은 동작과 기술 비교를 설명하는 샘플로, Primer�
 |---|---|---|
 | ① | 질문에 맞는 그림 고르기 | 11-08 결정 |
 | ② | 질문 관련 아키텍처 그리기, 줌인·줌아웃, 다음 볼 곳 제안 | 11-08 결정, 기존 "상세 탐색" 요구 |
-| ③ | 계약 보여 주기. 11-13 여덟 번째 세션에 변경 표시·보일 계약·필드 형식·화살표가 아닌 계약을 정했다(아래 "③의 …" 불릿). 11-14 아홉 번째 세션에 계약 블록의 자리(③-1)와 모양(③-2)을 정했다. 표 카드 디자인 비교가 남았다 | 사용자 요구 |
+| ③ | 계약 보여 주기. 11-13 여덟 번째 세션에 변경 표시·보일 계약·필드 형식·화살표가 아닌 계약을 정했다(아래 "③의 …" 불릿). 11-14 아홉 번째 세션에 계약 블록의 자리(③-1)와 모양(③-2)을 정했다. 열 번째 세션에 표 카드 모양(③-3)을 정했다. ③-2 재확인과 남은 부품이 남았다 | 사용자 요구 |
 | ④ | 확인 못 한 관계에 "unknown" 표시 | 2번 |
 | ⑤ | 사용자 표시 읽기, 동시 수정 거절, 고친 것 알리기. 묶음 안으로 옮긴 것도 여기서 묻는다 | 3번, 기존 "고친 그림 갱신"·"묶음 유지" 요구 |
 | ⑥ | 용어집 용어 쓰기, 코드 이름 괄호, 용어집이 없을 때 이름이 대화 안에서만 유지됨을 한 번 알리기 | 4번 |
@@ -496,6 +510,22 @@ System Design 101은 동작과 기술 비교를 설명하는 샘플로, Primer�
   - 닫혔다. 다. 바뀐 계약의 화살표에는 번호와 이름(`① POST /payments`)을 두고, 계약 블록은 그림 밖 목록에 둔다. 사용자가 에이전트 추천을 "ㅇㅋㅇㅋ 추천대로"로 받았다. 이전 결정 "화살표 옆 블록"을 바꾼다. 근거는 다섯 레포가 같은 방식이라는 것(위 원문)과, 계약이 많아도 그림이 복잡해지지 않고 PR 자료로 그대로 읽힌다는 에이전트 추론이다.
 - ③-2 계약 블록 모양(11-14 아홉 번째 세션, 답 없음). 캔버스에 가(밝은 회색 블록)·나(어두운 코드 블록)·다(흰 카드 + 머리줄)·라(점 + 제목 + 불릿 카드)를 그렸다. 사용자가 "라이트 모드 다크 모드 고려 안 해?"라고 물었다. Excalidraw 다크 모드는 캔버스 전체에 `invert(93%) hue-rotate(180deg)` 필터를 씌운다(설치된 `node_modules/@excalidraw/excalidraw/dist`에서 grep). 같은 필터를 라이트 모드 내보내기 PNG에 적용해 흉내 냈다(브라우저에서 직접 바꿔 보지는 않음). 가·다·라는 두 모드에서 모두 읽힌다. 나는 다크 모드에서 밝은 블록으로 뒤집혀 "어두운 코드 블록"이라는 뜻이 사라진다.
   - 닫혔다. 다. 흰 카드에 머리줄(왼쪽 `① POST /payments`, 그 아래 타입 요약 `PaymentRequest → PaymentResult`, 오른쪽 종류 태그 `API`)을 두고, 아래에 `REQUEST`·`RESPONSE 200` 구역을 위아래로 둔다. 타입 요약은 코드에 타입 이름이 있을 때만 쓰고, 없으면 그 줄을 뺀다. 사용자가 "너의 추천은 다라고?"라고 되물었고, 에이전트가 약한 근거(표 카드가 아직 다시 정해지지 않음)와 차선(가)을 밝힌 뒤 사용자가 "다로 가고"라고 답했다. 근거는 pr-lens 계약 패널의 머리줄(`docs/showcase/welcome.payload.gif`)과 Q7 표 카드와 같은 계열이라는 에이전트 추론이다.
+- ③-3 표 카드 모양 조사(11-14 열 번째 세션, 레포 17곳, 서브에이전트 셋이 읽고 에이전트가 이미지 확인). 대상은 PR이 DB 테이블을 바꿨을 때 저장소 박스 안에 두는 구조 보기 카드다. 변경 표시(`+ Δ −`와 색)는 정한 대로 고정했다. 찾은 서로 다른 방식은 여섯이다.
+  - 가. 칩을 가운데 열에: diagram-design `type-db-schema.md:11-14,32`·`docs/screenshots/db-schema.png`(Q7 그림이 이것), whiteboard `SoftwareMap.tsx:2557-2631`(칩이 이름 앞, 종류 태그가 이름 위).
+  - 나. 키 칩을 이름 앞에, 머리줄에 아이콘·이름·부제(`payments · 9 columns`): pr-lens `packages/renderer/src/svg/datamodel.ts:62-236`(테스트 스냅샷 `test/__goldens__/billing-org.data-model.light.svg`로 확인, 쇼케이스 이미지 없음). 키는 PK·FK·IX만.
+  - 다. 색 머리 띠, 채운 색 배지(PK 보라, FK 주황): archify `renderers/erd/render-erd.mjs:84-122,1376-1432`·`docs/assets/archify-erd.png`. drawio-skill ERD도 머리를 색으로 채운다(`references/diagram-types.md:15-18`).
+  - 라. 키를 글자 접두사로(`#` PK, `→` FK), 칩 없음: diagram-design `type-er.md:8-15`·`docs/screenshots/er.png`.
+  - 마. 컬럼을 가로로 놓은 격자 표와 예시 값 행, 원통 안: system-design-101 `data/guides/vertical-partitioning-vs-horizontal-partitioning.md:14`(원격 이미지 `0402-…png`를 받아 확인).
+  - 바. DDL 코드 블록, 그림 밖: system-design-primer `solutions/system_design/pastebin/README.md:111-117`. excalidraw-diagram-skill의 어두운 데이터 블록(`SKILL.md:79`)도 같은 계열.
+  - 표 모양이 없는 곳: show-me, effective-html, excalidraw-diagram-skill, stack-diagram(아이콘 타일과 역할 글만, `docs/hero.png`), system-design-academy(README 색인뿐). visual-explainer는 문서에만 "박스 안 키 필드"(`references/diagrams.md:25`)가 있고 그리는 코드가 없다.
+- ③-3 진행. 에이전트가 나를 추천했다. 사용자가 "테이블만 보고 싶을 때랑 데이터 예시가 필요할 때가 다를 수 있다"고 해서 마는 다른 상황용으로 뺐다(③-4로 제안, 답 없음). 사용자가 "나, 바 중에 고민"이라고 했다. 이어 "나는 널러블이 안 보이는데? 제약조건은?"이라고 물어 나-1(NULL 허용은 `type?`, 카드 아래 `CONSTRAINTS` 구역)과 나-2(`NN` 칩)를 그렸다. 사용자가 "솔직히 바가 나은 것 같아"라고 했다가 "몽고이거나 그런 경우는? mysql, pg, 벡터디비"라고 물었다. 저장소 네 종류(PG/MySQL, MongoDB, 벡터 DB, Redis)를 나-1과 바로 나란히 그렸다. 바는 SQL에서만 정의 글이 있다. Mongo는 정의가 앱 코드에 있고 프로젝트마다 다르며, 벡터 DB는 컬렉션 생성 API, Redis는 정의 파일이 없다. pr-lens는 `table` 하나가 "테이블, 컬렉션, 키 묶음"을 뜻하고(`packages/schema/README.md:81`), whiteboard는 `relational`·`document` 저장소를 같은 카드로 그리며 중첩 필드를 들여쓴다(`packages/whiteboard-document/src/blocks/database_lens.ts:24-25,49`). 벡터 DB를 다루는 레포는 없다.
+  - 닫혔다. 나-1. 사용자가 "그럼 나가 맞아 보이나? 바는 그냥 에이전트가 알려주는 느낌으로? ddl은?"이라고 묻고, 에이전트 정리에 "그렇게 하자"로 답했다.
+  - 머리줄: 아이콘, 표시 이름(`Payment`), 부제(코드 이름 · 종류 · 컬럼 수, 예: `payments · table · 10 columns`, Redis는 `session:{id} · hash · TTL 30m`).
+  - 행: 변경 기호, 키 칩(`PK`·`FK`·`UQ`, 이름 앞, 회색 채움), 이름(mono), 타입(오른쪽). NULL 허용은 `type?`, `?`가 없으면 NOT NULL이다(whiteboard `packages/review/app/src/database-lens.tsx:1248`). 바뀐 타입은 `옛 → 새`. 행 배경 교차는 없다. 그대로인 컬럼은 접는다.
+  - `CONSTRAINTS` 구역: 바뀌었거나 판단에 필요한 제약만 둔다(CHECK, DEFAULT, INDEX, FK 규칙, 벡터의 distance·인덱스). diagram-design INDEXES 구역(`type-db-schema.md:14`, "이야기에 필요한 것만")을 따랐다.
+  - 저장소 종류와 관계없이 같은 카드다. Mongo 중첩 필드는 들여쓰고, 벡터는 `vector float[1536]` 행 하나로 둔다(에이전트 추론).
+  - DDL 같은 원래 정의는 캔버스에 두지 않는다. 사용자가 물으면 에이전트가 지금 코드를 읽어 채팅에 `파일:줄`과 원문 일부를 보인다. DDL이 없는 저장소는 그 정의가 있는 코드(JPA 엔티티, Mongoose 스키마, 컬렉션 생성 호출)를 보인다. 2번의 "코드 위치는 채팅으로"와 같은 이유다.
+  - Q7 표 카드의 머리줄(이름 + `TABLE` 태그), 가운데 칩 열, `NN` 칩, 행 배경 교차는 이 결정으로 바뀐다. 표 카드가 바뀌었으므로 ③-2를 다시 본다.
 - ⑧의 정정: 에이전트가 처음에 "그림을 PR·문서 자료로 내보내기" 기능으로 적었다. 사용자의 뜻은 PR을 만들 때도 이 스킬을 쓴다는 사용 장면이었다. 현재 서버에는 `export_to_image`·`export_to_excalidraw_url`이 있다(`src/core/mcp-dispatch.ts:537,664`, 코드만 확인).
 
 원문을 다시 확인할 때는 `wiki/index.md`와 세 레포의 위 파일부터 읽는다.
