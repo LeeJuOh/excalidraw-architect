@@ -17,7 +17,7 @@
 |---|---|---|
 | 구현 착수 전 | 스펙(PRD)과 구현 순서 표, 이슈 티켓 | `.scratch/<feature-slug>/` |
 | 이슈 파일을 만들거나 `Status:`를 바꿀 때 | 티켓 파일 규약, 라벨 문자열 5종 | `docs/agents/issue-tracker.md`, `docs/agents/triage-labels.md` |
-| 코드 탐색 전 | 용어·결정 기록 읽는 순서, 용어 준수·ADR 충돌 규칙 | `docs/agents/domain.md` → `CONTEXT.md`, `docs/adr/` |
+| 코드 탐색 전 | 용어·결정 기록 읽는 순서, 용어 준수·ADR 충돌 규칙 | `docs/agents/domain.md` → `GLOSSARY.md`, `docs/adr/` |
 | archdraw 재개편을 이어서 하거나, 목표·사용 장면·그림 표현·스킬 범위를 정하거나, 참고 레포를 비교할 때 | 정한 것·남은 질문·진행 방식("이어서 하기" 절), 레포별 적용 판단·검수 근거 | `docs/research/2026-11-06-archdraw-redesign.md` |
 | 업스트림을 머지한 뒤 | 되살아나면 다시 지울 파일·설정 목록 | `docs/agents/upstream-merge.md` |
 
