@@ -6,11 +6,11 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const surveyPath = process.argv[2];
 if (!surveyPath) {
-  console.error('usage: node scripts/check-survey.mjs <docs/research/surveys/조사표.md>');
+  console.error('usage: node scripts/check-survey.mjs <.scratch/archdraw-redesign/surveys/조사표.md>');
   process.exit(2);
 }
 
-const repos = readFileSync(join(root, 'docs/research/design-refs.txt'), 'utf8')
+const repos = readFileSync(join(root, '.scratch/archdraw-redesign/design-refs.txt'), 'utf8')
   .split('\n')
   .map((line) => line.trim())
   .filter((line) => line && !line.startsWith('#'));

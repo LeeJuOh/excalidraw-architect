@@ -16,7 +16,7 @@
 | 언제 | 무엇 | 어디 |
 |---|---|---|
 | 구현 착수 전 | 스펙(PRD)과 구현 순서 표, 이슈 티켓 | `.scratch/<feature-slug>/` |
-| archdraw 재개편을 이어서 하거나, 목표·사용 장면·그림 표현·스킬 범위를 정하거나, 참고 레포를 비교할 때 | 다음 행동·정한 것·진행 방식("이어서 하기" 절), 레포별 적용 판단·검수 근거 | `docs/research/2026-11-06-archdraw-redesign.md` |
+| archdraw 재개편을 이어서 하거나, 목표·사용 장면·그림 표현·스킬 범위를 정하거나, 참고 레포를 비교할 때 | 다음 행동·정한 것·진행 방식("이어서 하기" 절), 레포별 적용 판단·검수 근거 | `.scratch/archdraw-redesign/research.md` |
 | 업스트림을 머지한 뒤 | 되살아나면 다시 지울 파일·설정 목록 | `docs/agents/upstream-merge.md` |
 
 ## Agent skills

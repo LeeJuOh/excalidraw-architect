@@ -133,7 +133,7 @@ POST /orders → 201 Created
 
 메모의 위치·크기·정보량과 펼쳐 보는 방식은 디자인 스펙에서 정한다. 데이터 관계 자체가 질문이면 ERD 같은 독립 그림을 쓸 수 있다. 계약 메모와 데이터 모델 그림의 분담도 함께 정한다.
 
-기존 [계약 지침](../../plugin/skills/archdraw/references/situations/contract.md)은 경계의 주소와 실제 값, 화살표 옆 메모를 이미 규정한다. [캔버스 규격](../canvas-guide.md)의 Contract note는 줄 단위 diff를 규정한다. 재개편에서는 이 요구를 유지하면서 실제 표현과 읽기 경험을 다시 설계한다. 기존 규칙의 존재가 원하는 품질을 달성했다는 뜻은 아니다.
+기존 [계약 지침](../../plugin/skills/archdraw/references/situations/contract.md)은 경계의 주소와 실제 값, 화살표 옆 메모를 이미 규정한다. [캔버스 규격](../../docs/canvas-guide.md)의 Contract note는 줄 단위 diff를 규정한다. 재개편에서는 이 요구를 유지하면서 실제 표현과 읽기 경험을 다시 설계한다. 기존 규칙의 존재가 원하는 품질을 달성했다는 뜻은 아니다.
 
 ## 참고 자료를 고르는 기준
 
@@ -246,7 +246,7 @@ System Design 101은 동작과 기술 비교를 설명하는 샘플로, Primer�
 - 제안 기준 "에이전트가 스스로 정한 것"의 빈틈("피드백 왕복"에서 넘어옴). 에이전트는 지금 대화에서 자기가 구현한 것만 안다. 남의 코드나 오래된 코드에는 결정 기록이 없어 이 기준을 쓸 수 없다(에이전트 추론). 결정 기록을 강제하지는 않는다. 사용자가 11-13에 이 점을 짚었다.
 - Claude Whiteboard 안내문에서 가져올 나머지 후보("피드백 왕복"에서 넘어옴). 캔버스 글을 지시가 아닌 데이터로 다루기, 쓰기 전 고칠 영역 표시, 같은 내용은 기존 요소를 고치기 등이다. 구현 세부라서 스펙 뒤로 미뤘다(에이전트 판단).
 
-색과 선의 뜻도 재검토 대상이다. archify의 종류별 색과 diagram-design의 강조색은 현재 [ADR-0015](../adr/0015-color-only-for-change-status.md)와 충돌한다. 여러 샘플의 응답·비동기·배포 점선은 [GLOSSARY.md](../../GLOSSARY.md)의 점선 뜻과 다르다. 새 표기법을 정하면 관련 ADR·용어·캔버스 규격을 함께 갱신한다.
+색과 선의 뜻도 재검토 대상이다. archify의 종류별 색과 diagram-design의 강조색은 현재 [ADR-0015](../../docs/adr/0015-color-only-for-change-status.md)와 충돌한다. 여러 샘플의 응답·비동기·배포 점선은 [GLOSSARY.md](../../GLOSSARY.md)의 점선 뜻과 다르다. 새 표기법을 정하면 관련 ADR·용어·캔버스 규격을 함께 갱신한다.
 
 ## 기존 시스템 문서의 역할
 
@@ -254,8 +254,8 @@ System Design 101은 동작과 기술 비교를 설명하는 샘플로, Primer�
 |---|---|
 | [README](../../README.md), [한국어 README](../../README.ko.md) | 현재 제품 설명과 설치·사용 안내. 재개편 구현에 맞춰 갱신한다. |
 | [GLOSSARY.md](../../GLOSSARY.md), `docs/adr/` | 현재 용어와 결정 근거. 새 설계가 바꾸는 결정을 식별할 때 읽는다. |
-| [캔버스 규격](../canvas-guide.md), [현재 스킬](../../plugin/skills/archdraw/SKILL.md)과 참고 문서 | 현재 동작을 지시하는 원본. 새 스킬로 교체할 때 함께 정리한다. |
-| [MCP 안내문 전달 조사](2026-09-19-mcp-guidance-delivery.md) | ADR-0006과 ADR-0014가 인용하는 기존 시스템의 결정 근거. |
+| [캔버스 규격](../../docs/canvas-guide.md), [현재 스킬](../../plugin/skills/archdraw/SKILL.md)과 참고 문서 | 현재 동작을 지시하는 원본. 새 스킬로 교체할 때 함께 정리한다. |
+| [MCP 안내문 전달 조사](../../docs/research/2026-09-19-mcp-guidance-delivery.md) | ADR-0006과 ADR-0014가 인용하는 기존 시스템의 결정 근거. |
 | [AGENTS.md](../../AGENTS.md), `docs/agents/`, [archdraw-report](../../tools/archdraw-report/README.md) | 프로젝트 작업 규약과 현재 도그푸딩 도구의 사용 안내. |
 
 이 문서가 예전 재설계 조사 원장과 레포별 단계 비교표를 대체한다. 폐기한 방향과 넓은 후보 목록은 Git 기록에 남긴다. 기존 시스템 문서를 유지하는 것은 그 설계를 새 스킬에도 그대로 채택한다는 뜻이 아니다.
@@ -391,8 +391,8 @@ System Design 101은 동작과 기술 비교를 설명하는 샘플로, Primer�
 
 **조사.** 디자인·표현을 묻거나 정한 결정을 다시 볼 때는 이 순서를 따른다.
 
-1. `docs/research/design-refs.txt`의 레포를 모두 읽는다. 레포가 많으면 서브에이전트 셋에 나눠 읽힌다.
-2. 조사표 `docs/research/surveys/<날짜>-<주제>.md`를 만든다. 레포마다 한 행에 커밋, 방식(없으면 "없음"), 근거(`파일:줄` 또는 이미지 경로)를 쓴다. 앞 조사표에서 같은 커밋으로 "없음"을 확인한 레포는 그 행을 옮겨 쓴다.
+1. `.scratch/archdraw-redesign/design-refs.txt`의 레포를 모두 읽는다. 레포가 많으면 서브에이전트 셋에 나눠 읽힌다.
+2. 조사표 `.scratch/archdraw-redesign/surveys/<날짜>-<주제>.md`를 만든다. 레포마다 한 행에 커밋, 방식(없으면 "없음"), 근거(`파일:줄` 또는 이미지 경로)를 쓴다. 앞 조사표에서 같은 커밋으로 "없음"을 확인한 레포는 그 행을 옮겨 쓴다.
 3. `node scripts/check-survey.mjs <조사표>`를 돌린다. 통과하면 다음으로 간다.
 4. 찾은 서로 다른 방식을 모두 선택지로 낸다. 선택지 수는 조사 결과가 정한다. 질문할 때 조사표 경로를 같이 보인다.
 
